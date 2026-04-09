@@ -3,7 +3,7 @@
  * Xử lý lỗi tập trung cho Express app
  */
 const errorHandler = (err, req, res, _next) => {
-  console.error("❌ Error:", err.message);
+  console.error("[ERROR]", err.message);
 
   // Lỗi từ Blockchain (ethers.js)
   if (err.code === "CALL_EXCEPTION" || err.code === "ACTION_REJECTED") {

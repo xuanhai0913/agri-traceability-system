@@ -1,57 +1,70 @@
-# 🌾 Hệ thống Truy xuất Nguồn gốc Nông sản (Blockchain-based Agricultural Traceability System)
+# Agri Traceability System
 
-Quản lý hành trình lô hàng nông sản từ gieo trồng đến thu hoạch, dữ liệu được lưu bất biến trên Blockchain.
+Blockchain-based agricultural product traceability. Manages batch lifecycle from seeding to harvest — data stored immutably on-chain, images on Cloudinary. Generates QR codes for mobile scanning.
 
-## 📁 Cấu trúc dự án
+## Project Structure
 
 ```
-/agri-traceability-system
-├── /smart-contracts    # Hardhat project - Solidity contracts & deploy scripts
-├── /backend            # Node.js Express server - API & Cloudinary integration
-└── /frontend-web       # ReactJS (Vite) - Admin Portal cho Nông dân/Kiểm định
+agri-traceability-system/
+├── smart-contracts/    # Hardhat project, Solidity contracts, deploy scripts
+├── backend/            # Node.js Express API, Cloudinary integration
+├── frontend-web/       # React (Vite) admin portal
+└── mobile-app/         # Expo React Native consumer app (QR scanning)
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Thành phần | Công nghệ |
-|-----------|-----------|
-| Smart Contract | Solidity, Hardhat, Polygon Amoy / Ethereum Sepolia |
-| Backend | Node.js, Express.js, ethers.js v6, Cloudinary SDK |
-| Frontend | React (Vite), Tailwind CSS v4, qrcode.react |
+| Layer | Tech |
+|-------|------|
+| Smart Contract | Solidity 0.8.24, Hardhat |
+| Backend | Node.js, Express, ethers.js v6 |
+| Image Storage | Cloudinary |
+| Frontend | React (Vite), Tailwind CSS v4 |
+| Mobile App | Expo, React Native, expo-camera |
+| QR Code | qrcode.react |
+| Networks | Polygon Amoy, Ethereum Sepolia |
 
-## 🚀 Bắt đầu nhanh
-
-### 1. Cài đặt dependencies
+## Quick Start
 
 ```bash
+# Install all dependencies (workspaces)
 npm install
-```
 
-### 2. Chạy Smart Contract
-
-```bash
-# Compile
+# Compile smart contract
 npm run contracts:compile
 
-# Test
+# Run contract tests
 npm run contracts:test
 
-# Deploy (local)
-npm run contracts:deploy
-```
-
-### 3. Chạy Backend
-
-```bash
+# Start backend (port 3000)
 npm run backend:dev
-```
 
-### 4. Chạy Frontend
-
-```bash
+# Start frontend (port 5173)
 npm run frontend:dev
+
+# Start mobile app (Expo)
+npm run mobile:start
 ```
 
-## 📄 License
+## API Endpoints
+
+```
+POST   /api/batches             Create batch
+GET    /api/batches/:id         Get batch info
+POST   /api/batches/:id/stages  Add growth stage
+GET    /api/batches/:id/history Stage timeline
+GET    /api/batches/total       Total batch count
+POST   /api/upload              Upload image
+GET    /api/health              Health check
+```
+
+## Environment Variables
+
+Copy `.env.example` in each sub-directory and fill in your values:
+
+- `smart-contracts/.env.example` — Private key, RPC URLs
+- `backend/.env.example` — Blockchain connection, Cloudinary credentials
+
+## License
 
 MIT

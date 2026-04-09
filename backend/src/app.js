@@ -7,11 +7,8 @@ const uploadRoutes = require("./routes/upload.routes");
 
 const app = express();
 
-// ================================================================
-// │                      MIDDLEWARE                                │
-// ================================================================
+// --- Middleware ---
 
-// CORS - cho phép Frontend và Mobile App truy cập
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "*",
@@ -20,39 +17,31 @@ app.use(
   })
 );
 
-// Parse JSON body
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// HTTP request logging
 app.use(morgan("dev"));
 
-// ================================================================
-// │                        ROUTES                                 │
-// ================================================================
+// --- Routes ---
 
-// Health check
 app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
-    message: "🌾 AgriTrace API is running",
+    message: "AgriTrace API is running",
     timestamp: new Date().toISOString(),
   });
 });
 
-// API Routes
 app.use("/api/batches", batchRoutes);
 app.use("/api/upload", uploadRoutes);
 
-// 404 handler
+// 404
 app.use((_req, res) => {
   res.status(404).json({
     success: false,
-    message: "Route không tồn tại",
+    message: "Route not found",
   });
 });
 
-// Global error handler (phải đặt cuối cùng)
 app.use(errorHandler);
 
 module.exports = app;

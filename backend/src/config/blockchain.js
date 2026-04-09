@@ -16,7 +16,7 @@ function getContractABI() {
 
   if (!fs.existsSync(artifactPath)) {
     console.warn(
-      "⚠️  Contract artifact not found. Run 'npm run contracts:compile' first."
+      "[WARN] Contract artifact not found. Run 'npm run contracts:compile' first."
     );
     return null;
   }

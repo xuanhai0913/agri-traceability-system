@@ -6,7 +6,8 @@
   "workspaces": [
     "smart-contracts",
     "backend",
-    "frontend-web"
+    "frontend-web",
+    "mobile-app"
   ],
   "scripts": {
     "contracts:compile": "npm run compile --workspace=smart-contracts",
@@ -14,6 +15,7 @@
     "contracts:deploy": "npm run deploy --workspace=smart-contracts",
     "backend:dev": "npm run dev --workspace=backend",
     "frontend:dev": "npm run dev --workspace=frontend-web",
+    "mobile:start": "npm run start --workspace=mobile-app",
     "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\""
   },
   "keywords": [
