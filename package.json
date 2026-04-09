@@ -1,0 +1,28 @@
+{
+  "name": "agri-traceability-system",
+  "version": "1.0.0",
+  "description": "Blockchain-based Agricultural Traceability System - Hệ thống truy xuất nguồn gốc nông sản",
+  "private": true,
+  "workspaces": [
+    "smart-contracts",
+    "backend",
+    "frontend-web"
+  ],
+  "scripts": {
+    "contracts:compile": "npm run compile --workspace=smart-contracts",
+    "contracts:test": "npm run test --workspace=smart-contracts",
+    "contracts:deploy": "npm run deploy --workspace=smart-contracts",
+    "backend:dev": "npm run dev --workspace=backend",
+    "frontend:dev": "npm run dev --workspace=frontend-web",
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\""
+  },
+  "keywords": [
+    "blockchain",
+    "traceability",
+    "agriculture",
+    "solidity",
+    "ethereum"
+  ],
+  "author": "",
+  "license": "MIT"
+}
