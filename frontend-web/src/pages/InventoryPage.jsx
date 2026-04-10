@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MapPin, CalendarDays, ArrowRight, PackagePlus, Warehouse } from "lucide-react";
+import { MapPin, CalendarDays, ArrowRight, PackagePlus, Warehouse, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2 } from "lucide-react";
 import { getTotalBatches, getBatch } from "../services/api";
 import { InventorySkeleton } from "../components/ui/Skeleton";
+import { EmptyInventoryIllustration } from "../components/ui/EmptyStateIllustrations";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -25,7 +26,7 @@ const STAGE_COLORS = {
   6: { border: "border-l-slate-400", bg: "bg-slate-200", text: "text-slate-600", dot: "bg-slate-400", track: "bg-slate-400" },
 };
 
-const PRODUCT_ICONS = ["eco", "grass", "coffee", "forest", "park", "yard"];
+const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 
 export default function InventoryPage() {
   const { t, i18n } = useTranslation();
@@ -142,9 +143,7 @@ export default function InventoryPage() {
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-slate-400">
-          <span className="material-symbols-outlined text-5xl mb-3">
-            inventory_2
-          </span>
+          <EmptyInventoryIllustration className="w-32 h-32 mb-4" />
           <p className="text-sm font-medium">{t("common.noData")}</p>
           <Link
             to="/batches/new"
@@ -159,7 +158,7 @@ export default function InventoryPage() {
           {filtered.map((batch) => {
             const stageIdx = batch.currentStageIndex ?? 0;
             const colors = STAGE_COLORS[stageIdx] || STAGE_COLORS[0];
-            const icon = PRODUCT_ICONS[batch.id % PRODUCT_ICONS.length];
+            const IconComponent = PRODUCT_ICONS[batch.id % PRODUCT_ICONS.length];
             const progress = ((stageIdx + 1) / 7) * 100;
 
             return (
@@ -172,9 +171,7 @@ export default function InventoryPage() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-emerald-700">
-                          {icon}
-                        </span>
+                        <IconComponent className="text-emerald-700" size={20} />
                       </div>
                       <div>
                         <h3 className="font-bold text-on-surface text-base">
