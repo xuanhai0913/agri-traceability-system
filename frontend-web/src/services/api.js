@@ -1,7 +1,7 @@
 import axios from "axios";
 
 /**
- * API Service — TerraLedger Frontend
+ * API Service — AgriTrace Frontend
  *
  * Dev mode:  Vite proxy /api → localhost:3000 (no env var needed)
  * Prod mode: VITE_API_URL = https://your-backend.onrender.com/api

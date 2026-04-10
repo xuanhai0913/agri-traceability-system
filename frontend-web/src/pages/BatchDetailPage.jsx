@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
 import { getBatch, getStageHistory, addStage } from "../services/api";
 import { BatchDetailSkeleton } from "../components/ui/Skeleton";
@@ -25,6 +26,7 @@ const STAGE_NAMES_EN = [
 ];
 
 export default function BatchDetailPage() {
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const [batch, setBatch] = useState(null);
   const [stages, setStages] = useState([]);
@@ -83,7 +85,7 @@ export default function BatchDetailPage() {
 
   function formatDate(timestamp) {
     if (!timestamp) return "—";
-    return new Date(timestamp * 1000).toLocaleDateString("vi-VN", {
+    return new Date(timestamp * 1000).toLocaleDateString(i18n.language === "vi" ? "vi-VN" : "en-US", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -92,7 +94,7 @@ export default function BatchDetailPage() {
 
   function formatTime(timestamp) {
     if (!timestamp) return "";
-    return new Date(timestamp * 1000).toLocaleString("vi-VN");
+    return new Date(timestamp * 1000).toLocaleString(i18n.language === "vi" ? "vi-VN" : "en-US");
   }
 
   function handlePrint() {
@@ -112,7 +114,7 @@ export default function BatchDetailPage() {
         </span>
         <p className="text-error font-medium">{error}</p>
         <Link to="/" className="mt-4 text-primary text-sm font-bold hover:underline">
-          ← Về Dashboard
+          ← {t("nav.dashboard")}
         </Link>
       </div>
     );
@@ -130,7 +132,7 @@ export default function BatchDetailPage() {
       {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-xs text-outline mb-6">
         <Link to="/" className="hover:text-primary transition-colors">
-          Dashboard
+          {t("nav.dashboard")}
         </Link>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
         <span className="text-on-surface-variant font-medium">
@@ -157,29 +159,29 @@ export default function BatchDetailPage() {
         <div className="col-span-12 lg:col-span-3 space-y-6">
           <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient">
             <h2 className="text-xs font-bold text-tertiary uppercase tracking-widest mb-5">
-              Batch Summary
+              {t("batchDetail.summary")}
             </h2>
             <div className="space-y-4">
               <div>
-                <p className="text-xs text-outline mb-1">Tên sản phẩm</p>
+                <p className="text-xs text-outline mb-1">{t("dashboard.productName")}</p>
                 <p className="font-headline font-bold text-emerald-900">
                   {batch.name}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-outline mb-1">Nguồn gốc</p>
+                <p className="text-xs text-outline mb-1">{t("batchDetail.farmOrigin")}</p>
                 <p className="font-headline font-bold text-emerald-900">
                   {batch.origin || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-outline mb-1">Ngày tạo</p>
+                <p className="text-xs text-outline mb-1">{t("dashboard.dateCreated")}</p>
                 <p className="font-headline font-bold text-emerald-900">
                   {formatDate(batch.createdAt)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-outline mb-1">Trạng thái</p>
+                <p className="text-xs text-outline mb-1">{t("dashboard.status")}</p>
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                     batch.isActive
@@ -192,7 +194,7 @@ export default function BatchDetailPage() {
                       batch.isActive ? "bg-emerald-600" : "bg-amber-500"
                     }`}
                   ></span>
-                  {batch.isActive ? "Đang xử lý" : "Hoàn thành"}
+                  {batch.isActive ? t("common.active") : t("stages.completed")}
                 </span>
               </div>
             </div>

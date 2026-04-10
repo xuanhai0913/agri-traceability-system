@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { MapPin, Package, Star, ShieldCheck, Send } from "lucide-react";
 
 // ── Mock Data ────────────────────────────────────
 const PRODUCERS_DATA = {
@@ -136,6 +138,7 @@ const DEFAULT_PRODUCER = {
 const TABS = ["Overview", "Active Batches", "Compliance History", "Location"];
 
 export default function ProducerDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("Overview");
 
@@ -145,11 +148,7 @@ export default function ProducerDetailPage() {
     <>
       {/* Hero Banner */}
       <div className="relative h-52 md:h-72 w-[calc(100%+2rem)] md:w-[calc(100%+4rem)] overflow-hidden rounded-2xl -mt-4 md:-mt-8 -mx-4 md:-mx-8 mb-0">
-        <div className="w-full h-full bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-600 flex items-center justify-center">
-          <span className="material-symbols-outlined text-white/10 text-[200px]">
-            agriculture
-          </span>
-        </div>
+        <img src="/images/hero-coffee-farm.png" alt={producer.name} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
         {/* Profile overlay */}
@@ -184,9 +183,7 @@ export default function ProducerDetailPage() {
               </span>
             </div>
             <div className="flex items-center gap-2 mt-1 text-emerald-50">
-              <span className="material-symbols-outlined text-lg">
-                location_on
-              </span>
+              <MapPin size={18} />
               <span className="font-medium">{producer.location}</span>
             </div>
           </div>
@@ -194,7 +191,7 @@ export default function ProducerDetailPage() {
           {/* Actions */}
           <div className="flex gap-3">
             <button className="px-6 py-2.5 bg-white text-emerald-900 font-bold rounded-xl hover:scale-105 transition-transform text-sm">
-              Contact Farmer
+              {t("producerDetail.contactFarmer")}
             </button>
             <button className="p-2.5 bg-white/20 backdrop-blur-md text-white rounded-xl hover:bg-white/30 transition-colors">
               <span className="material-symbols-outlined">share</span>
@@ -208,22 +205,20 @@ export default function ProducerDetailPage() {
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">
-              Total Batches
+              {t("producerDetail.totalBatches")}
             </p>
             <p className="text-3xl font-black text-emerald-900 font-headline">
               {producer.totalBatches.toLocaleString()}
             </p>
           </div>
           <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
-            <span className="material-symbols-outlined text-3xl">
-              inventory_2
-            </span>
+            <Package size={24} />
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">
-              Average Quality
+              {t("producerDetail.avgQuality")}
             </p>
             <p className="text-3xl font-black text-emerald-900 font-headline">
               {producer.avgQuality}
@@ -231,24 +226,20 @@ export default function ProducerDetailPage() {
             </p>
           </div>
           <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600">
-            <span className="material-symbols-outlined text-3xl filled">
-              star
-            </span>
+            <Star size={24} fill="currentColor" />
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">
-              Compliance Score
+              {t("producerDetail.complianceScore")}
             </p>
             <p className="text-3xl font-black text-emerald-900 font-headline">
               {producer.complianceScore}%
             </p>
           </div>
           <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-white">
-            <span className="material-symbols-outlined text-3xl">
-              verified_user
-            </span>
+            <ShieldCheck size={24} />
           </div>
         </div>
       </div>
@@ -277,7 +268,7 @@ export default function ProducerDetailPage() {
           {/* Description */}
           <section>
             <h2 className="text-2xl font-black text-emerald-900 mb-4 font-headline">
-              The Digital Ledger of Nature
+              {t("producerDetail.digitalLedger")}
             </h2>
             <p className="text-slate-600 leading-relaxed text-base md:text-lg mb-6">
               {producer.description.split("Regenerative Agriculture").length >
@@ -297,7 +288,7 @@ export default function ProducerDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-surface-container-low p-5 rounded-2xl">
                 <h3 className="text-primary font-bold text-sm uppercase tracking-wider mb-3">
-                  Farming Methods
+                  {t("producerDetail.farmingMethods")}
                 </h3>
                 <ul className="space-y-2">
                   {producer.farmingMethods.map((m) => (
@@ -315,7 +306,7 @@ export default function ProducerDetailPage() {
               </div>
               <div className="bg-surface-container-low p-5 rounded-2xl">
                 <h3 className="text-tertiary font-bold text-sm uppercase tracking-wider mb-3">
-                  Social Impact
+                  {t("producerDetail.socialImpact")}
                 </h3>
                 <ul className="space-y-2">
                   {producer.socialImpact.map((s) => (
@@ -337,7 +328,7 @@ export default function ProducerDetailPage() {
           {/* Certifications */}
           <section>
             <h2 className="text-xl font-bold text-emerald-900 mb-6 font-headline">
-              Verified Certifications
+              {t("producerDetail.certifications")}
             </h2>
             <div className="flex flex-wrap gap-4">
               {producer.certifications.map((cert) => {
@@ -376,13 +367,13 @@ export default function ProducerDetailPage() {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-emerald-900 font-headline">
-                  Active Processing Batches
+                  {t("producerDetail.activeBatchesTitle")}
                 </h2>
                 <Link
                   to="/batches"
                   className="text-sm font-semibold text-primary hover:underline"
                 >
-                  View Ledger
+                  {t("producerDetail.viewLedger")}
                 </Link>
               </div>
               <div className="space-y-4">

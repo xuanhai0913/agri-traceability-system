@@ -1,16 +1,35 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import {
+  LayoutDashboard,
+  GitBranch,
+  Warehouse,
+  Users,
+  ShieldCheck,
+  Plus,
+  Settings,
+  HelpCircle,
+  X,
+} from "lucide-react";
+
+const NAV_ICONS = {
+  "/": LayoutDashboard,
+  "/batches": GitBranch,
+  "/inventory": Warehouse,
+  "/producers": Users,
+  "/compliance": ShieldCheck,
+};
 
 export default function Sidebar({ open, onClose }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const navItems = [
-    { to: "/", icon: "dashboard", label: t("nav.dashboard") },
-    { to: "/batches", icon: "account_tree", label: t("nav.ledger") },
-    { to: "/inventory", icon: "inventory_2", label: t("nav.inventory") },
-    { to: "/producers", icon: "groups", label: t("nav.producers") },
-    { to: "/compliance", icon: "verified_user", label: t("nav.compliance") },
+    { to: "/", label: t("nav.dashboard") },
+    { to: "/batches", label: t("nav.ledger") },
+    { to: "/inventory", label: t("nav.inventory") },
+    { to: "/producers", label: t("nav.producers") },
+    { to: "/compliance", label: t("nav.compliance") },
   ];
 
   return (
@@ -35,32 +54,33 @@ export default function Sidebar({ open, onClose }) {
           className="md:hidden p-1.5 rounded-lg text-slate-500 hover:bg-emerald-100 transition-colors"
           aria-label="Close menu"
         >
-          <span className="material-symbols-outlined">close</span>
+          <X size={20} />
         </button>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-1">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === "/"}
-            onClick={onClose}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
-                isActive
-                  ? "text-emerald-700 font-bold border-r-4 border-emerald-600 bg-emerald-100/50"
-                  : "text-slate-600 hover:text-emerald-600 hover:bg-emerald-100/50"
-              }`
-            }
-          >
-            <span className="material-symbols-outlined text-xl">
-              {item.icon}
-            </span>
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
+        {navItems.map((item) => {
+          const Icon = NAV_ICONS[item.to];
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === "/"}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
+                  isActive
+                    ? "text-emerald-700 font-bold border-r-4 border-emerald-600 bg-emerald-100/50"
+                    : "text-slate-600 hover:text-emerald-600 hover:bg-emerald-100/50"
+                }`
+              }
+            >
+              <Icon size={20} strokeWidth={2} />
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* New Batch CTA */}
@@ -72,7 +92,7 @@ export default function Sidebar({ open, onClose }) {
           }}
           className="w-full py-3.5 btn-primary-gradient rounded-xl font-bold text-sm flex items-center justify-center gap-2"
         >
-          <span className="material-symbols-outlined text-lg">add</span>
+          <Plus size={18} strokeWidth={2.5} />
           {t("nav.newBatch")}
         </button>
       </div>
@@ -83,16 +103,14 @@ export default function Sidebar({ open, onClose }) {
           href="#"
           className="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-emerald-600 transition-colors text-sm"
         >
-          <span className="material-symbols-outlined text-xl">settings</span>
+          <Settings size={20} />
           <span>{t("nav.settings")}</span>
         </a>
         <a
           href="#"
           className="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-emerald-600 transition-colors text-sm"
         >
-          <span className="material-symbols-outlined text-xl">
-            help_outline
-          </span>
+          <HelpCircle size={20} />
           <span>{t("nav.support")}</span>
         </a>
       </div>

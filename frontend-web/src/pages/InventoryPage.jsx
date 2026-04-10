@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { MapPin, CalendarDays, ArrowRight, PackagePlus, Warehouse } from "lucide-react";
 import { getTotalBatches, getBatch } from "../services/api";
 import { InventorySkeleton } from "../components/ui/Skeleton";
 
@@ -26,6 +28,7 @@ const STAGE_COLORS = {
 const PRODUCT_ICONS = ["eco", "grass", "coffee", "forest", "park", "yard"];
 
 export default function InventoryPage() {
+  const { t, i18n } = useTranslation();
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all | active | completed
@@ -66,7 +69,7 @@ export default function InventoryPage() {
 
   function formatDate(timestamp) {
     if (!timestamp) return "—";
-    return new Date(timestamp * 1000).toLocaleDateString("vi-VN", {
+    return new Date(timestamp * 1000).toLocaleDateString(i18n.language === "vi" ? "vi-VN" : "en-US", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -81,36 +84,36 @@ export default function InventoryPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
         <div>
           <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em]">
-            Asset Management
+            {t("inventory.sectionLabel")}
           </span>
           <h1 className="text-2xl md:text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
-            Inventory
+            {t("inventory.title")}
           </h1>
           <p className="text-slate-500 mt-2 text-sm md:text-base">
-            Quản lý trực quan toàn bộ lô hàng nông sản đang trong hệ thống.
+            {t("inventory.subtitle")}
           </p>
         </div>
         <Link
           to="/batches/new"
           className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0 w-full md:w-auto justify-center"
         >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Thêm lô hàng
+          <PackagePlus size={18} />
+          {t("inventory.addItem")}
         </Link>
       </div>
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 mb-8">
         {[
-          { key: "all", label: "Tất cả", count: batches.length },
+          { key: "all", label: t("common.all"), count: batches.length },
           {
             key: "active",
-            label: "Đang xử lý",
+            label: t("common.active"),
             count: batches.filter((b) => b.isActive).length,
           },
           {
             key: "completed",
-            label: "Hoàn thành",
+            label: t("stages.completed"),
             count: batches.filter((b) => !b.isActive).length,
           },
         ].map((tab) => (
@@ -142,12 +145,12 @@ export default function InventoryPage() {
           <span className="material-symbols-outlined text-5xl mb-3">
             inventory_2
           </span>
-          <p className="text-sm font-medium">Không có lô hàng nào</p>
+          <p className="text-sm font-medium">{t("common.noData")}</p>
           <Link
             to="/batches/new"
             className="mt-4 text-primary text-sm font-bold hover:underline"
           >
-            + Tạo lô hàng đầu tiên
+            {t("dashboard.createFirst")}
           </Link>
         </div>
       ) : (
@@ -198,16 +201,12 @@ export default function InventoryPage() {
                   <div className="space-y-2 mb-5">
                     {batch.origin && (
                       <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="material-symbols-outlined text-sm text-slate-400">
-                          location_on
-                        </span>
+                        <MapPin size={14} className="text-slate-400 shrink-0" />
                         {batch.origin}
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <span className="material-symbols-outlined text-sm text-slate-400">
-                        calendar_today
-                      </span>
+                      <CalendarDays size={14} className="text-slate-400 shrink-0" />
                       {formatDate(batch.createdAt)}
                     </div>
                   </div>
@@ -234,10 +233,8 @@ export default function InventoryPage() {
                   to={`/batches/${batch.id}`}
                   className="flex items-center justify-center gap-2 py-3.5 bg-surface-container-low hover:bg-primary hover:text-white text-emerald-900 font-bold text-xs uppercase tracking-widest transition-colors"
                 >
-                  Xem chi tiết
-                  <span className="material-symbols-outlined text-sm">
-                    arrow_forward
-                  </span>
+                  {t("common.viewDetails")}
+                  <ArrowRight size={14} />
                 </Link>
               </div>
             );
