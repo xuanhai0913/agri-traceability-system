@@ -21,10 +21,10 @@ export default function Sidebar({ open, onClose }) {
       <div className="px-6 py-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-emerald-900 font-headline">
-            TerraLedger
+            AgriTrace
           </h1>
           <p className="text-emerald-600/70 text-xs font-semibold uppercase tracking-widest mt-1">
-            Agricultural Integrity
+            Blockchain Traceability
           </p>
         </div>
         {/* Mobile close */}
