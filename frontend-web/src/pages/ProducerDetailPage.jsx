@@ -144,7 +144,7 @@ export default function ProducerDetailPage() {
   return (
     <>
       {/* Hero Banner */}
-      <div className="relative h-64 md:h-72 w-full overflow-hidden rounded-2xl -mt-8 -mx-8 mb-0" style={{ width: "calc(100% + 4rem)" }}>
+      <div className="relative h-52 md:h-72 w-[calc(100%+2rem)] md:w-[calc(100%+4rem)] overflow-hidden rounded-2xl -mt-4 md:-mt-8 -mx-4 md:-mx-8 mb-0">
         <div className="w-full h-full bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-600 flex items-center justify-center">
           <span className="material-symbols-outlined text-white/10 text-[200px]">
             agriculture
@@ -153,7 +153,7 @@ export default function ProducerDetailPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
         {/* Profile overlay */}
-        <div className="absolute bottom-0 left-0 w-full px-8 pb-6 flex flex-col md:flex-row md:items-end gap-6">
+        <div className="absolute bottom-0 left-0 w-full px-4 md:px-8 pb-4 md:pb-6 flex flex-col md:flex-row md:items-end gap-4 md:gap-6">
           {/* Avatar */}
           <div className="relative">
             <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-gradient-to-br from-emerald-200 to-emerald-400 flex items-center justify-center">
@@ -174,7 +174,7 @@ export default function ProducerDetailPage() {
           {/* Name & Location */}
           <div className="flex-1 text-white">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight font-headline">
+              <h1 className="text-xl md:text-4xl font-extrabold tracking-tight font-headline">
                 {producer.name}
               </h1>
               <span className="hidden md:inline-flex px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-wider uppercase">
@@ -254,12 +254,12 @@ export default function ProducerDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-8 border-b border-slate-200 mb-8">
+      <div className="flex gap-4 md:gap-8 border-b border-slate-200 mb-8 overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0 scrollbar-hide">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`pb-4 text-sm font-bold transition-colors ${
+            className={`pb-4 text-sm font-bold transition-colors whitespace-nowrap ${
               activeTab === tab
                 ? "text-emerald-600 border-b-2 border-emerald-600"
                 : "text-slate-400 hover:text-slate-600"
@@ -279,7 +279,7 @@ export default function ProducerDetailPage() {
             <h2 className="text-2xl font-black text-emerald-900 mb-4 font-headline">
               The Digital Ledger of Nature
             </h2>
-            <p className="text-slate-600 leading-relaxed text-lg mb-6">
+            <p className="text-slate-600 leading-relaxed text-base md:text-lg mb-6">
               {producer.description.split("Regenerative Agriculture").length >
               1 ? (
                 <>

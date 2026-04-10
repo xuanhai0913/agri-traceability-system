@@ -152,7 +152,7 @@ export default function BatchDetailPage() {
       )}
 
       {/* 3-Column Layout */}
-      <div className="grid grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
         {/* Left: Summary */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
           <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient">

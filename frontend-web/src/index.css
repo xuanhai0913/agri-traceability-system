@@ -232,3 +232,12 @@ h1, h2, h3, .font-headline {
   background-size: 800px 100%;
   animation: skeleton-shimmer 1.6s ease-in-out infinite;
 }
+
+/* Hide scrollbar for horizontal-scroll elements */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -78,27 +78,27 @@ export default function ProducerNetworkPage() {
   return (
     <>
       {/* Header */}
-      <section className="mb-10 flex justify-between items-end">
+      <section className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
           <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em]">
             Ecosystem Directory
           </span>
-          <h1 className="text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
+          <h1 className="text-2xl md:text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
             Producer Network
           </h1>
-          <p className="text-slate-500 mt-2 max-w-lg">
+          <p className="text-slate-500 mt-2 max-w-lg text-sm md:text-base">
             Manage and monitor verified agricultural partners across the global
             supply chain ledger.
           </p>
         </div>
-        <button className="bg-primary text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-emerald-900/10">
+        <button className="bg-primary text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-emerald-900/10 w-full md:w-auto justify-center">
           <span className="material-symbols-outlined">person_add</span>
           Add New Producer
         </button>
       </section>
 
       {/* Stats Bento Grid */}
-      <div className="grid grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-10">
         <div className="col-span-1 bg-surface-container-lowest p-6 rounded-xl shadow-ambient ghost-border">
           <span className="text-slate-400 text-xs font-bold uppercase">
             Total Producers
@@ -127,7 +127,7 @@ export default function ProducerNetworkPage() {
             Integrity Secured
           </div>
         </div>
-        <div className="col-span-2 bg-gradient-to-r from-emerald-900 to-emerald-800 p-6 rounded-xl shadow-lg relative overflow-hidden">
+        <div className="col-span-2 bg-gradient-to-r from-emerald-900 to-emerald-800 p-5 md:p-6 rounded-xl shadow-lg relative overflow-hidden">
           <div className="relative z-10">
             <span className="text-emerald-300 text-xs font-bold uppercase">
               Global Distribution
@@ -154,7 +154,7 @@ export default function ProducerNetworkPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex items-center justify-between mb-6 bg-surface-container-low p-4 rounded-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 bg-surface-container-low p-3 md:p-4 rounded-xl gap-3">
         <div className="flex gap-3">
           {FILTERS.map((f) => (
             <button
@@ -304,12 +304,12 @@ export default function ProducerNetworkPage() {
       </div>
 
       {/* Network Integrity Section */}
-      <section className="mt-16 bg-surface-container-low rounded-3xl p-10 flex flex-col md:flex-row gap-12 items-center">
+      <section className="mt-12 md:mt-16 bg-surface-container-low rounded-2xl md:rounded-3xl p-6 md:p-10 flex flex-col md:flex-row gap-8 md:gap-12 items-center">
         <div className="flex-1">
           <span className="text-tertiary text-[10px] font-black uppercase tracking-[0.3em]">
             Network Integrity
           </span>
-          <h3 className="text-5xl font-extrabold text-on-surface tracking-tighter mt-4 leading-tight font-headline">
+          <h3 className="text-3xl md:text-5xl font-extrabold text-on-surface tracking-tighter mt-4 leading-tight font-headline">
             Verifying Every <br />
             <span className="text-emerald-600">Single Step.</span>
           </h3>
@@ -340,7 +340,7 @@ export default function ProducerNetworkPage() {
         </div>
 
         {/* Decorative image area */}
-        <div className="w-full md:w-[400px] aspect-square bg-emerald-900 rounded-[2.5rem] relative overflow-hidden shadow-2xl rotate-2">
+        <div className="w-full md:w-[400px] aspect-square bg-emerald-900 rounded-2xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl md:rotate-2">
           <div className="w-full h-full bg-gradient-to-br from-emerald-700 to-emerald-900 flex items-center justify-center">
             <span className="material-symbols-outlined text-emerald-600/30 text-[150px]">
               agriculture
