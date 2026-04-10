@@ -208,3 +208,27 @@ h1, h2, h3, .font-headline {
   background: var(--color-surface-container-high);
   color: var(--color-outline);
 }
+
+/* ================================================================
+   Skeleton Shimmer Animation
+   ================================================================ */
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 800px 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-container-high) 0%,
+    var(--color-surface-container-low) 40%,
+    var(--color-surface-container-high) 80%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}

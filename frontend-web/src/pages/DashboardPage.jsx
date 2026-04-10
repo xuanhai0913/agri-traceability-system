@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getTotalBatches, getBatch, getStageHistory } from "../services/api";
+import { DashboardSkeleton } from "../components/ui/Skeleton";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -71,6 +72,8 @@ export default function DashboardPage() {
     });
   }
 
+  if (loading) return <DashboardSkeleton />;
+
   return (
     <>
       {/* Greeting */}
@@ -97,7 +100,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-on-surface tracking-tighter">
-              {loading ? "—" : totalBatches}
+              {totalBatches}
             </span>
             {totalBatches > 0 && (
               <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2 py-0.5 rounded">
@@ -122,7 +125,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-on-surface tracking-tighter">
-              {loading ? "—" : activeBatches}
+              {activeBatches}
             </span>
             <span className="text-slate-400 text-xs font-medium">
               lô đang xử lý
@@ -145,7 +148,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-on-surface tracking-tighter">
-              {loading ? "—" : completedBatches}
+              {completedBatches}
             </span>
             <span className="text-xs font-medium text-secondary">
               Chuỗi hoàn tất
@@ -174,14 +177,8 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {loading ? (
-          <div className="px-8 py-16 flex flex-col items-center justify-center text-slate-400">
-            <span className="material-symbols-outlined text-4xl mb-3 animate-spin">
-              progress_activity
-            </span>
-            <p className="text-sm">Đang tải dữ liệu từ blockchain...</p>
-          </div>
-        ) : batches.length === 0 ? (
+        {batches.length === 0 ? (
+
           <div className="px-8 py-16 flex flex-col items-center justify-center text-slate-400">
             <span className="material-symbols-outlined text-5xl mb-3">
               inventory_2

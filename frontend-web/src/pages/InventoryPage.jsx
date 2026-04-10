@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getTotalBatches, getBatch } from "../services/api";
+import { InventorySkeleton } from "../components/ui/Skeleton";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -72,6 +73,8 @@ export default function InventoryPage() {
     });
   }
 
+  if (loading) return <InventorySkeleton />;
+
   return (
     <>
       {/* Header */}
@@ -134,15 +137,7 @@ export default function InventoryPage() {
         ))}
       </div>
 
-      {/* Loading */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 text-slate-400">
-          <span className="material-symbols-outlined text-4xl mb-3 animate-spin">
-            progress_activity
-          </span>
-          <p className="text-sm">Đang tải inventory...</p>
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-slate-400">
           <span className="material-symbols-outlined text-5xl mb-3">
             inventory_2

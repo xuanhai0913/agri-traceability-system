@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getTotalBatches, getBatch } from "../services/api";
+import { LedgerTableSkeleton } from "../components/ui/Skeleton";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -180,12 +181,7 @@ export default function TraceabilityLedgerPage() {
       {/* Table */}
       <section className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-ambient">
         {loading ? (
-          <div className="px-8 py-20 flex flex-col items-center justify-center text-slate-400">
-            <span className="material-symbols-outlined text-4xl mb-3 animate-spin">
-              progress_activity
-            </span>
-            <p className="text-sm">Đang tải dữ liệu từ blockchain...</p>
-          </div>
+          <LedgerTableSkeleton />
         ) : paged.length === 0 ? (
           <div className="px-8 py-20 flex flex-col items-center justify-center text-slate-400">
             <span className="material-symbols-outlined text-5xl mb-3">

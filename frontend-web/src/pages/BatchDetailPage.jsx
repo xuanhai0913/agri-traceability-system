@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { getBatch, getStageHistory, addStage } from "../services/api";
+import { BatchDetailSkeleton } from "../components/ui/Skeleton";
 
 const STAGE_NAMES = [
   "Gieo hạt",
@@ -98,16 +99,8 @@ export default function BatchDetailPage() {
     window.print();
   }
 
-  // ── Loading ────────────────────────────────
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 text-slate-400">
-        <span className="material-symbols-outlined text-5xl mb-4 animate-spin">
-          progress_activity
-        </span>
-        <p className="text-sm font-medium">Đang tải từ blockchain...</p>
-      </div>
-    );
+    return <BatchDetailSkeleton />;
   }
 
   // ── Error ────────────────────────────────
