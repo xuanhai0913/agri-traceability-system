@@ -1,8 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
 import DashboardPage from "./pages/DashboardPage";
+import TraceabilityLedgerPage from "./pages/TraceabilityLedgerPage";
+import InventoryPage from "./pages/InventoryPage";
 import CreateBatchPage from "./pages/CreateBatchPage";
 import BatchDetailPage from "./pages/BatchDetailPage";
+import ProducerNetworkPage from "./pages/ProducerNetworkPage";
+import ProducerDetailPage from "./pages/ProducerDetailPage";
 
 function ComingSoon({ title }) {
   return (
@@ -24,17 +28,12 @@ export default function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
-          <Route path="/batches" element={<DashboardPage />} />
+          <Route path="/batches" element={<TraceabilityLedgerPage />} />
           <Route path="/batches/new" element={<CreateBatchPage />} />
           <Route path="/batches/:id" element={<BatchDetailPage />} />
-          <Route
-            path="/inventory"
-            element={<ComingSoon title="Inventory" />}
-          />
-          <Route
-            path="/producers"
-            element={<ComingSoon title="Producer Network" />}
-          />
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/producers" element={<ProducerNetworkPage />} />
+          <Route path="/producers/:id" element={<ProducerDetailPage />} />
           <Route
             path="/compliance"
             element={<ComingSoon title="Compliance" />}
