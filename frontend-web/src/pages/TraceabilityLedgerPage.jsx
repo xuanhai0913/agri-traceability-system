@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Plus, Search, ChevronLeft, ChevronRight, Eye, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2 } from "lucide-react";
 import { getTotalBatches, getBatch } from "../services/api";
 import { LedgerTableSkeleton } from "../components/ui/Skeleton";
+import { NoResultsIllustration, EmptyBoxIllustration } from "../components/ui/EmptyStateIllustrations";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -24,7 +26,7 @@ const STAGE_COLORS = {
   6: { bg: "bg-slate-200", text: "text-slate-600", dot: "bg-slate-400" },
 };
 
-const PRODUCT_ICONS = ["eco", "grass", "coffee", "forest", "park", "yard"];
+const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 const PAGE_SIZE = 8;
 
 export default function TraceabilityLedgerPage() {
@@ -110,7 +112,7 @@ export default function TraceabilityLedgerPage() {
           to="/batches/new"
           className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0 w-full md:w-auto justify-center"
         >
-          <span className="material-symbols-outlined text-lg">add</span>
+          <Plus size={18} />
           {t("ledger.newBatch")}
         </Link>
       </div>
@@ -120,9 +122,7 @@ export default function TraceabilityLedgerPage() {
         <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 flex-1">
           {/* Search */}
           <div className="relative flex-1 md:max-w-md">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
-              search
-            </span>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               className="w-full bg-white border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-slate-400"
               placeholder={t("ledger.searchPlaceholder")}
@@ -186,13 +186,15 @@ export default function TraceabilityLedgerPage() {
           <LedgerTableSkeleton />
         ) : paged.length === 0 ? (
           <div className="px-8 py-20 flex flex-col items-center justify-center text-slate-400">
-            <span className="material-symbols-outlined text-5xl mb-3">
-              search_off
-            </span>
+            {search || filterStage !== null ? (
+              <NoResultsIllustration className="w-32 h-32 mb-4" />
+            ) : (
+              <EmptyBoxIllustration className="w-32 h-32 mb-4" />
+            )}
             <p className="text-sm font-medium">
               {search || filterStage !== null
-                ? "Không tìm thấy lô hàng phù hợp"
-                : "Chưa có lô hàng nào"}
+                ? t("common.noData")
+                : t("dashboard.noBatches")}
             </p>
             {!search && filterStage === null && (
               <Link
@@ -221,7 +223,7 @@ export default function TraceabilityLedgerPage() {
                 {paged.map((batch, i) => {
                   const stageIdx = batch.currentStageIndex ?? 0;
                   const colors = STAGE_COLORS[stageIdx] || STAGE_COLORS[0];
-                  const icon =
+                  const IconComponent =
                     PRODUCT_ICONS[batch.id % PRODUCT_ICONS.length];
 
                   return (
@@ -237,9 +239,7 @@ export default function TraceabilityLedgerPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-emerald-700 text-lg">
-                              {icon}
-                            </span>
+                            <IconComponent className="text-emerald-700" size={18} />
                           </div>
                           <span className="font-bold text-on-surface">
                             {batch.name}
@@ -279,9 +279,7 @@ export default function TraceabilityLedgerPage() {
                           className="p-2 text-slate-400 hover:text-primary transition-colors inline-block"
                           title="Xem chi tiết"
                         >
-                          <span className="material-symbols-outlined">
-                            visibility
-                          </span>
+                          <Eye size={20} />
                         </Link>
                       </td>
                     </tr>
@@ -296,7 +294,7 @@ export default function TraceabilityLedgerPage() {
         {totalPages > 1 && (
           <div className="px-8 py-4 flex justify-between items-center text-xs text-slate-500 border-t border-surface-container-low">
             <span>
-              Trang {currentPage} / {totalPages} — {filtered.length} lô hàng
+              {t("common.showing")} {currentPage} {t("common.of")} {totalPages} — {filtered.length} {t("common.batches")}
             </span>
             <div className="flex gap-1.5">
               <button
@@ -304,9 +302,7 @@ export default function TraceabilityLedgerPage() {
                 disabled={currentPage === 1}
                 className="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center hover:bg-primary hover:text-white transition-colors disabled:opacity-30"
               >
-                <span className="material-symbols-outlined text-sm">
-                  chevron_left
-                </span>
+                <ChevronLeft size={16} />
               </button>
               {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                 const page = i + 1;
@@ -331,9 +327,7 @@ export default function TraceabilityLedgerPage() {
                 disabled={currentPage === totalPages}
                 className="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center hover:bg-primary hover:text-white transition-colors disabled:opacity-30"
               >
-                <span className="material-symbols-outlined text-sm">
-                  chevron_right
-                </span>
+                <ChevronRight size={16} />
               </button>
             </div>
           </div>

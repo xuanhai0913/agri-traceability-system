@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Package, Sprout, Truck, ChevronRight, Eye, History, ShieldCheck, Leaf, Coffee, TreePine, TreeDeciduous, Flower2 } from "lucide-react";
 import { getTotalBatches, getBatch, getStageHistory } from "../services/api";
 import { DashboardSkeleton } from "../components/ui/Skeleton";
+import { SeedlingIllustration } from "../components/ui/EmptyStateIllustrations";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -24,7 +26,7 @@ const STAGE_COLORS = {
   6: { bg: "bg-slate-200", text: "text-slate-600", dot: "bg-slate-400" },
 };
 
-const PRODUCT_ICONS = ["eco", "grass", "coffee", "forest", "park", "yard"];
+const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation();
@@ -96,9 +98,7 @@ export default function DashboardPage() {
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
               {t("dashboard.totalBatches")}
             </span>
-            <span className="material-symbols-outlined text-primary-container">
-              package_2
-            </span>
+            <Package className="text-primary-container" size={24} />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-on-surface tracking-tighter">
@@ -121,9 +121,7 @@ export default function DashboardPage() {
             <span className="text-xs font-bold uppercase tracking-widest text-tertiary">
               {t("dashboard.activeCultivation")}
             </span>
-            <span className="material-symbols-outlined text-tertiary-container">
-              potted_plant
-            </span>
+            <Sprout className="text-tertiary-container" size={24} />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-on-surface tracking-tighter">
@@ -144,9 +142,7 @@ export default function DashboardPage() {
             <span className="text-xs font-bold uppercase tracking-widest text-secondary">
               {t("dashboard.completed")}
             </span>
-            <span className="material-symbols-outlined text-secondary-container">
-              local_shipping
-            </span>
+            <Truck className="text-secondary-container" size={24} />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-on-surface tracking-tighter">
@@ -173,18 +169,14 @@ export default function DashboardPage() {
             className="text-primary text-sm font-semibold flex items-center hover:underline"
           >
             {t("common.viewAll")}
-            <span className="material-symbols-outlined text-sm ml-1">
-              chevron_right
-            </span>
+            <ChevronRight size={16} className="ml-1" />
           </Link>
         </div>
 
         {batches.length === 0 ? (
 
           <div className="px-8 py-16 flex flex-col items-center justify-center text-slate-400">
-            <span className="material-symbols-outlined text-5xl mb-3">
-              inventory_2
-            </span>
+            <SeedlingIllustration className="w-32 h-32 mb-4" />
             <p className="text-sm font-medium">{t("dashboard.noBatches")}</p>
             <Link
               to="/batches/new"
@@ -209,7 +201,7 @@ export default function DashboardPage() {
                 {batches.map((batch, i) => {
                   const stageIdx = batch.currentStageIndex ?? 0;
                   const colors = STAGE_COLORS[stageIdx] || STAGE_COLORS[0];
-                  const icon =
+                  const IconComponent =
                     PRODUCT_ICONS[batch.id % PRODUCT_ICONS.length];
 
                   return (
@@ -225,9 +217,7 @@ export default function DashboardPage() {
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-emerald-700 text-lg">
-                              {icon}
-                            </span>
+                            <IconComponent className="text-emerald-700" size={18} />
                           </div>
                           <span className="font-bold text-on-surface">
                             {batch.name}
@@ -252,9 +242,7 @@ export default function DashboardPage() {
                           to={`/batches/${batch.id}`}
                           className="p-2 text-slate-400 hover:text-primary transition-colors inline-block"
                         >
-                          <span className="material-symbols-outlined">
-                            visibility
-                          </span>
+                          <Eye size={20} />
                         </Link>
                       </td>
                     </tr>
@@ -299,9 +287,7 @@ export default function DashboardPage() {
           {/* Wallet Activity */}
           <div className="bg-surface-container-low p-6 rounded-2xl">
             <h5 className="text-on-surface font-bold mb-4 flex items-center text-sm">
-              <span className="material-symbols-outlined text-primary mr-2 text-lg">
-                history
-              </span>
+              <History size={18} className="text-primary mr-2" />
               {t("dashboard.walletActivity")}
             </h5>
             <div className="space-y-3">
@@ -347,9 +333,7 @@ export default function DashboardPage() {
                 {t("dashboard.upgradeBtn")}
               </button>
             </div>
-            <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-8xl text-white/10 group-hover:rotate-12 transition-transform">
-              verified
-            </span>
+            <ShieldCheck size={100} className="absolute -right-4 -bottom-4 text-white/10 group-hover:rotate-12 transition-transform" />
           </div>
         </div>
       </div>
