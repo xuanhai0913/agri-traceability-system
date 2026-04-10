@@ -11,6 +11,7 @@ const PRODUCERS = [
     certifications: ["Organic Certified", "Fair Trade"],
     activeBatches: 12,
     progressSegments: [true, true, true, false, false],
+    image: "/images/farm-highland.png",
   },
   {
     id: 2,
@@ -20,6 +21,7 @@ const PRODUCERS = [
     certifications: ["Rainforest Alliance", "Carbon Neutral"],
     activeBatches: 4,
     progressSegments: [true, false, false, false],
+    image: "/images/farm-coastal.png",
   },
   {
     id: 3,
@@ -29,6 +31,7 @@ const PRODUCERS = [
     certifications: ["Biodynamic"],
     activeBatches: 28,
     progressSegments: [true, true, true, true, true],
+    image: "/images/farm-cooperative.png",
   },
   {
     id: 4,
@@ -38,6 +41,7 @@ const PRODUCERS = [
     certifications: ["VietGAP", "Organic"],
     activeBatches: 8,
     progressSegments: [true, true, false, false, false],
+    image: "/images/hero-coffee-farm.png",
   },
   {
     id: 5,
@@ -47,6 +51,7 @@ const PRODUCERS = [
     certifications: ["GlobalGAP", "Fair Trade"],
     activeBatches: 15,
     progressSegments: [true, true, true, true, false],
+    image: "/images/hero-rice-field.png",
   },
   {
     id: 6,
@@ -56,6 +61,7 @@ const PRODUCERS = [
     certifications: ["Organic"],
     activeBatches: 6,
     progressSegments: [true, true, false, false, false],
+    image: "/images/harvest-scene.png",
   },
 ];
 

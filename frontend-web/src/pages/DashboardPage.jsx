@@ -277,11 +277,7 @@ export default function DashboardPage() {
         {/* Hero Image */}
         <div className="lg:col-span-3">
           <div className="relative rounded-2xl h-[300px] overflow-hidden shadow-xl shadow-emerald-900/10">
-            <div className="w-full h-full bg-gradient-to-br from-emerald-800 to-emerald-600 flex items-center justify-center">
-              <span className="material-symbols-outlined text-white/20 text-[120px]">
-                agriculture
-              </span>
-            </div>
+            <img src="/images/hero-rice-field.png" alt="Rice terraces" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
               <span className="text-primary-fixed font-bold text-xs uppercase tracking-widest mb-2">
                 Báo cáo khu vực
