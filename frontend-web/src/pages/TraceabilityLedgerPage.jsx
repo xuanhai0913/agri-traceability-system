@@ -92,21 +92,21 @@ export default function TraceabilityLedgerPage() {
   return (
     <>
       {/* Header */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
         <div>
           <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em]">
             Blockchain Records
           </span>
-          <h1 className="text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
+          <h1 className="text-2xl md:text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
             Traceability Ledger
           </h1>
-          <p className="text-slate-500 mt-2">
+          <p className="text-slate-500 mt-2 text-sm md:text-base">
             Toàn bộ lô hàng đã được ghi nhận trên hệ thống sổ cái Blockchain.
           </p>
         </div>
         <Link
           to="/batches/new"
-          className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0"
+          className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0 w-full md:w-auto justify-center"
         >
           <span className="material-symbols-outlined text-lg">add</span>
           New Batch Entry
@@ -114,16 +114,16 @@ export default function TraceabilityLedgerPage() {
       </div>
 
       {/* Search + Filter Bar */}
-      <div className="flex items-center justify-between mb-6 bg-surface-container-low p-4 rounded-xl gap-4">
-        <div className="flex items-center gap-4 flex-1">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 bg-surface-container-low p-3 md:p-4 rounded-xl gap-3 md:gap-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 flex-1">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 md:max-w-md">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
               search
             </span>
             <input
               className="w-full bg-white border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-slate-400"
-              placeholder="Tìm theo tên sản phẩm hoặc ID..."
+              placeholder="Tìm theo tên hoặc ID..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);

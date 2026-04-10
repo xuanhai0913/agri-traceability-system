@@ -78,7 +78,7 @@ export default function DashboardPage() {
     <>
       {/* Greeting */}
       <header className="mb-10">
-        <h2 className="text-4xl font-extrabold text-on-surface tracking-tight mb-2 font-headline">
+        <h2 className="text-2xl md:text-4xl font-extrabold text-on-surface tracking-tight mb-2 font-headline">
           Chào buổi sáng, Nông trại Xanh!
         </h2>
         <p className="text-slate-500 font-medium">

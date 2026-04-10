@@ -8,19 +8,33 @@ const navItems = [
   { to: "/compliance", icon: "verified_user", label: "Compliance" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col bg-emerald-50 z-50">
+    <aside
+      className={`fixed left-0 top-0 h-screen w-64 flex flex-col bg-emerald-50 z-50 transition-transform duration-300 ${
+        open ? "translate-x-0" : "-translate-x-full"
+      } md:translate-x-0`}
+    >
       {/* Logo */}
-      <div className="px-6 py-8">
-        <h1 className="text-2xl font-bold tracking-tight text-emerald-900 font-headline">
-          TerraLedger
-        </h1>
-        <p className="text-emerald-600/70 text-xs font-semibold uppercase tracking-widest mt-1">
-          Agricultural Integrity
-        </p>
+      <div className="px-6 py-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-emerald-900 font-headline">
+            TerraLedger
+          </h1>
+          <p className="text-emerald-600/70 text-xs font-semibold uppercase tracking-widest mt-1">
+            Agricultural Integrity
+          </p>
+        </div>
+        {/* Mobile close */}
+        <button
+          onClick={onClose}
+          className="md:hidden p-1.5 rounded-lg text-slate-500 hover:bg-emerald-100 transition-colors"
+          aria-label="Close menu"
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
       </div>
 
       {/* Navigation */}
@@ -30,6 +44,7 @@ export default function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.to === "/"}
+            onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
                 isActive
@@ -49,7 +64,10 @@ export default function Sidebar() {
       {/* New Batch CTA */}
       <div className="px-4 mb-6">
         <button
-          onClick={() => navigate("/batches/new")}
+          onClick={() => {
+            navigate("/batches/new");
+            onClose();
+          }}
           className="w-full py-3.5 btn-primary-gradient rounded-xl font-bold text-sm flex items-center justify-center gap-2"
         >
           <span className="material-symbols-outlined text-lg">add</span>

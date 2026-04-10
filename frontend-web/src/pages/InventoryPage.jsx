@@ -78,21 +78,21 @@ export default function InventoryPage() {
   return (
     <>
       {/* Header */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
         <div>
           <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em]">
             Asset Management
           </span>
-          <h1 className="text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
+          <h1 className="text-2xl md:text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
             Inventory
           </h1>
-          <p className="text-slate-500 mt-2">
+          <p className="text-slate-500 mt-2 text-sm md:text-base">
             Quản lý trực quan toàn bộ lô hàng nông sản đang trong hệ thống.
           </p>
         </div>
         <Link
           to="/batches/new"
-          className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0"
+          className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0 w-full md:w-auto justify-center"
         >
           <span className="material-symbols-outlined text-lg">add</span>
           Thêm lô hàng
