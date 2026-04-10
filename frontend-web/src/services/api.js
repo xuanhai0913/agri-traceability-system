@@ -2,11 +2,13 @@ import axios from "axios";
 
 /**
  * API Service — TerraLedger Frontend
- * Connects to Express backend via Vite proxy (/api → localhost:3000)
+ *
+ * Dev mode:  Vite proxy /api → localhost:3000 (no env var needed)
+ * Prod mode: VITE_API_URL = https://your-backend.onrender.com/api
  */
 
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_URL || "/api",
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
@@ -15,6 +17,10 @@ const api = axios.create({
 
 export function getTotalBatches() {
   return api.get("/batches/total");
+}
+
+export function getAllBatches(page = 1, limit = 20) {
+  return api.get(`/batches?page=${page}&limit=${limit}`);
 }
 
 export function getBatch(batchId) {

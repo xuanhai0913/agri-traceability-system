@@ -1,36 +1,21 @@
 const { ethers } = require("ethers");
-const path = require("path");
-const fs = require("fs");
+const abi = require("./abi.json");
 
 /**
  * Blockchain Configuration
  * Kết nối tới Smart Contract thông qua ethers.js v6
+ *
+ * Production-ready: ABI embedded trực tiếp,
+ * không phụ thuộc vào smart-contracts/ folder
  */
 
-// Đọc ABI từ file artifact của Hardhat (sau khi compile)
-function getContractABI() {
-  const artifactPath = path.join(
-    __dirname,
-    "../../../smart-contracts/artifacts/contracts/Traceability.sol/Traceability.json"
-  );
-
-  if (!fs.existsSync(artifactPath)) {
-    console.warn(
-      "[WARN] Contract artifact not found. Run 'npm run contracts:compile' first."
-    );
-    return null;
-  }
-
-  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
-  return artifact.abi;
-}
-
-// Khởi tạo provider và signer
+// Khởi tạo provider
 function getProvider() {
-  const rpcUrl = process.env.RPC_URL || "http://127.0.0.1:8545";
+  const rpcUrl = process.env.RPC_URL || "https://rpc-amoy.polygon.technology";
   return new ethers.JsonRpcProvider(rpcUrl);
 }
 
+// Khởi tạo signer (cần PRIVATE_KEY)
 function getSigner() {
   const provider = getProvider();
   const privateKey = process.env.PRIVATE_KEY;
@@ -42,14 +27,9 @@ function getSigner() {
   return new ethers.Wallet(privateKey, provider);
 }
 
-// Khởi tạo contract instance
+// Contract instance có quyền ghi (write) — cần PRIVATE_KEY
 function getContract() {
-  const abi = getContractABI();
   const contractAddress = process.env.CONTRACT_ADDRESS;
-
-  if (!abi) {
-    throw new Error("Contract ABI not available. Compile contracts first.");
-  }
 
   if (!contractAddress) {
     throw new Error("CONTRACT_ADDRESS not found in environment variables");
@@ -59,12 +39,11 @@ function getContract() {
   return new ethers.Contract(contractAddress, abi, signer);
 }
 
-// Read-only contract (không cần private key)
+// Contract instance chỉ đọc (read-only) — không cần PRIVATE_KEY
 function getReadOnlyContract() {
-  const abi = getContractABI();
   const contractAddress = process.env.CONTRACT_ADDRESS;
 
-  if (!abi || !contractAddress) return null;
+  if (!contractAddress) return null;
 
   const provider = getProvider();
   return new ethers.Contract(contractAddress, abi, provider);
@@ -75,5 +54,4 @@ module.exports = {
   getSigner,
   getContract,
   getReadOnlyContract,
-  getContractABI,
 };

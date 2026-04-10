@@ -7,7 +7,7 @@ async function main() {
   console.log("Deployer:", deployer.address);
 
   const balance = await hre.ethers.provider.getBalance(deployer.address);
-  console.log("Balance:", hre.ethers.formatEther(balance), "ETH\n");
+  console.log("Balance:", hre.ethers.formatEther(balance), "POL\n");
 
   const Traceability = await hre.ethers.getContractFactory("Traceability");
   const traceability = await Traceability.deploy();
@@ -15,25 +15,13 @@ async function main() {
   await traceability.waitForDeployment();
   const contractAddress = await traceability.getAddress();
 
-  console.log("Traceability deployed to:", contractAddress);
-  console.log("\nSave this address in your .env file as CONTRACT_ADDRESS");
+  console.log("✅ Traceability deployed to:", contractAddress);
+  console.log("\n📋 Copy this to your .env files:");
+  console.log(`   CONTRACT_ADDRESS=${contractAddress}\n`);
 
-  // Verify on testnet (skip for local network)
   const network = hre.network.name;
   if (network !== "hardhat" && network !== "localhost") {
-    console.log("\nWaiting for block confirmations...");
-    await traceability.deploymentTransaction().wait(5);
-
-    console.log("Verifying contract on Etherscan...");
-    try {
-      await hre.run("verify:verify", {
-        address: contractAddress,
-        constructorArguments: [],
-      });
-      console.log("Contract verified successfully");
-    } catch (error) {
-      console.log("[WARN] Verification failed:", error.message);
-    }
+    console.log(`🔗 View on explorer: https://amoy.polygonscan.com/address/${contractAddress}`);
   }
 }
 

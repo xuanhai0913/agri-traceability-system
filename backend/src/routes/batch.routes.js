@@ -5,6 +5,7 @@ const {
   getBatch,
   getStageHistory,
   getTotalBatches,
+  getAllBatches,
 } = require("../controllers/batch.controller");
 
 const router = express.Router();
@@ -15,6 +16,13 @@ const router = express.Router();
  * (đặt trước /:id để tránh conflict routing)
  */
 router.get("/total", getTotalBatches);
+
+/**
+ * GET /api/batches
+ * Lấy danh sách tất cả lô hàng (phân trang)
+ * Query: ?page=1&limit=20
+ */
+router.get("/", getAllBatches);
 
 /**
  * POST /api/batches
