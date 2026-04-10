@@ -316,7 +316,7 @@ export default function ProducerNetworkPage() {
           <p className="text-slate-500 mt-6 text-lg leading-relaxed max-w-md">
             Our Producer Network isn't just a list; it's a living ecosystem of
             trust. Every producer must maintain up-to-the-minute compliance
-            records to remain active on the TerraLedger blockchain.
+            records to remain active on the AgriTrace blockchain.
           </p>
           <div className="flex gap-6 mt-8">
             <div className="flex flex-col">

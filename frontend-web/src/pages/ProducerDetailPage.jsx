@@ -26,7 +26,7 @@ const PRODUCERS_DATA = {
     totalArea: "242.5 Hectares",
     elevation: "3,450m - 3,800m",
     latestVerification: "0x72a...f92d",
-    smartContract: "TerraLedger_v2_772",
+    smartContract: "AgriTrace_v2_772",
     activeBatches: [
       {
         id: "ARB-2024-8842",
@@ -91,7 +91,7 @@ const PRODUCERS_DATA = {
     totalArea: "180.0 Hectares",
     elevation: "800m - 1,200m",
     latestVerification: "0x5b1...a34c",
-    smartContract: "TerraLedger_v2_772",
+    smartContract: "AgriTrace_v2_772",
     activeBatches: [],
     audits: [
       {
@@ -128,7 +128,7 @@ const DEFAULT_PRODUCER = {
   totalArea: "50.0 Hectares",
   elevation: "1,200m - 1,500m",
   latestVerification: "0x44e...b21f",
-  smartContract: "TerraLedger_v2_772",
+  smartContract: "AgriTrace_v2_772",
   activeBatches: [],
   audits: [],
 };
