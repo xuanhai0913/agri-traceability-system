@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getTotalBatches, getBatch } from "../services/api";
 import { LedgerTableSkeleton } from "../components/ui/Skeleton";
 
@@ -27,6 +28,7 @@ const PRODUCT_ICONS = ["eco", "grass", "coffee", "forest", "park", "yard"];
 const PAGE_SIZE = 8;
 
 export default function TraceabilityLedgerPage() {
+  const { t, i18n } = useTranslation();
   const [totalBatches, setTotalBatches] = useState(0);
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +84,7 @@ export default function TraceabilityLedgerPage() {
 
   function formatDate(timestamp) {
     if (!timestamp) return "—";
-    return new Date(timestamp * 1000).toLocaleDateString("vi-VN", {
+    return new Date(timestamp * 1000).toLocaleDateString(i18n.language === "vi" ? "vi-VN" : "en-US", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -95,13 +97,13 @@ export default function TraceabilityLedgerPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
         <div>
           <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em]">
-            Blockchain Records
+            {t("ledger.sectionLabel")}
           </span>
           <h1 className="text-2xl md:text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
-            Traceability Ledger
+            {t("ledger.title")}
           </h1>
           <p className="text-slate-500 mt-2 text-sm md:text-base">
-            Toàn bộ lô hàng đã được ghi nhận trên hệ thống sổ cái Blockchain.
+            {t("ledger.subtitle")}
           </p>
         </div>
         <Link
@@ -109,7 +111,7 @@ export default function TraceabilityLedgerPage() {
           className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0 w-full md:w-auto justify-center"
         >
           <span className="material-symbols-outlined text-lg">add</span>
-          New Batch Entry
+          {t("ledger.newBatch")}
         </Link>
       </div>
 
@@ -123,7 +125,7 @@ export default function TraceabilityLedgerPage() {
             </span>
             <input
               className="w-full bg-white border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-slate-400"
-              placeholder="Tìm theo tên hoặc ID..."
+              placeholder={t("ledger.searchPlaceholder")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -145,7 +147,7 @@ export default function TraceabilityLedgerPage() {
                   : "bg-white text-slate-600 hover:bg-emerald-50"
               }`}
             >
-              Tất cả
+              {t("common.all")}
             </button>
             {[0, 3, 6].map((idx) => (
               <button
@@ -174,7 +176,7 @@ export default function TraceabilityLedgerPage() {
         </div>
 
         <div className="text-xs text-slate-500 font-medium shrink-0">
-          {filtered.length} kết quả
+          {filtered.length} {t("common.results")}
         </div>
       </div>
 
@@ -197,7 +199,7 @@ export default function TraceabilityLedgerPage() {
                 to="/batches/new"
                 className="mt-4 text-primary text-sm font-bold hover:underline"
               >
-                + Tạo lô hàng đầu tiên
+                {t("ledger.createFirstLink")}
               </Link>
             )}
           </div>
@@ -206,13 +208,13 @@ export default function TraceabilityLedgerPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">
-                  <th className="px-8 py-4">Mã lô (ID)</th>
-                  <th className="px-6 py-4">Tên sản phẩm</th>
-                  <th className="px-6 py-4">Nguồn gốc</th>
-                  <th className="px-6 py-4">Ngày tạo</th>
-                  <th className="px-6 py-4">Giai đoạn</th>
-                  <th className="px-6 py-4">Trạng thái</th>
-                  <th className="px-6 py-4 text-right">Hành động</th>
+                  <th className="px-8 py-4">{t("dashboard.batchId")}</th>
+                  <th className="px-6 py-4">{t("dashboard.productName")}</th>
+                  <th className="px-6 py-4">{t("batchDetail.farmOrigin")}</th>
+                  <th className="px-6 py-4">{t("dashboard.dateCreated")}</th>
+                  <th className="px-6 py-4">{t("dashboard.status")}</th>
+                  <th className="px-6 py-4">{t("dashboard.status")}</th>
+                  <th className="px-6 py-4 text-right">{t("dashboard.actions")}</th>
                 </tr>
               </thead>
               <tbody className="text-sm">

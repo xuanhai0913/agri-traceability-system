@@ -1,8 +1,10 @@
 import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { createBatch, uploadImage } from "../services/api";
 
 export default function CreateBatchPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -109,7 +111,7 @@ export default function CreateBatchPage() {
           </span>
         </div>
         <h1 className="text-3xl font-extrabold text-on-surface font-headline mb-3">
-          Khởi tạo thành công!
+          {t("createBatch.success")}
         </h1>
         <p className="text-slate-500 mb-2">
           Lô hàng{" "}
@@ -160,11 +162,10 @@ export default function CreateBatchPage() {
       </nav>
 
       <h1 className="text-4xl font-extrabold tracking-tight text-on-surface mb-2 font-headline">
-        Khởi tạo lô hàng mới
+        {t("createBatch.title")}
       </h1>
       <p className="text-slate-500 text-lg mb-10">
-        Ghi lại thông tin truy xuất nguồn gốc nông sản lên hệ thống sổ cái
-        Blockchain.
+        {t("createBatch.subtitle")}
       </p>
 
       {/* Error banner */}
@@ -194,14 +195,14 @@ export default function CreateBatchPage() {
                 {/* Product Name */}
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
-                    Tên sản phẩm
+                    {t("createBatch.nameLabel")}
                   </label>
                   <input
                     name="name"
                     value={form.name}
                     onChange={handleChange}
                     className="input-ledger"
-                    placeholder="Ví dụ: Cà phê Arabica Cầu Đất"
+                    placeholder={t("createBatch.namePlaceholder")}
                     required
                   />
                 </div>
@@ -360,7 +361,7 @@ export default function CreateBatchPage() {
                     <span className="material-symbols-outlined filled">
                       account_balance_wallet
                     </span>
-                    Khởi tạo trên Blockchain
+                    {t("createBatch.submitBtn")}
                   </>
                 )}
               </button>
@@ -375,7 +376,7 @@ export default function CreateBatchPage() {
 
             {/* Quote card */}
             <div className="relative h-28 rounded-2xl overflow-hidden">
-              <div className="w-full h-full bg-gradient-to-br from-emerald-900 to-emerald-700"></div>
+              <img src="/images/quote-tea-field.png" alt="Tea field" className="w-full h-full object-cover" />
               <div className="absolute inset-0 flex items-center p-6">
                 <p className="text-white text-xs italic font-medium leading-relaxed">
                   "Sự minh bạch là gốc rễ của niềm tin trong nông nghiệp hiện

@@ -1,15 +1,17 @@
 import { NavLink, useNavigate } from "react-router-dom";
-
-const navItems = [
-  { to: "/", icon: "dashboard", label: "Dashboard" },
-  { to: "/batches", icon: "account_tree", label: "Traceability Ledger" },
-  { to: "/inventory", icon: "inventory_2", label: "Inventory" },
-  { to: "/producers", icon: "groups", label: "Producer Network" },
-  { to: "/compliance", icon: "verified_user", label: "Compliance" },
-];
+import { useTranslation } from "react-i18next";
 
 export default function Sidebar({ open, onClose }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const navItems = [
+    { to: "/", icon: "dashboard", label: t("nav.dashboard") },
+    { to: "/batches", icon: "account_tree", label: t("nav.ledger") },
+    { to: "/inventory", icon: "inventory_2", label: t("nav.inventory") },
+    { to: "/producers", icon: "groups", label: t("nav.producers") },
+    { to: "/compliance", icon: "verified_user", label: t("nav.compliance") },
+  ];
 
   return (
     <aside
@@ -71,7 +73,7 @@ export default function Sidebar({ open, onClose }) {
           className="w-full py-3.5 btn-primary-gradient rounded-xl font-bold text-sm flex items-center justify-center gap-2"
         >
           <span className="material-symbols-outlined text-lg">add</span>
-          New Batch Entry
+          {t("nav.newBatch")}
         </button>
       </div>
 
@@ -82,7 +84,7 @@ export default function Sidebar({ open, onClose }) {
           className="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-emerald-600 transition-colors text-sm"
         >
           <span className="material-symbols-outlined text-xl">settings</span>
-          <span>Settings</span>
+          <span>{t("nav.settings")}</span>
         </a>
         <a
           href="#"
@@ -91,7 +93,7 @@ export default function Sidebar({ open, onClose }) {
           <span className="material-symbols-outlined text-xl">
             help_outline
           </span>
-          <span>Support</span>
+          <span>{t("nav.support")}</span>
         </a>
       </div>
     </aside>

@@ -1,4 +1,14 @@
+import { useTranslation } from "react-i18next";
+
 export default function TopNav({ onMenuToggle }) {
+  const { t, i18n } = useTranslation();
+
+  const toggleLang = () => {
+    const newLang = i18n.language === "vi" ? "en" : "vi";
+    i18n.changeLanguage(newLang);
+    localStorage.setItem("lang", newLang);
+  };
+
   return (
     <header className="md:ml-64 flex justify-between items-center px-4 md:px-8 py-4 h-16 glass-overlay sticky top-0 z-30 shadow-sm shadow-emerald-900/5">
       {/* Left: hamburger (mobile) + search */}
@@ -19,7 +29,7 @@ export default function TopNav({ onMenuToggle }) {
           </span>
           <input
             className="bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-sm w-48 md:w-72 focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-slate-400"
-            placeholder="Search batches, origin or assets..."
+            placeholder={t("topnav.searchPlaceholder")}
             type="text"
           />
         </div>
@@ -31,12 +41,22 @@ export default function TopNav({ onMenuToggle }) {
 
       {/* Right side */}
       <div className="flex items-center gap-3 md:gap-5">
+        {/* Language Switcher */}
+        <button
+          onClick={toggleLang}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-600 transition-colors"
+          title={i18n.language === "vi" ? "Switch to English" : "Chuyển sang Tiếng Việt"}
+        >
+          <span className="material-symbols-outlined text-sm">translate</span>
+          <span className="uppercase">{i18n.language === "vi" ? "EN" : "VI"}</span>
+        </button>
+
         {/* Wallet badge — hide text on very small screens */}
         <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-emerald-50 text-primary font-medium text-xs">
           <span className="material-symbols-outlined text-sm filled">
             account_balance_wallet
           </span>
-          <span className="hidden sm:inline">Connected: 0x12...4f5</span>
+          <span className="hidden sm:inline">{t("topnav.connected")}: 0x12...4f5</span>
         </div>
 
         {/* Actions */}

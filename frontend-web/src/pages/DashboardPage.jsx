@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getTotalBatches, getBatch, getStageHistory } from "../services/api";
 import { DashboardSkeleton } from "../components/ui/Skeleton";
 
@@ -26,6 +27,7 @@ const STAGE_COLORS = {
 const PRODUCT_ICONS = ["eco", "grass", "coffee", "forest", "park", "yard"];
 
 export default function DashboardPage() {
+  const { t, i18n } = useTranslation();
   const [totalBatches, setTotalBatches] = useState(0);
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function DashboardPage() {
 
   function formatDate(timestamp) {
     if (!timestamp) return "—";
-    return new Date(timestamp * 1000).toLocaleDateString("vi-VN", {
+    return new Date(timestamp * 1000).toLocaleDateString(i18n.language === "vi" ? "vi-VN" : "en-US", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -79,10 +81,10 @@ export default function DashboardPage() {
       {/* Greeting */}
       <header className="mb-10">
         <h2 className="text-2xl md:text-4xl font-extrabold text-on-surface tracking-tight mb-2 font-headline">
-          Chào buổi sáng, Nông trại Xanh!
+          {t("dashboard.greeting")}
         </h2>
         <p className="text-slate-500 font-medium">
-          Theo dõi hành trình nông sản từ cánh đồng đến bàn ăn.
+          {t("dashboard.subtitle")}
         </p>
       </header>
 
@@ -92,7 +94,7 @@ export default function DashboardPage() {
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient border-l-4 border-primary">
           <div className="flex justify-between items-start mb-4">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
-              Tổng lô hàng
+              {t("dashboard.totalBatches")}
             </span>
             <span className="material-symbols-outlined text-primary-container">
               package_2
@@ -109,7 +111,7 @@ export default function DashboardPage() {
             )}
           </div>
           <p className="text-slate-400 text-xs mt-2">
-            Dữ liệu được xác thực on-chain
+            {t("dashboard.onChain")}
           </p>
         </div>
 
@@ -117,7 +119,7 @@ export default function DashboardPage() {
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient border-l-4 border-tertiary">
           <div className="flex justify-between items-start mb-4">
             <span className="text-xs font-bold uppercase tracking-widest text-tertiary">
-              Đang canh tác
+              {t("dashboard.activeCultivation")}
             </span>
             <span className="material-symbols-outlined text-tertiary-container">
               potted_plant
@@ -128,11 +130,11 @@ export default function DashboardPage() {
               {activeBatches}
             </span>
             <span className="text-slate-400 text-xs font-medium">
-              lô đang xử lý
+              {t("dashboard.lotsProcessing")}
             </span>
           </div>
           <p className="text-slate-400 text-xs mt-2">
-            Dự kiến thu hoạch trong 15 ngày
+            {t("dashboard.harvestEstimate")}
           </p>
         </div>
 
@@ -140,7 +142,7 @@ export default function DashboardPage() {
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient border-l-4 border-secondary">
           <div className="flex justify-between items-start mb-4">
             <span className="text-xs font-bold uppercase tracking-widest text-secondary">
-              Đã hoàn thành
+              {t("dashboard.completed")}
             </span>
             <span className="material-symbols-outlined text-secondary-container">
               local_shipping
@@ -151,11 +153,11 @@ export default function DashboardPage() {
               {completedBatches}
             </span>
             <span className="text-xs font-medium text-secondary">
-              Chuỗi hoàn tất
+              {t("dashboard.chainsCompleted")}
             </span>
           </div>
           <p className="text-slate-400 text-xs mt-2">
-            Phân phối khu vực Đông Nam Á
+            {t("dashboard.distributed")}
           </p>
         </div>
       </div>
@@ -164,13 +166,13 @@ export default function DashboardPage() {
       <section className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-ambient">
         <div className="px-8 py-6 flex justify-between items-center">
           <h3 className="text-lg font-bold text-on-surface font-headline">
-            Nhật ký truy xuất nguồn gốc mới nhất
+            {t("dashboard.recentLog")}
           </h3>
           <Link
             to="/batches"
             className="text-primary text-sm font-semibold flex items-center hover:underline"
           >
-            Xem tất cả
+            {t("common.viewAll")}
             <span className="material-symbols-outlined text-sm ml-1">
               chevron_right
             </span>
@@ -183,12 +185,12 @@ export default function DashboardPage() {
             <span className="material-symbols-outlined text-5xl mb-3">
               inventory_2
             </span>
-            <p className="text-sm font-medium">Chưa có lô hàng nào</p>
+            <p className="text-sm font-medium">{t("dashboard.noBatches")}</p>
             <Link
               to="/batches/new"
               className="mt-4 text-primary text-sm font-bold hover:underline"
             >
-              + Tạo lô hàng đầu tiên
+              {t("dashboard.createFirst")}
             </Link>
           </div>
         ) : (
@@ -196,11 +198,11 @@ export default function DashboardPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">
-                  <th className="px-8 py-4">Mã lô (ID)</th>
-                  <th className="px-8 py-4">Tên sản phẩm</th>
-                  <th className="px-8 py-4">Ngày tạo</th>
-                  <th className="px-8 py-4">Trạng thái</th>
-                  <th className="px-8 py-4 text-right">Hành động</th>
+                  <th className="px-8 py-4">{t("dashboard.batchId")}</th>
+                  <th className="px-8 py-4">{t("dashboard.productName")}</th>
+                  <th className="px-8 py-4">{t("dashboard.dateCreated")}</th>
+                  <th className="px-8 py-4">{t("dashboard.status")}</th>
+                  <th className="px-8 py-4 text-right">{t("dashboard.actions")}</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
@@ -266,7 +268,7 @@ export default function DashboardPage() {
         {batches.length > 0 && (
           <div className="px-8 py-4 flex justify-between items-center text-xs text-slate-500 border-t border-surface-container-low">
             <span>
-              Hiển thị {batches.length} trong {totalBatches} lô hàng
+              {t("common.showing")} {batches.length} {t("common.of")} {totalBatches} {t("common.batches")}
             </span>
           </div>
         )}
@@ -280,14 +282,13 @@ export default function DashboardPage() {
             <img src="/images/hero-rice-field.png" alt="Rice terraces" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
               <span className="text-primary-fixed font-bold text-xs uppercase tracking-widest mb-2">
-                Báo cáo khu vực
+                {t("dashboard.soilReport")}
               </span>
               <h4 className="text-white text-2xl font-extrabold font-headline">
-                Cập nhật thổ nhưỡng - Vùng 04
+                {t("dashboard.soilTitle")}
               </h4>
               <p className="text-white/80 text-sm mt-2 max-w-md">
-                Độ ẩm đất hiện tại ở mức 68%. Điều kiện lý tưởng cho giai đoạn
-                ra hoa của cà phê Arabica.
+                {t("dashboard.soilDesc")}
               </p>
             </div>
           </div>
@@ -301,7 +302,7 @@ export default function DashboardPage() {
               <span className="material-symbols-outlined text-primary mr-2 text-lg">
                 history
               </span>
-              Hoạt động ví gần đây
+              {t("dashboard.walletActivity")}
             </h5>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-white rounded-xl">
@@ -337,13 +338,13 @@ export default function DashboardPage() {
           <div className="bg-primary p-6 rounded-2xl text-white relative overflow-hidden group">
             <div className="relative z-10">
               <h5 className="font-bold mb-2 font-headline">
-                Nâng cấp Compliance Pro
+                {t("dashboard.upgradePro")}
               </h5>
               <p className="text-xs text-primary-fixed/80 mb-4">
-                Nhận chứng chỉ GlobalGAP tự động thông qua Smart Contract.
+                {t("dashboard.upgradeDesc")}
               </p>
               <button className="bg-white text-primary px-4 py-2 rounded-xl text-xs font-bold hover:scale-105 transition-transform">
-                Nâng cấp ngay
+                {t("dashboard.upgradeBtn")}
               </button>
             </div>
             <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-8xl text-white/10 group-hover:rotate-12 transition-transform">

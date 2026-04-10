@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 // ── Mock Data ────────────────────────────────────
 const PRODUCERS = [
@@ -71,6 +72,7 @@ const FILTERS = ["All", "Verified", "Audit Pending"];
 const SORTS = ["Most Recent", "Region", "Compliance Score"];
 
 export default function ProducerNetworkPage() {
+  const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState("All");
   const [sort, setSort] = useState("Most Recent");
 
@@ -87,19 +89,18 @@ export default function ProducerNetworkPage() {
       <section className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
           <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em]">
-            Ecosystem Directory
+            {t("producers.sectionLabel")}
           </span>
           <h1 className="text-2xl md:text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
-            Producer Network
+            {t("producers.title")}
           </h1>
           <p className="text-slate-500 mt-2 max-w-lg text-sm md:text-base">
-            Manage and monitor verified agricultural partners across the global
-            supply chain ledger.
+            {t("producers.subtitle")}
           </p>
         </div>
         <button className="bg-primary text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-emerald-900/10 w-full md:w-auto justify-center">
           <span className="material-symbols-outlined">person_add</span>
-          Add New Producer
+          {t("producers.addProducer")}
         </button>
       </section>
 
@@ -107,7 +108,7 @@ export default function ProducerNetworkPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-10">
         <div className="col-span-1 bg-surface-container-lowest p-6 rounded-xl shadow-ambient ghost-border">
           <span className="text-slate-400 text-xs font-bold uppercase">
-            Total Producers
+            {t("producers.totalProducers")}
           </span>
           <div className="text-3xl font-extrabold text-emerald-900 mt-1 font-headline">
             1,284
@@ -116,12 +117,12 @@ export default function ProducerNetworkPage() {
             <span className="material-symbols-outlined text-xs">
               trending_up
             </span>
-            +12% from last month
+            {t("producers.fromLastMonth")}
           </div>
         </div>
         <div className="col-span-1 bg-surface-container-lowest p-6 rounded-xl shadow-ambient ghost-border">
           <span className="text-slate-400 text-xs font-bold uppercase">
-            Verified On-Chain
+            {t("producers.verifiedOnChain")}
           </span>
           <div className="text-3xl font-extrabold text-emerald-900 mt-1 font-headline">
             98.2%
@@ -130,16 +131,16 @@ export default function ProducerNetworkPage() {
             <span className="material-symbols-outlined text-xs filled">
               verified
             </span>
-            Integrity Secured
+            {t("producers.integritySecured")}
           </div>
         </div>
         <div className="col-span-2 bg-gradient-to-r from-emerald-900 to-emerald-800 p-5 md:p-6 rounded-xl shadow-lg relative overflow-hidden">
           <div className="relative z-10">
             <span className="text-emerald-300 text-xs font-bold uppercase">
-              Global Distribution
+              {t("producers.globalDist")}
             </span>
             <div className="text-2xl font-bold text-white mt-1 font-headline">
-              Active in 24 Regions
+              {t("producers.activeRegions", { count: 24 })}
             </div>
             <div className="mt-4 flex -space-x-2">
               {["🇻🇳", "🇵🇪", "🇨🇷", "🇬🇧"].map((flag, i) => (
@@ -207,17 +208,11 @@ export default function ProducerNetworkPage() {
             >
               {/* Cover Image */}
               <div className="h-32 relative overflow-hidden">
-                <div
-                  className={`w-full h-full flex items-center justify-center ${
-                    producer.id % 2 === 0
-                      ? "bg-gradient-to-br from-emerald-700 to-emerald-500"
-                      : "bg-gradient-to-br from-emerald-800 to-teal-600"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-white/20 text-[80px] group-hover:scale-110 transition-transform duration-700">
-                    {icon}
-                  </span>
-                </div>
+                <img
+                  src={producer.image || "/images/farm-highland.png"}
+                  alt={producer.name}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                />
 
                 {/* Status badge */}
                 <div
@@ -347,11 +342,7 @@ export default function ProducerNetworkPage() {
 
         {/* Decorative image area */}
         <div className="w-full md:w-[400px] aspect-square bg-emerald-900 rounded-2xl md:rounded-[2.5rem] relative overflow-hidden shadow-2xl md:rotate-2">
-          <div className="w-full h-full bg-gradient-to-br from-emerald-700 to-emerald-900 flex items-center justify-center">
-            <span className="material-symbols-outlined text-emerald-600/30 text-[150px]">
-              agriculture
-            </span>
-          </div>
+          <img src="/images/smart-farm.png" alt="Smart agriculture" className="w-full h-full object-cover" />
           <div className="absolute inset-0 p-8 flex flex-col justify-end">
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-2xl">
               <div className="flex items-center gap-3 mb-3">
