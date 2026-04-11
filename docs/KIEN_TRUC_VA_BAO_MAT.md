@@ -41,6 +41,32 @@ Hệ thống hoàn toàn cho phép! Admin chỉ cần đưa địa chỉ ví Met
 
 ---
 
+## 3. Kiến Trúc Lưu Trữ Dữ Liệu (Hybrid Data Storage)
+
+Một điểm thường bị hiểu lầm trong thiết kế Web3 là *"Mọi thứ đều được nhét vào Blockchain"*. Sự thật là cấu trúc Blockchain không được sinh ra để lưu trữ File (hình ảnh, video). 
+
+### Sự Thật Về Việc Lưu Hình Ảnh Trên Blockchain
+Việc lưu trữ trực tiếp 1 tấm hình chất lượng cao (Vài Megabytes) lên mạng lưới Polygon có thể tốn hàng trăm đô la tiền phí Gas. Đây là điều cấm kị trong thiết kế phi tập trung.
+
+Do đó, AgriTrace sử dụng mô hình **Lưu Trữ Kết Lai (Hybrid Storage)**:
+1. **Phần Off-chain (Dưới Lưới):** Hình ảnh minh chứng thu hoạch được nông dân tải lên sẽ được đẩy vào **Cloudinary** (Một nền tảng lưu trữ Web2/Cloud). Cloudinary trả về một đường link URL tĩnh (Ví dụ: `https://.../cam-sanh.jpg`).
+2. **Phần On-chain (Sổ Cái Blockchain):** Chúng ta chỉ lấy Độc Nhất đường link `URL` đó, ghép chung với một câu mô tả (*"Bón phân hữu cơ"*) và nạp vào Smart Contract để băm thành mã Hash lưu vĩnh viễn trên Sổ cái (Ledger).
+
+Hãy nhìn vào cấu trúc Contract để thấy rõ:
+```solidity
+struct StageRecord {
+    Stage stage;           // (On-chain) Giai đoạn 1/2/3 
+    string description;    // (On-chain) Câu mô tả
+    string imageUrl;       // (On-chain) Chỉ lưu đường link text, KHÔNG LƯU MÃ BYTE ẢNH!
+    uint256 timestamp;     // (On-chain) Thời điểm
+}
+```
+
+### Tại Sao Cách Này Giữ Được Tính Minh Bạch (Transparency)?
+Mặc dù ảnh nằm trên Cloud, nhưng đường link trỏ tới ảnh đó đã bị Ghi Tử (Khóa chết) trên Blockchain. Nông dân **không thể sửa đổi** đường link này trỏ đi chỗ khác sau khi đã bấm Lưu. Bản thân URL đã trở thành một "Bằng chứng bất biến" cho vòng đời của Lô hàng.
+
+---
+
 ## 💡 Tổng Kết (Thông Điệp Phản Biện)
 
 Hãy nhớ rõ thông điệp cốt lõi này trình bày trong các buổi báo cáo/defense:
