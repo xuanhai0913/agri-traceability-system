@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { UserPlus, MapPin, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Filter, Shield, Clock, MoreVertical, TrendingUp } from "lucide-react";
+import { UserPlus, MapPin, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Filter, Shield, Clock, MoreVertical, TrendingUp, ChevronRight } from "lucide-react";
 import { getProducers } from "../services/api";
 
 const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
