@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
 import Skeleton from "./components/ui/Skeleton";
 import { Construction } from "lucide-react";
+import { Toaster } from "react-hot-toast";
 
 /* ── Lazy-loaded pages ─── */
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
@@ -44,6 +45,7 @@ function ComingSoon({ title }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" toastOptions={{ duration: 4000, style: { background: '#1c1f1d', color: '#fff' } }} />
       <Routes>
         <Route element={<AppLayout />}>
           <Route

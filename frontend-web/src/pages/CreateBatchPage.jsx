@@ -6,6 +6,7 @@ import {
   MapPin, Lock, CloudUpload, Loader2, Wallet,
 } from "lucide-react";
 import { createBatch, uploadImage } from "../services/api";
+import { toast } from "react-hot-toast";
 
 export default function CreateBatchPage() {
   const { t } = useTranslation();
@@ -22,7 +23,6 @@ export default function CreateBatchPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -91,10 +91,14 @@ export default function CreateBatchPage() {
       });
 
       const batchId = res.data.data.batchId;
-      setSuccess({
-        batchId,
-        txHash: res.data.data.transactionHash,
-      });
+      toast.success(
+        <div>
+          <b>Thêm lô hàng thành công!</b>
+          <p className="text-xs mt-1">Lô #{String(batchId).padStart(4, "0")}</p>
+        </div>,
+        { duration: 5000 }
+      );
+      navigate(`/batches/${batchId}`);
     } catch (err) {
       setError(
         err.response?.data?.message || "Lỗi khi tạo lô hàng. Vui lòng thử lại."
@@ -103,50 +107,6 @@ export default function CreateBatchPage() {
       setSubmitting(false);
       setUploading(false);
     }
-  }
-
-  // ── Success State ──────────────────────────────
-  if (success) {
-    return (
-      <div className="max-w-lg mx-auto mt-16 text-center">
-        <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
-          <CheckCircle size={40} className="text-emerald-600" />
-        </div>
-        <h1 className="text-3xl font-extrabold text-on-surface font-headline mb-3">
-          {t("createBatch.success")}
-        </h1>
-        <p className="text-slate-500 mb-2">
-          Lô hàng{" "}
-          <span className="font-mono font-bold text-primary">
-            #BTC-{String(success.batchId).padStart(4, "0")}
-          </span>{" "}
-          đã được ghi nhận trên Blockchain.
-        </p>
-        <p className="text-xs font-mono text-slate-400 mb-8 break-all">
-          Tx: {success.txHash}
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Link
-            to={`/batches/${success.batchId}`}
-            className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2"
-          >
-            <QrCode size={18} />
-            Xem & In QR Code
-          </Link>
-          <button
-            onClick={() => {
-              setSuccess(null);
-              setForm({ name: "", origin: "", description: "" });
-              setImageFile(null);
-              setImagePreview(null);
-            }}
-            className="px-6 py-3 rounded-xl font-bold text-sm text-slate-500 hover:text-on-surface bg-surface-container-high transition-colors"
-          >
-            Tạo lô mới
-          </button>
-        </div>
-      </div>
-    );
   }
 
   // ── Form State ──────────────────────────────────
