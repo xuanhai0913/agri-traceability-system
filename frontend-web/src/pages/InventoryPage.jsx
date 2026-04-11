@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MapPin, CalendarDays, ArrowRight, PackagePlus, Warehouse, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2 } from "lucide-react";
+import { MapPin, CalendarDays, ArrowRight, PackagePlus, Warehouse, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Download } from "lucide-react";
 import { getTotalBatches, getBatch } from "../services/api";
 import { InventorySkeleton } from "../components/ui/Skeleton";
 import { EmptyInventoryIllustration } from "../components/ui/EmptyStateIllustrations";
@@ -79,6 +79,32 @@ export default function InventoryPage() {
 
   if (loading) return <InventorySkeleton />;
 
+  function handleExportCSV() {
+    if (filtered.length === 0) return;
+    
+    const bom = "\uFEFF";
+    const headers = "Mã lô,Sản phẩm,Nguồn gốc,Giai đoạn,Ngày tạo,Trạng thái\n";
+    
+    const rows = filtered.map(b => {
+      const status = b.isActive ? "Đang xử lý" : "Hoàn thành";
+      const date = b.createdAt ? new Date(b.createdAt * 1000).toLocaleDateString("vi-VN") : "—";
+      const stageName = b.currentStage || "—";
+      const name = `"${b.name?.replace(/"/g, '""') || ''}"`;
+      const origin = `"${b.origin?.replace(/"/g, '""') || ''}"`;
+      return `#BTC-${String(b.id).padStart(4, "0")},${name},${origin},${stageName},${date},${status}`;
+    }).join("\n");
+    
+    const blob = new Blob([bom + headers + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `agritrace_kho_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <>
       {/* Header */}
@@ -94,13 +120,23 @@ export default function InventoryPage() {
             {t("inventory.subtitle")}
           </p>
         </div>
-        <Link
-          to="/batches/new"
-          className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0 w-full md:w-auto justify-center"
-        >
-          <PackagePlus size={18} />
-          {t("inventory.addItem")}
-        </Link>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full md:w-auto">
+          <button
+            onClick={handleExportCSV}
+            disabled={filtered.length === 0}
+            className="px-6 py-3 rounded-xl border border-surface-container-high font-bold text-sm flex items-center justify-center gap-2 hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download size={18} />
+            Xuất CSV
+          </button>
+          <Link
+            to="/batches/new"
+            className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 justify-center"
+          >
+            <PackagePlus size={18} />
+            {t("inventory.addItem")}
+          </Link>
+        </div>
       </div>
 
       {/* Filter Tabs */}

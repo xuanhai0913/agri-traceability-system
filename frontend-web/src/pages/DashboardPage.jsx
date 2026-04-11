@@ -5,6 +5,8 @@ import { Package, Sprout, Truck, ChevronRight, Eye, History, ShieldCheck, Leaf, 
 import { getTotalBatches, getBatch, getStageHistory, getAllBatches } from "../services/api";
 import { DashboardSkeleton } from "../components/ui/Skeleton";
 import { SeedlingIllustration } from "../components/ui/EmptyStateIllustrations";
+import { motion } from "framer-motion";
+import { Counter } from "../components/ui/Counter";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -84,16 +86,20 @@ export default function DashboardPage() {
       {/* Stats Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {/* Total */}
-        <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient border-l-4 border-primary">
-          <div className="flex justify-between items-start mb-4">
+        <motion.div 
+          whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(52,211,153,0.15)" }}
+          className="bg-surface-container-lowest p-6 rounded-2xl border-l-4 border-primary transition-all shadow-ambient relative overflow-hidden group"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
+          <div className="flex justify-between items-start mb-4 relative z-10">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
               {t("dashboard.totalBatches")}
             </span>
             <Package className="text-primary-container" size={24} />
           </div>
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 relative z-10">
             <span className="text-4xl font-extrabold text-on-surface tracking-tighter">
-              {totalBatches}
+              <Counter value={totalBatches || 0} />
             </span>
             {totalBatches > 0 && (
               <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2 py-0.5 rounded">
@@ -101,52 +107,60 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          <p className="text-slate-400 text-xs mt-2">
+          <p className="text-slate-400 text-xs mt-2 relative z-10">
             {t("dashboard.onChain")}
           </p>
-        </div>
+        </motion.div>
 
         {/* Active */}
-        <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient border-l-4 border-tertiary">
-          <div className="flex justify-between items-start mb-4">
+        <motion.div 
+          whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(34,211,238,0.15)" }}
+          className="bg-surface-container-lowest p-6 rounded-2xl border-l-4 border-tertiary transition-all shadow-ambient relative overflow-hidden group"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-tertiary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
+          <div className="flex justify-between items-start mb-4 relative z-10">
             <span className="text-xs font-bold uppercase tracking-widest text-tertiary">
               {t("dashboard.activeCultivation")}
             </span>
             <Sprout className="text-tertiary-container" size={24} />
           </div>
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 relative z-10">
             <span className="text-4xl font-extrabold text-on-surface tracking-tighter">
-              {activeBatches}
+              <Counter value={activeBatches || 0} />
             </span>
             <span className="text-slate-400 text-xs font-medium">
               {t("dashboard.lotsProcessing")}
             </span>
           </div>
-          <p className="text-slate-400 text-xs mt-2">
+          <p className="text-slate-400 text-xs mt-2 relative z-10">
             {t("dashboard.harvestEstimate")}
           </p>
-        </div>
+        </motion.div>
 
         {/* Completed */}
-        <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient border-l-4 border-secondary">
-          <div className="flex justify-between items-start mb-4">
+        <motion.div 
+          whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(251,191,36,0.15)" }}
+          className="bg-surface-container-lowest p-6 rounded-2xl border-l-4 border-secondary transition-all shadow-ambient relative overflow-hidden group"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
+          <div className="flex justify-between items-start mb-4 relative z-10">
             <span className="text-xs font-bold uppercase tracking-widest text-secondary">
               {t("dashboard.completed")}
             </span>
             <Truck className="text-secondary-container" size={24} />
           </div>
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 relative z-10">
             <span className="text-4xl font-extrabold text-on-surface tracking-tighter">
-              {completedBatches}
+              <Counter value={completedBatches || 0} />
             </span>
             <span className="text-xs font-medium text-secondary">
               {t("dashboard.chainsCompleted")}
             </span>
           </div>
-          <p className="text-slate-400 text-xs mt-2">
+          <p className="text-slate-400 text-xs mt-2 relative z-10">
             {t("dashboard.distributed")}
           </p>
-        </div>
+        </motion.div>
       </div>
 
       {/* Recent Batches Ledger */}
