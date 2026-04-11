@@ -48,4 +48,47 @@ Tuy nhiên, hệ thống của em giải quyết vấn đề rác đầu vào th
 **💡 Trả lời:** 
 *"Dạ, sao chép mã QR là một lỗ hổng thuộc về Thế giới Vật Lý. Đồ án của chúng em giải quyết bài toán cốt lõi là **'Vết Tích Lô Hàng' (Traceability Ledger)** phần mềm. Để chống việc dán nhãn giả, ở quy mô triển khai thực tế, doanh nghiệp sẽ kết hợp mã QR này vào Tem Vỡ, hoặc mã hóa thẳng vào Chip RFID/NFC hủy khi bóc. Blockchain làm rất tốt việc lưu dữ liệu chứ không chống được việc nhân bản tấm tem giấy."*
 
-*(💡 Lưu ý: Khi trả lời câu 1 và câu 5, triết lý là phải **mạnh dạn thừa nhận giới hạn thực tế** và lấp đầy bằng kiến thức công nghệ kết hợp, hội đồng rất thích sinh viên không "ảo tưởng sức mạnh" về Blockchain).*
+---
+
+### Câu 6: Tại sao lại chọn Polygon (Amoy) thay vì Ethereum Mainnet hay Binance Smart Chain (BSC)?
+**🤨 Giám khảo hỏi:** *"Anh/chị nói Blockchain của anh chị mở rộng tốt, vậy tại sao lại chọn Polygon Testnet/Mainnet mà không dùng mạng lưới số 1 là Ethereum hay BSC?"*
+
+**💡 Trả lời:** 
+*"Dạ, việc chọn mạng Polygon thay vì Ethereum Mainnet là một quyết định kiến trúc mang tính chiến lược về **Hiệu quả chi phí (Cost-Efficiency)**. Ethereum bảo mật nhất nhưng phí Gas rất cao (có thể lên tới $2 - $10 cho một lần ghi dữ liệu). Polygon là một mạng lưới Layer-2 (Lớp thứ 2) chạy song song với Ethereum, giúp gộp các giao dịch lại với tốc độ cực nhanh và phí Gas cực rẻ (chưa tới 1 cent). Nhờ vậy, hệ thống truy xuất nông sản có thể nhân rộng thực tế hàng triệu lô hàng mà không bị lỗ chi phí hạ tầng. So với BSC (thiên hướng giải trí/Defi), Polygon được các doanh nghiệp thực chuẩn quốc tế tin tưởng hơn trong việc xây dựng DApp."*
+
+---
+
+### Câu 7: Khi quét mã QR trên điện thoại, dữ liệu đó đã bị thao túng chưa?
+**🤨 Giám khảo hỏi:** *"Mã QR quét trên điện thoại chỉ là trỏ về trang Web của em, vậy em hoàn toàn có thể 'đánh tráo' hiển thị Web để lừa người dùng, thế thì phi tập trung chỗ nào?"*
+
+**💡 Trả lời:** 
+*"Dạ em xin xác nhận đây là thắc mắc hoàn toàn chính xác. Ở phiên bản Prototype hiện tại, mã QR trỏ về một giao diện Web (Gateway) để thuận tiện cho điện thoại không cài ví Metamask. Nhưng, mọi dữ liệu hiển thị trên Web đó đều được **Đọc trực tiếp (Fetch)** từ địa chỉ Smart Contract công khai trên block explorer (PolygonScan). 
+Trong môi trường thực tế, bất kỳ chuyên gia hay công ty kiểm toán nào cũng có thể kiểm tra trực tiếp mã ID Lô hàng trên mạng PolygonScan mà không cần thông qua giao diện Web của hệ thống em. Giao diện Web chỉ là 'Bộ đọc hiển thị', còn dữ liệu sinh mạng của lô hàng nằm vĩnh viễn trên máy chủ phân tán toàn cầu."*
+
+---
+
+## 📚 Phần Hỗ Trợ: Các Khái Niệm Cơ Bản Phải Nhớ (Back-to-Basics)
+
+Nếu Thầy/Cô hỏi các khái niệm nền tảng để xem sinh viên có dùng AI làm giùm hay không, hãy bám vào các từ khóa này để trả lời:
+
+1. **Smart Contract (Hợp đồng thông minh):** 
+   - Không phải là tờ giấy hay file PDF. Nó là một **Đoạn mã code (Code script)** được cài thẳng vào không gian mạng lưới Blockchain. Nó tự động chạy nếu thỏa điều kiện (Ví dụ: Đúng hàm, đúng quyền) và không ai (kể cả admin) có thể tắt hay sửa mã code đó một khi đã Deploy.
+   - Trọng tâm AgriTrace: *"Em dùng Smart Contract bằng ngôn ngữ Solidity để lập trình các quy định thêm lô hàng."*
+
+2. **Immutable Ledger (Sổ cái bất biến):**
+   - Giống như cuốn sổ kế toán của dòng họ, nhưng mỗi người trong dòng họ (Node) đều giữ 1 bản sao. Ai ghi sai thì các cuốn sổ khác không cho phép.
+   - Trọng tâm AgriTrace: *"Dữ liệu nông sản ghi vào là vĩnh viễn, không hỗ trợ hàm Update/Delete."*
+
+3. **EVM (Ethereum Virtual Machine):**
+   - Máy ảo Ethereum. Các mạng lưới nổi tiếng như Polygon, BSC, Avalanche đều là "EVM-Compatible" (tương thích EVM).
+   - Trọng tâm AgriTrace: *"Do code bằng Solidity tương thích EVM, mốt doanh nghiệp muốn đổi từ Polygon sang Ethereum thì chỉ mất 15 phút đổi cấu hình mạng mà không phải viết lại code."*
+
+4. **Gas Fee (Phí Gas):**
+   - Tiền cước phí phải trả cho mạng lưới (Miner/Validator) để họ tốn điện chạy máy chủ xác nhận giao dịch của mình. Lưu 1 ký tự text cũng tốn tiền.
+   - Trọng tâm AgriTrace: *"Em áp dụng mô hình Gasless Relayer, Backend tự cầm Ví Admin xì tiền túi ra trả tiền Gas để người nông dân không bị ngộp khi dùng Web."*
+
+5. **Off-chain vs On-chain (Trong và Ngoài chuỗi):**
+   - On-chain: Chữ viết, con số ID (nằm trong lõi Blockchain, bất biến cục bộ).
+   - Off-chain: Server của chúng ta, Cảnh quan UI, Hình ảnh dung lượng lớn (Nằm trên máy chủ bình thường hoặc nền tảng lưu trữ ngoại vi như Cloudinary/IPFS).
+
+*(💡 Lời khuyên: Đừng cố giải thích dài dòng về cấu trúc Mã băm (Hash/Cryptography) của Blockchain nếu thầy cô không gặng hỏi. Hãy tập trung đánh mạnh vào Giá trị Kinh doanh và Triết lý Ứng dụng B2B của nền tảng vào Nông nghiệp).*
