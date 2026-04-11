@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Package, Sprout, Truck, ChevronRight, Eye, History, ShieldCheck, Leaf, Coffee, TreePine, TreeDeciduous, Flower2 } from "lucide-react";
-import { getTotalBatches, getBatch, getStageHistory } from "../services/api";
+import { getTotalBatches, getBatch, getStageHistory, getAllBatches } from "../services/api";
 import { DashboardSkeleton } from "../components/ui/Skeleton";
 import { SeedlingIllustration } from "../components/ui/EmptyStateIllustrations";
 
@@ -37,26 +37,17 @@ export default function DashboardPage() {
   useEffect(() => {
     loadDashboard();
   }, []);
-
   async function loadDashboard() {
     try {
       setLoading(true);
-      const totalRes = await getTotalBatches();
+      // Fetch total for stats and top 3 recent for the table simultaneously
+      const [totalRes, recentRes] = await Promise.all([
+        getTotalBatches(),
+        getAllBatches(1, 3),
+      ]);
       const total = totalRes.data.data.total;
       setTotalBatches(total);
-
-      // Load recent batches (latest N)
-      const batchList = [];
-      const maxDisplay = Math.min(total, 6);
-      for (let i = total; i > total - maxDisplay && i > 0; i--) {
-        try {
-          const batchRes = await getBatch(i);
-          batchList.push(batchRes.data.data);
-        } catch {
-          // skip invalid batch
-        }
-      }
-      setBatches(batchList);
+      setBatches(recentRes.data.data.batches);
     } catch (err) {
       console.error("Dashboard load error:", err);
     } finally {
