@@ -25,6 +25,13 @@
 
 Manages the lifecycle of agricultural product batches (from seeding to harvest). Text data is stored immutably on-chain for transparency; images are hosted on Cloudinary with URLs recorded on the blockchain. A QR code is generated per batch for mobile scanning.
 
+### Production Features (Latest Updates)
+- 🔐 **On-chain Role-Based Access Control**: Smart contract whitelisting ensures only authorized farmers can create and update batches.
+- 🚀 **Progressive Image Loading**: Custom React hook for lazy loading decentralized images via `framer-motion` skeleton cross-fading.
+- 🛸 **Framer Motion Animations**: Web3.0 futuristic hover scale effects and counting numbers on the dashboard.
+- 📊 **CSV Data Export**: One-click data export directly from the smart-contract ledger to ERP systems with UTF-8 BOM encoding.
+- ⚡ **Vercel SPA Routing**: Fully configured rewrites for robust client-side React Router behaviors.
+
 ## Project Structure
 
 ```

@@ -26,6 +26,50 @@ describe("Traceability", function () {
   });
 
   // ================================================================
+  // │                    ROLE MANAGEMENT TESTS                       │
+  // ================================================================
+
+  describe("Role Management (Whitelist)", function () {
+    it("Deployer (System Admin) should be whitelisted by default", async function () {
+      expect(await traceability.systemAdmin()).to.equal(owner.address);
+      expect(await traceability.isWhitelistedProducer(owner.address)).to.equal(true);
+    });
+
+    it("Cannot create batch if not whitelisted", async function () {
+      await expect(
+        traceability.connect(otherUser).createBatch("Gạo", "Sóc Trăng", "img.jpg")
+      ).to.be.revertedWithCustomError(traceability, "NotWhitelistedProducer");
+    });
+
+    it("Admin can add and remove a whitelisted producer", async function () {
+      // Add
+      await expect(traceability.addWhitelistedProducer(otherUser.address))
+        .to.emit(traceability, "ProducerAdded")
+        .withArgs(otherUser.address);
+      
+      expect(await traceability.isWhitelistedProducer(otherUser.address)).to.equal(true);
+
+      // Now otherUser can create batch
+      await expect(
+        traceability.connect(otherUser).createBatch("Trái cây", "Đà Lạt", "img.jpg")
+      ).to.not.be.reverted;
+
+      // Remove
+      await expect(traceability.removeWhitelistedProducer(otherUser.address))
+        .to.emit(traceability, "ProducerRemoved")
+        .withArgs(otherUser.address);
+
+      expect(await traceability.isWhitelistedProducer(otherUser.address)).to.equal(false);
+    });
+
+    it("Only admin can add producers", async function () {
+      await expect(
+        traceability.connect(otherUser).addWhitelistedProducer(otherUser.address)
+      ).to.be.revertedWithCustomError(traceability, "NotSystemAdmin");
+    });
+  });
+
+  // ================================================================
   // │                    CREATE BATCH TESTS                         │
   // ================================================================
 

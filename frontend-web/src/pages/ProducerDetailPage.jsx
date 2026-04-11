@@ -6,6 +6,7 @@ import {
   Users, Globe, Droplets, Scale, ClipboardCheck, Sprout,
 } from "lucide-react";
 import { getProducer } from "../services/api";
+import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
 
 const AUDIT_ICONS = {
   "clipboard-check": ClipboardCheck,
@@ -67,7 +68,12 @@ export default function ProducerDetailPage() {
     <>
       {/* Hero Banner */}
       <div className="relative h-52 md:h-72 w-[calc(100%+2rem)] md:w-[calc(100%+4rem)] overflow-hidden rounded-2xl -mt-4 md:-mt-8 -mx-4 md:-mx-8 mb-0">
-        <img src="/images/hero-coffee-farm.png" alt={producer.name} className="w-full h-full object-cover" />
+        <ImageWithSkeleton 
+          src="/images/hero-coffee-farm.png" 
+          alt={producer.name} 
+          className="w-full h-full object-cover" 
+          wrapperClassName="absolute inset-0 w-full h-full"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
         {/* Profile overlay */}

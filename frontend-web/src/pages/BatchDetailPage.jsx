@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { getBatch, getStageHistory, addStage } from "../services/api";
 import { BatchDetailSkeleton } from "../components/ui/Skeleton";
+import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
 
 const STAGE_NAMES = [
   "Gieo hạt",
@@ -205,7 +206,11 @@ export default function BatchDetailPage() {
 
           {/* Image placeholder */}
           <div className="relative overflow-hidden rounded-2xl group">
-            <img src="/images/hero-coffee-farm.png" alt={batch.name} className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500" />
+            <ImageWithSkeleton
+              src="/images/hero-coffee-farm.png"
+              alt={batch.name}
+              className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
               <span className="text-white text-xs font-bold px-3 py-1 bg-primary/80 backdrop-blur-sm rounded-full flex items-center gap-1">
                 <BadgeCheck size={12} />
@@ -362,11 +367,14 @@ export default function BatchDetailPage() {
 
                         {/* Image */}
                         {stage.imageUrl && (
-                          <img
-                            src={stage.imageUrl}
-                            alt={stage.stage}
-                            className="mt-2 w-full h-20 object-cover rounded-lg"
-                          />
+                          <div className="mt-2 w-full h-20">
+                            <ImageWithSkeleton
+                              src={stage.imageUrl}
+                              alt={stage.stage}
+                              className="rounded-lg"
+                              wrapperClassName="w-full h-full rounded-lg"
+                            />
+                          </div>
                         )}
                       </div>
                     </div>

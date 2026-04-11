@@ -90,6 +90,15 @@ contract Traceability {
     mapping(uint256 => StageRecord[]) private _stageHistory;
 
     // ================================================================
+    // │                        ROLES                                 │
+    // ================================================================
+
+    /// @notice Chủ sở hữu hệ thống (có quyền cấp phép tài khoản nông trại)
+    address public systemAdmin;
+
+    /// @notice Mapping kiểm tra xem địa chỉ ví có phải là nông trại được phép (whitelisted) không
+    mapping(address => bool) public isWhitelistedProducer;
+    // ================================================================
     // │                      CUSTOM ERRORS                           │
     // ================================================================
 
@@ -107,6 +116,12 @@ contract Traceability {
 
     /// @dev Giai đoạn mới phải >= giai đoạn hiện tại (không lùi lại)
     error InvalidStageProgression(Stage currentStage, Stage newStage);
+
+    /// @dev Người gọi không phải là System Admin
+    error NotSystemAdmin(address caller);
+
+    /// @dev Người gọi chưa được cấp phép (whitelist) làm nông trại
+    error NotWhitelistedProducer(address caller);
 
     // ================================================================
     // │                        EVENTS                                │
@@ -150,6 +165,16 @@ contract Traceability {
      */
     event BatchCompleted(uint256 indexed batchId, uint256 timestamp);
 
+    /**
+     * @notice Phát ra khi một nông trại được cấp quyền (whitelist)
+     */
+    event ProducerAdded(address indexed producer);
+
+    /**
+     * @notice Phát ra khi một nông trại bị thu hồi quyền
+     */
+    event ProducerRemoved(address indexed producer);
+
     // ================================================================
     // │                       MODIFIERS                              │
     // ================================================================
@@ -184,9 +209,53 @@ contract Traceability {
         _;
     }
 
+    /**
+     * @dev Chỉ SystemAdmin mới được gọi
+     */
+    modifier onlySystemAdmin() {
+        if (msg.sender != systemAdmin) revert NotSystemAdmin(msg.sender);
+        _;
+    }
+
+    /**
+     * @dev Chỉ Nông trại đã duyệt mới được gọi
+     */
+    modifier onlyProducer() {
+        if (!isWhitelistedProducer[msg.sender]) revert NotWhitelistedProducer(msg.sender);
+        _;
+    }
+
+    // ================================================================
+    // │                        CONSTRUCTOR                           │
+    // ================================================================
+
+    constructor() {
+        systemAdmin = msg.sender;
+        isWhitelistedProducer[msg.sender] = true;
+        emit ProducerAdded(msg.sender);
+    }
+
     // ================================================================
     // │                   WRITE FUNCTIONS                            │
     // ================================================================
+
+    /**
+     * @notice Cấp quyền tạo lô hàng cho một địa chỉ ví
+     * @param producer Địa chỉ ví nông trại
+     */
+    function addWhitelistedProducer(address producer) external onlySystemAdmin {
+        isWhitelistedProducer[producer] = true;
+        emit ProducerAdded(producer);
+    }
+
+    /**
+     * @notice Thu hồi quyền tạo lô hàng của một địa chỉ ví
+     * @param producer Địa chỉ ví nông trại
+     */
+    function removeWhitelistedProducer(address producer) external onlySystemAdmin {
+        isWhitelistedProducer[producer] = false;
+        emit ProducerRemoved(producer);
+    }
 
     /**
      * @notice Tạo một lô hàng nông sản mới
@@ -202,7 +271,7 @@ contract Traceability {
         string calldata _name,
         string calldata _origin,
         string calldata _imageUrl
-    ) external returns (uint256 batchId) {
+    ) external onlyProducer returns (uint256 batchId) {
         // Validate: tên không được rỗng
         if (bytes(_name).length == 0) {
             revert EmptyBatchName();
