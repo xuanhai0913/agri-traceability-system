@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-verify");
 require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -29,5 +30,13 @@ module.exports = {
   gasReporter: {
     enabled: process.env.REPORT_GAS === "true",
     currency: "USD",
+  },
+  etherscan: {
+    apiKey: {
+      polygonAmoy: process.env.POLYGONSCAN_API_KEY || "",
+    },
+  },
+  sourcify: {
+    enabled: true,
   },
 };
