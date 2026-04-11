@@ -54,6 +54,16 @@ export function uploadImage(file) {
   });
 }
 
+// ── Producer endpoints ───────────────────────────────
+
+export function getProducers() {
+  return api.get("/producers");
+}
+
+export function getProducer(producerId) {
+  return api.get(`/producers/${producerId}`);
+}
+
 // ── Health check ─────────────────────────────────────
 
 export function healthCheck() {

@@ -1,138 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MapPin, Package, Star, ShieldCheck, Send } from "lucide-react";
+import {
+  MapPin, Package, Star, ShieldCheck, Send, Share2, Leaf, CheckCircle,
+  Users, Globe, Droplets, Scale, ClipboardCheck, Sprout,
+} from "lucide-react";
+import { getProducer } from "../services/api";
 
-// ── Mock Data ────────────────────────────────────
-const PRODUCERS_DATA = {
-  1: {
-    name: "Highland Valleys Farm",
-    location: "Andes Mountains, Peru",
-    status: "verified",
-    totalBatches: 1284,
-    avgQuality: 4.9,
-    complianceScore: 99,
-    description:
-      "Nestled at 3,500 meters in the Peruvian Andes, Highland Valleys Farm has been a pioneer in Regenerative Agriculture for three generations. Our coffee and cacao production is not just about yield, but about preserving the volcanic soil's mineral wealth and ensuring zero-deforestation in the surrounding cloud forests.",
-    farmingMethods: [
-      "No-Till Soil Management",
-      "Compost-Based Fertilization",
-      "Bio-Diverse Shade Grown",
-    ],
-    socialImpact: [
-      "Fair Wages for 40+ Families",
-      "Education Fund for Youth",
-    ],
-    certifications: ["USDA Organic", "Fair Trade", "Rainforest"],
-    coordinates: "13.1631° S, 72.5450° W",
-    totalArea: "242.5 Hectares",
-    elevation: "3,450m - 3,800m",
-    latestVerification: "0x72a...f92d",
-    smartContract: "AgriTrace_v2_772",
-    activeBatches: [
-      {
-        id: "ARB-2024-8842",
-        name: "Premium Arabica Cherry",
-        harvestDate: "Mar 12",
-        stage: "Drying Phase",
-        progress: 66,
-        stages: ["Harvest", "Processing", "Drying", "Export"],
-        activeStage: 2,
-      },
-      {
-        id: "CAC-2024-1102",
-        name: "Heirloom Criollo Cacao",
-        harvestDate: "Mar 08",
-        stage: "Fermenting",
-        progress: 50,
-        stages: ["Harvest", "Ferment", "Drying", "Export"],
-        activeStage: 1,
-      },
-    ],
-    audits: [
-      {
-        icon: "fact_check",
-        title: "Soil Quality Audit",
-        date: "Mar 02, 2024",
-        result: "Passed (100/100)",
-      },
-      {
-        icon: "water_drop",
-        title: "Water Usage Review",
-        date: "Feb 15, 2024",
-        result: "Passed (98/100)",
-      },
-      {
-        icon: "gavel",
-        title: "Annual Labor Cert",
-        date: "Jan 10, 2024",
-        result: "Verified",
-      },
-    ],
-  },
-  2: {
-    name: "Coastal Breeze Estate",
-    location: "Guanacaste, Costa Rica",
-    status: "verified",
-    totalBatches: 420,
-    avgQuality: 4.7,
-    complianceScore: 97,
-    description:
-      "Coastal Breeze Estate is a tropical fruit and coffee producer committed to sustainable agriculture. Their unique microclimate produces exceptional flavor profiles.",
-    farmingMethods: [
-      "Shade-Grown Cultivation",
-      "Natural Pest Management",
-      "Water Conservation Systems",
-    ],
-    socialImpact: [
-      "Community Health Programs",
-      "Women Empowerment Initiative",
-    ],
-    certifications: ["Rainforest Alliance", "Carbon Neutral"],
-    coordinates: "10.6274° N, 85.4407° W",
-    totalArea: "180.0 Hectares",
-    elevation: "800m - 1,200m",
-    latestVerification: "0x5b1...a34c",
-    smartContract: "AgriTrace_v2_772",
-    activeBatches: [],
-    audits: [
-      {
-        icon: "fact_check",
-        title: "Organic Compliance",
-        date: "Jan 20, 2024",
-        result: "Passed (97/100)",
-      },
-    ],
-  },
-};
-
-// Fallback producer for unknown IDs
-const DEFAULT_PRODUCER = {
-  name: "Nông trại Xanh Lâm Đồng",
-  location: "Đà Lạt, Lâm Đồng",
-  status: "verified",
-  totalBatches: 56,
-  avgQuality: 4.5,
-  complianceScore: 95,
-  description:
-    "Nông trại Xanh chuyên sản xuất cà phê Arabica và rau sạch theo tiêu chuẩn VietGAP. Cam kết minh bạch từ gieo trồng đến thu hoạch.",
-  farmingMethods: [
-    "Canh tác hữu cơ",
-    "Sử dụng phân vi sinh",
-    "Che phủ đất tự nhiên",
-  ],
-  socialImpact: [
-    "Hỗ trợ 20+ gia đình nông dân",
-    "Đào tạo nghề cho thanh niên",
-  ],
-  certifications: ["VietGAP", "Organic"],
-  coordinates: "11.9404° N, 108.4583° E",
-  totalArea: "50.0 Hectares",
-  elevation: "1,200m - 1,500m",
-  latestVerification: "0x44e...b21f",
-  smartContract: "AgriTrace_v2_772",
-  activeBatches: [],
-  audits: [],
+const AUDIT_ICONS = {
+  "clipboard-check": ClipboardCheck,
+  "droplets": Droplets,
+  "scale": Scale,
 };
 
 const TABS = ["Overview", "Active Batches", "Compliance History", "Location"];
@@ -141,8 +19,49 @@ export default function ProducerDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("Overview");
+  const [producer, setProducer] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const producer = PRODUCERS_DATA[id] || DEFAULT_PRODUCER;
+  useEffect(() => {
+    loadProducer();
+  }, [id]);
+
+  async function loadProducer() {
+    try {
+      setLoading(true);
+      const res = await getProducer(id);
+      setProducer(res.data.data);
+    } catch (err) {
+      console.error("Producer load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="animate-pulse space-y-6">
+        <div className="h-52 bg-surface-container-high rounded-2xl" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-28 bg-surface-container-high rounded-2xl" />
+          ))}
+        </div>
+        <div className="h-96 bg-surface-container-high rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!producer) {
+    return (
+      <div className="text-center py-20 text-slate-500">
+        <p className="text-lg font-bold">{t("common.noData")}</p>
+        <Link to="/producers" className="text-primary text-sm font-bold hover:underline mt-2 inline-block">
+          ← {t("nav.producers")}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -156,17 +75,10 @@ export default function ProducerDetailPage() {
           {/* Avatar */}
           <div className="relative">
             <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-gradient-to-br from-emerald-200 to-emerald-400 flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-5xl">
-                eco
-              </span>
+              <Sprout size={48} className="text-white" />
             </div>
             <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1 rounded-full border-2 border-white">
-              <span
-                className="material-symbols-outlined text-sm filled"
-                style={{ display: "block" }}
-              >
-                verified
-              </span>
+              <ShieldCheck size={14} />
             </div>
           </div>
 
@@ -194,7 +106,7 @@ export default function ProducerDetailPage() {
               {t("producerDetail.contactFarmer")}
             </button>
             <button className="p-2.5 bg-white/20 backdrop-blur-md text-white rounded-xl hover:bg-white/30 transition-colors">
-              <span className="material-symbols-outlined">share</span>
+              <Share2 size={20} />
             </button>
           </div>
         </div>
@@ -271,18 +183,7 @@ export default function ProducerDetailPage() {
               {t("producerDetail.digitalLedger")}
             </h2>
             <p className="text-slate-600 leading-relaxed text-base md:text-lg mb-6">
-              {producer.description.split("Regenerative Agriculture").length >
-              1 ? (
-                <>
-                  {producer.description.split("Regenerative Agriculture")[0]}
-                  <span className="text-primary font-semibold">
-                    Regenerative Agriculture
-                  </span>
-                  {producer.description.split("Regenerative Agriculture")[1]}
-                </>
-              ) : (
-                producer.description
-              )}
+              {producer.description}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -296,9 +197,7 @@ export default function ProducerDetailPage() {
                       key={m}
                       className="flex items-center gap-2 text-on-surface text-sm"
                     >
-                      <span className="material-symbols-outlined text-primary text-sm">
-                        check_circle
-                      </span>
+                      <CheckCircle size={14} className="text-primary" />
                       <span>{m}</span>
                     </li>
                   ))}
@@ -314,9 +213,7 @@ export default function ProducerDetailPage() {
                       key={s}
                       className="flex items-center gap-2 text-on-surface text-sm"
                     >
-                      <span className="material-symbols-outlined text-tertiary text-sm">
-                        people
-                      </span>
+                      <Users size={14} className="text-tertiary" />
                       <span>{s}</span>
                     </li>
                   ))}
@@ -331,34 +228,19 @@ export default function ProducerDetailPage() {
               {t("producerDetail.certifications")}
             </h2>
             <div className="flex flex-wrap gap-4">
-              {producer.certifications.map((cert) => {
-                const icons = {
-                  "USDA Organic": "eco",
-                  "Fair Trade": "handshake",
-                  Rainforest: "forest",
-                  VietGAP: "verified_user",
-                  Organic: "eco",
-                  "Carbon Neutral": "filter_drama",
-                  "Rainforest Alliance": "forest",
-                  GlobalGAP: "public",
-                  Biodynamic: "yard",
-                };
-                return (
+              {producer.certifications.map((cert) => (
                   <div
                     key={cert}
                     className="group bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:border-primary transition-colors flex flex-col items-center text-center w-28"
                   >
                     <div className="w-12 h-12 mb-3 bg-emerald-50 rounded-full flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                      <span className="material-symbols-outlined text-emerald-600 filled">
-                        {icons[cert] || "verified"}
-                      </span>
+                      <Leaf size={22} className="text-emerald-600" />
                     </div>
                     <span className="text-[10px] font-black uppercase text-slate-500">
                       {cert}
                     </span>
                   </div>
-                );
-              })}
+              ))}
             </div>
           </section>
 
@@ -440,13 +322,9 @@ export default function ProducerDetailPage() {
               Geographic Boundary
             </h2>
             <div className="aspect-square rounded-xl overflow-hidden mb-4 relative bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center">
-              <span className="material-symbols-outlined text-emerald-500/30 text-[100px]">
-                satellite_alt
-              </span>
+              <Globe size={80} className="text-emerald-500/30" />
               <div className="absolute top-4 right-4 bg-white/90 p-2 rounded-lg shadow-md backdrop-blur">
-                <span className="material-symbols-outlined text-primary">
-                  satellite_alt
-                </span>
+                <Globe size={20} className="text-primary" />
               </div>
             </div>
             <div className="space-y-3">
@@ -521,9 +399,10 @@ export default function ProducerDetailPage() {
                   <div key={i} className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                        <span className="material-symbols-outlined text-sm">
-                          {audit.icon}
-                        </span>
+                        {(() => {
+                          const AuditIcon = AUDIT_ICONS[audit.icon] || ClipboardCheck;
+                          return <AuditIcon size={16} />;
+                        })()}
                       </div>
                       {i < producer.audits.length - 1 && (
                         <div className="w-0.5 flex-1 bg-slate-100 mt-1"></div>

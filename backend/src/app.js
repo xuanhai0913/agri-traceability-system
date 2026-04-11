@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const errorHandler = require("./middleware/errorHandler");
 const batchRoutes = require("./routes/batch.routes");
 const uploadRoutes = require("./routes/upload.routes");
+const producerRoutes = require("./routes/producer.routes");
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/batches", batchRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/producers", producerRoutes);
 
 // 404
 app.use((_req, res) => {

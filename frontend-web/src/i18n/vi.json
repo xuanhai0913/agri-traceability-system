@@ -32,7 +32,9 @@
     "back": "Quay lại",
     "submit": "Gửi",
     "delete": "Xóa",
-    "edit": "Sửa"
+    "edit": "Sửa",
+    "saving": "Đang ghi...",
+    "confirm": "Xác nhận"
   },
   "dashboard": {
     "greeting": "Chào buổi sáng, Nông trại Xanh!",
@@ -144,7 +146,18 @@
     "verifiedNodes": "Đã xác thực bởi {{count}} node mạng",
     "organicProof": "100% Chứng nhận Organic",
     "certNumber": "Cert #{{number}}",
-    "geotaggedOrigin": "Nguồn gốc định vị"
+    "geotaggedOrigin": "Nguồn gốc định vị",
+    "title": "Chi tiết lô hàng",
+    "loadError": "Không thể tải dữ liệu lô hàng",
+    "stageError": "Lỗi khi thêm giai đoạn",
+    "verifiedOnChain": "Xác thực On-Chain",
+    "lifecycleProgress": "Vòng đời sản phẩm",
+    "updateStage": "Cập nhật giai đoạn mới",
+    "updateStageTitle": "Cập nhật giai đoạn",
+    "newStage": "Giai đoạn mới",
+    "selectStage": "Chọn giai đoạn...",
+    "descriptionOptional": "Mô tả (Tùy chọn)",
+    "descPlaceholder": "Mô tả hoạt động..."
   },
   "createBatch": {
     "title": "Tạo lô hàng mới",

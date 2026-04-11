@@ -2,6 +2,11 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
+import {
+  Check, ChevronRight, AlertCircle, X, Leaf, BadgeCheck,
+  Printer, Share2, PlusCircle, RefreshCw, Shield, MapPin,
+  Loader2,
+} from "lucide-react";
 import { getBatch, getStageHistory, addStage } from "../services/api";
 import { BatchDetailSkeleton } from "../components/ui/Skeleton";
 
@@ -53,7 +58,7 @@ export default function BatchDetailPage() {
       setStages(historyRes.data.data.stages);
     } catch (err) {
       setError(
-        err.response?.data?.message || "Không thể tải dữ liệu lô hàng"
+        err.response?.data?.message || t("batchDetail.loadError")
       );
     } finally {
       setLoading(false);
@@ -76,7 +81,7 @@ export default function BatchDetailPage() {
       await loadBatchData();
     } catch (err) {
       setError(
-        err.response?.data?.message || "Lỗi khi thêm giai đoạn"
+        err.response?.data?.message || t("batchDetail.stageError")
       );
     } finally {
       setAddingStage(false);
@@ -109,9 +114,7 @@ export default function BatchDetailPage() {
   if (error && !batch) {
     return (
       <div className="flex flex-col items-center justify-center py-32">
-        <span className="material-symbols-outlined text-5xl text-error mb-4">
-          error
-        </span>
+        <AlertCircle size={48} className="text-error mb-4" />
         <p className="text-error font-medium">{error}</p>
         <Link to="/" className="mt-4 text-primary text-sm font-bold hover:underline">
           ← {t("nav.dashboard")}
@@ -134,21 +137,21 @@ export default function BatchDetailPage() {
         <Link to="/" className="hover:text-primary transition-colors">
           {t("nav.dashboard")}
         </Link>
-        <span className="material-symbols-outlined text-sm">chevron_right</span>
+        <ChevronRight size={14} />
         <span className="text-on-surface-variant font-medium">
-          Batch Details
+          {t("batchDetail.title")}
         </span>
-        <span className="material-symbols-outlined text-sm">chevron_right</span>
+        <ChevronRight size={14} />
         <span className="text-primary font-bold">{batchCode}</span>
       </div>
 
       {/* Error banner */}
       {error && (
         <div className="bg-error-container text-on-error-container px-6 py-3 rounded-2xl mb-6 flex items-center gap-3 text-sm">
-          <span className="material-symbols-outlined">error</span>
+          <AlertCircle size={18} />
           <span>{error}</span>
           <button className="ml-auto" onClick={() => setError(null)}>
-            <span className="material-symbols-outlined text-lg">close</span>
+            <X size={18} />
           </button>
         </div>
       )}
@@ -202,14 +205,11 @@ export default function BatchDetailPage() {
 
           {/* Image placeholder */}
           <div className="relative overflow-hidden rounded-2xl group">
-            <div className="w-full h-44 bg-gradient-to-br from-emerald-800 to-emerald-600 flex items-center justify-center">
-              <span className="material-symbols-outlined text-white/30 text-6xl group-hover:scale-110 transition-transform duration-500">
-                eco
-              </span>
-            </div>
+            <img src="/images/hero-coffee-farm.png" alt={batch.name} className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-              <span className="text-white text-xs font-bold px-3 py-1 bg-primary/80 backdrop-blur-sm rounded-full">
-                Verified On-Chain
+              <span className="text-white text-xs font-bold px-3 py-1 bg-primary/80 backdrop-blur-sm rounded-full flex items-center gap-1">
+                <BadgeCheck size={12} />
+                {t("batchDetail.verifiedOnChain")}
               </span>
             </div>
           </div>
@@ -229,10 +229,10 @@ export default function BatchDetailPage() {
             ></div>
 
             <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tighter mb-2 relative z-10">
-              Digital Identity
+              {t("batchDetail.digitalIdentity")}
             </h1>
             <p className="text-outline text-sm mb-8 relative z-10">
-              Scan to verify authenticity on the blockchain
+              {t("batchDetail.scanToVerify")}
             </p>
 
             {/* QR Code */}
@@ -249,9 +249,7 @@ export default function BatchDetailPage() {
             <div className="flex flex-col items-center gap-5 relative z-10">
               {/* Batch Code */}
               <div className="bg-surface-container-low px-8 py-3 rounded-full inline-flex items-center gap-3">
-                <span className="material-symbols-outlined text-emerald-600 filled">
-                  verified
-                </span>
+                <BadgeCheck size={22} className="text-emerald-600" />
                 <span className="font-mono text-xl font-bold tracking-widest text-emerald-900">
                   {batchCode}
                 </span>
@@ -263,11 +261,11 @@ export default function BatchDetailPage() {
                   onClick={handlePrint}
                   className="px-8 py-4 btn-primary-gradient rounded-2xl font-bold shadow-lg shadow-emerald-900/20 flex items-center gap-3"
                 >
-                  <span className="material-symbols-outlined">print</span>
-                  In tem QR (Print)
+                  <Printer size={20} />
+                  {t("batchDetail.printQR")}
                 </button>
                 <button className="p-4 bg-surface-container-high text-on-surface rounded-2xl hover:bg-surface-variant transition-colors">
-                  <span className="material-symbols-outlined">share</span>
+                  <Share2 size={20} />
                 </button>
               </div>
             </div>
@@ -280,10 +278,8 @@ export default function BatchDetailPage() {
                 onClick={() => setShowAddStage(true)}
                 className="px-6 py-3 bg-tertiary-container text-on-tertiary-container rounded-xl font-bold text-sm flex items-center gap-2 mx-auto hover:scale-[1.02] transition-transform"
               >
-                <span className="material-symbols-outlined text-lg">
-                  add_circle
-                </span>
-                Cập nhật giai đoạn mới
+                <PlusCircle size={18} />
+                {t("batchDetail.updateStage")}
               </button>
             </div>
           )}
@@ -294,7 +290,7 @@ export default function BatchDetailPage() {
           <div className="bg-surface-container-low p-7 rounded-2xl min-h-[480px]">
             <div className="flex justify-between items-center mb-7">
               <h3 className="font-headline font-bold text-on-surface text-sm">
-                Lifecycle Progress
+                {t("batchDetail.lifecycleProgress")}
               </h3>
               <span className="text-[9px] bg-tertiary-container text-on-tertiary-container px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
                 On-Chain
@@ -304,52 +300,44 @@ export default function BatchDetailPage() {
             {/* Timeline */}
             <div className="relative pl-8">
               {/* Track */}
-              <div className="absolute left-[11px] top-2 bottom-2 w-1.5 bg-surface-container-high rounded-full overflow-hidden">
+              <div className="absolute left-[11px] top-2 bottom-2 w-[5px] bg-surface-container-high rounded-full overflow-hidden">
                 <div
-                  className="w-full bg-primary transition-all duration-500"
+                  className="w-full bg-gradient-to-b from-emerald-500 to-emerald-400 transition-all duration-700 ease-out"
                   style={{
-                    height: `${stages.length > 0 ? ((stages.length - 1) / 6) * 100 : 0}%`,
+                    height: `${stages.length > 0 ? (stages.length / Math.max(stages.length, 4)) * 100 : 0}%`,
                   }}
                 ></div>
               </div>
 
-              <div className="space-y-10">
+              <div className="space-y-7">
                 {stages.map((stage, i) => {
                   const isLast = i === stages.length - 1;
                   const isCompleted = !isLast || !batch.isActive;
 
                   return (
-                    <div key={i} className="relative">
+                    <div key={i} className="relative group">
                       {/* Node */}
                       {isLast && batch.isActive ? (
-                        <div className="absolute -left-[32px] -top-1 w-7 h-7 bg-white rounded-full flex items-center justify-center border-2 border-emerald-600 ring-4 ring-surface-container-low">
-                          <div className="w-3 h-3 bg-emerald-600 rounded-full animate-pulse"></div>
+                        <div className="absolute -left-[32px] -top-1 w-7 h-7 bg-white rounded-full flex items-center justify-center border-[2.5px] border-emerald-500 ring-4 ring-emerald-50 shadow-md shadow-emerald-200/50">
+                          <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
                         </div>
                       ) : (
-                        <div className="absolute -left-[30px] top-0.5 w-6 h-6 bg-primary rounded-full flex items-center justify-center ring-4 ring-surface-container-low">
-                          <span
-                            className="material-symbols-outlined text-white text-xs"
-                            style={{
-                              fontVariationSettings: "'wght' 700",
-                              fontSize: "14px",
-                            }}
-                          >
-                            check
-                          </span>
+                        <div className="absolute -left-[30px] top-0.5 w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center ring-[3px] ring-emerald-100 shadow-sm">
+                          <Check size={13} className="text-white" strokeWidth={3} />
                         </div>
                       )}
 
                       {/* Content */}
-                      <div className={isCompleted && !isLast ? "opacity-60" : ""}>
+                      <div className={`transition-opacity ${isCompleted && !isLast ? "opacity-50 group-hover:opacity-80" : ""}`}>
                         <p
-                          className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${
+                          className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${
                             isLast && batch.isActive
                               ? "text-primary"
-                              : "text-emerald-700"
+                              : "text-emerald-600"
                           }`}
                         >
                           {STAGE_NAMES[stage.stageIndex] || stage.stage} (
-                          {isLast && batch.isActive ? "Active" : "Completed"})
+                          {isLast && batch.isActive ? t("common.active") : t("stages.completed")})
                         </p>
                         <p
                           className={`font-semibold text-on-surface ${
@@ -415,7 +403,7 @@ export default function BatchDetailPage() {
       <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-surface-container-low p-5 rounded-2xl flex items-center gap-4">
           <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-            <span className="material-symbols-outlined filled">security</span>
+            <Shield size={22} />
           </div>
           <div>
             <h4 className="font-bold text-on-surface text-sm">
@@ -428,7 +416,7 @@ export default function BatchDetailPage() {
         </div>
         <div className="bg-surface-container-low p-5 rounded-2xl flex items-center gap-4">
           <div className="w-11 h-11 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
-            <span className="material-symbols-outlined filled">eco</span>
+            <Leaf size={22} />
           </div>
           <div>
             <h4 className="font-bold text-on-surface text-sm">
@@ -441,9 +429,7 @@ export default function BatchDetailPage() {
         </div>
         <div className="bg-surface-container-low p-5 rounded-2xl flex items-center gap-4">
           <div className="w-11 h-11 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
-            <span className="material-symbols-outlined filled">
-              location_on
-            </span>
+            <MapPin size={22} />
           </div>
           <div>
             <h4 className="font-bold text-on-surface text-sm">
@@ -463,16 +449,14 @@ export default function BatchDetailPage() {
           ></div>
           <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
             <h3 className="text-xl font-bold font-headline mb-6 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">
-                update
-              </span>
-              Cập nhật giai đoạn
+              <RefreshCw size={20} className="text-primary" />
+              {t("batchDetail.updateStageTitle")}
             </h3>
 
             <form onSubmit={handleAddStage} className="space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                  Giai đoạn mới
+                  {t("batchDetail.newStage")}
                 </label>
                 <select
                   value={newStage.stage}
@@ -482,7 +466,7 @@ export default function BatchDetailPage() {
                   className="input-ledger"
                   required
                 >
-                  <option value="">Chọn giai đoạn...</option>
+                  <option value="">{t("batchDetail.selectStage")}</option>
                   {STAGE_NAMES.map((name, idx) => {
                     if (idx <= currentStageIdx) return null;
                     return (
@@ -496,7 +480,7 @@ export default function BatchDetailPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                  Mô tả (Tùy chọn)
+                  {t("batchDetail.descriptionOptional")}
                 </label>
                 <textarea
                   value={newStage.description}
@@ -504,7 +488,7 @@ export default function BatchDetailPage() {
                     setNewStage({ ...newStage, description: e.target.value })
                   }
                   className="input-ledger resize-none"
-                  placeholder="Mô tả hoạt động..."
+                  placeholder={t("batchDetail.descPlaceholder")}
                   rows={3}
                 />
               </div>
@@ -517,17 +501,13 @@ export default function BatchDetailPage() {
                 >
                   {addingStage ? (
                     <>
-                      <span className="material-symbols-outlined animate-spin text-lg">
-                        progress_activity
-                      </span>
-                      Đang ghi...
+                      <Loader2 size={18} className="animate-spin" />
+                      {t("common.saving")}
                     </>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined text-lg">
-                        check
-                      </span>
-                      Xác nhận
+                      <Check size={18} />
+                      {t("common.confirm")}
                     </>
                   )}
                 </button>
@@ -536,7 +516,7 @@ export default function BatchDetailPage() {
                   onClick={() => setShowAddStage(false)}
                   className="px-6 py-3 bg-surface-container-high rounded-xl font-bold text-sm text-slate-600 hover:text-on-surface transition-colors"
                 >
-                  Hủy
+                  {t("common.cancel")}
                 </button>
               </div>
             </form>

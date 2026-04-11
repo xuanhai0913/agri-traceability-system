@@ -1,87 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { UserPlus, MapPin, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Filter, Shield, Clock, MoreVertical, TrendingUp } from "lucide-react";
+import { getProducers } from "../services/api";
 
-// ── Mock Data ────────────────────────────────────
-const PRODUCERS = [
-  {
-    id: 1,
-    name: "Highland Valleys Farm",
-    location: "Andes Mountains, Peru",
-    status: "verified",
-    certifications: ["Organic Certified", "Fair Trade"],
-    activeBatches: 12,
-    progressSegments: [true, true, true, false, false],
-    image: "/images/farm-highland.png",
-  },
-  {
-    id: 2,
-    name: "Coastal Breeze Estate",
-    location: "Guanacaste, Costa Rica",
-    status: "verified",
-    certifications: ["Rainforest Alliance", "Carbon Neutral"],
-    activeBatches: 4,
-    progressSegments: [true, false, false, false],
-    image: "/images/farm-coastal.png",
-  },
-  {
-    id: 3,
-    name: "Old Oak Cooperative",
-    location: "Kent, United Kingdom",
-    status: "audit_pending",
-    certifications: ["Biodynamic"],
-    activeBatches: 28,
-    progressSegments: [true, true, true, true, true],
-    image: "/images/farm-cooperative.png",
-  },
-  {
-    id: 4,
-    name: "Nông trại Xanh Lâm Đồng",
-    location: "Đà Lạt, Lâm Đồng",
-    status: "verified",
-    certifications: ["VietGAP", "Organic"],
-    activeBatches: 8,
-    progressSegments: [true, true, false, false, false],
-    image: "/images/hero-coffee-farm.png",
-  },
-  {
-    id: 5,
-    name: "Mekong Delta Co-op",
-    location: "Cần Thơ, Việt Nam",
-    status: "verified",
-    certifications: ["GlobalGAP", "Fair Trade"],
-    activeBatches: 15,
-    progressSegments: [true, true, true, true, false],
-    image: "/images/hero-rice-field.png",
-  },
-  {
-    id: 6,
-    name: "Sunrise Plantation",
-    location: "Chiang Mai, Thailand",
-    status: "audit_pending",
-    certifications: ["Organic"],
-    activeBatches: 6,
-    progressSegments: [true, true, false, false, false],
-    image: "/images/harvest-scene.png",
-  },
-];
-
-const ICONS = ["agriculture", "forest", "eco", "yard", "park", "grass"];
+const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 
 const FILTERS = ["All", "Verified", "Audit Pending"];
 const SORTS = ["Most Recent", "Region", "Compliance Score"];
 
+const ProducerNetworkSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+    {[1, 2, 3].map((i) => (
+      <div key={i} className="bg-surface-container-lowest rounded-2xl h-80 animate-pulse" />
+    ))}
+  </div>
+);
+
 export default function ProducerNetworkPage() {
   const { t } = useTranslation();
+  const [producers, setProducers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [sort, setSort] = useState("Most Recent");
 
+  useEffect(() => {
+    loadProducers();
+  }, []);
+
+  async function loadProducers() {
+    try {
+      setLoading(true);
+      const res = await getProducers();
+      setProducers(res.data.data);
+    } catch (err) {
+      console.error("Producers load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const filtered =
     activeFilter === "All"
-      ? PRODUCERS
+      ? producers
       : activeFilter === "Verified"
-      ? PRODUCERS.filter((p) => p.status === "verified")
-      : PRODUCERS.filter((p) => p.status === "audit_pending");
+      ? producers.filter((p) => p.status === "verified")
+      : producers.filter((p) => p.status === "audit_pending");
 
   return (
     <>
@@ -99,7 +63,7 @@ export default function ProducerNetworkPage() {
           </p>
         </div>
         <button className="bg-primary text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-emerald-900/10 w-full md:w-auto justify-center">
-          <span className="material-symbols-outlined">person_add</span>
+          <UserPlus size={18} />
           {t("producers.addProducer")}
         </button>
       </section>
@@ -111,12 +75,10 @@ export default function ProducerNetworkPage() {
             {t("producers.totalProducers")}
           </span>
           <div className="text-3xl font-extrabold text-emerald-900 mt-1 font-headline">
-            1,284
+            {producers.length}
           </div>
           <div className="flex items-center gap-1 text-emerald-600 text-xs font-bold mt-2">
-            <span className="material-symbols-outlined text-xs">
-              trending_up
-            </span>
+            <TrendingUp size={12} />
             {t("producers.fromLastMonth")}
           </div>
         </div>
@@ -128,9 +90,7 @@ export default function ProducerNetworkPage() {
             98.2%
           </div>
           <div className="flex items-center gap-1 text-emerald-600 text-xs font-bold mt-2">
-            <span className="material-symbols-outlined text-xs filled">
-              verified
-            </span>
+            <Shield size={12} />
             {t("producers.integritySecured")}
           </div>
         </div>
@@ -174,9 +134,7 @@ export default function ProducerNetworkPage() {
               }`}
             >
               {f === "All" && (
-                <span className="material-symbols-outlined text-sm mr-1 align-middle">
-                  filter_list
-                </span>
+                <Filter size={14} className="inline mr-1 align-middle" />
               )}
               {f}
             </button>
@@ -198,8 +156,14 @@ export default function ProducerNetworkPage() {
 
       {/* Producer Card Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-        {filtered.map((producer) => {
-          const icon = ICONS[producer.id % ICONS.length];
+        {loading ? (
+          <div className="col-span-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            {[1,2,3].map((i) => (
+              <div key={i} className="bg-surface-container-lowest rounded-2xl h-80 animate-pulse" />
+            ))}
+          </div>
+        ) : filtered.map((producer) => {
+          const IconComp = PRODUCT_ICONS[producer.id % PRODUCT_ICONS.length];
 
           return (
             <div
@@ -222,15 +186,14 @@ export default function ProducerNetworkPage() {
                       : "bg-tertiary-container text-white"
                   }`}
                 >
-                  <span
-                    className="material-symbols-outlined filled"
-                    style={{ fontSize: "12px" }}
-                  >
-                    {producer.status === "verified" ? "shield" : "pending"}
-                  </span>
+                  {producer.status === "verified" ? (
+                    <Shield size={12} />
+                  ) : (
+                    <Clock size={12} />
+                  )}
                   {producer.status === "verified"
-                    ? "VERIFIED"
-                    : "AUDIT PENDING"}
+                    ? t("common.verified").toUpperCase()
+                    : t("common.auditPending").toUpperCase()}
                 </div>
               </div>
 
@@ -240,15 +203,11 @@ export default function ProducerNetworkPage() {
                   <h3 className="text-lg font-bold text-on-surface font-headline">
                     {producer.name}
                   </h3>
-                  <span className="material-symbols-outlined text-slate-300 hover:text-emerald-500 cursor-pointer transition-colors">
-                    more_vert
-                  </span>
+                  <MoreVertical size={18} className="text-slate-300 hover:text-emerald-500 cursor-pointer transition-colors" />
                 </div>
 
                 <div className="flex items-center gap-2 text-slate-500 text-sm mb-4">
-                  <span className="material-symbols-outlined text-sm">
-                    location_on
-                  </span>
+                  <MapPin size={14} />
                   {producer.location}
                 </div>
 
@@ -268,18 +227,18 @@ export default function ProducerNetworkPage() {
                 <div className="border-t border-emerald-50 pt-4">
                   <div className="flex justify-between items-center text-xs mb-3">
                     <span className="text-slate-400 font-medium">
-                      Active Batches
+                      {t("producers.activeBatches")}
                     </span>
                     <span className="text-emerald-900 font-bold">
-                      {producer.activeBatches} Batches
+                      {producer.activeBatches} {t("common.batches")}
                     </span>
                   </div>
                   <div className="flex gap-1.5 overflow-hidden">
-                    {producer.progressSegments.map((filled, i) => (
+                    {Array.from({ length: 5 }, (_, i) => (
                       <div
                         key={i}
                         className={`h-1 flex-1 rounded-full ${
-                          filled
+                          i < Math.min(Math.ceil(producer.activeBatches / 6), 5)
                             ? "bg-emerald-600"
                             : "bg-surface-container-high"
                         }`}
@@ -294,10 +253,8 @@ export default function ProducerNetworkPage() {
                 to={`/producers/${producer.id}`}
                 className="flex items-center justify-center gap-2 py-4 bg-surface-container-low hover:bg-emerald-600 hover:text-white text-emerald-900 font-bold text-xs uppercase tracking-widest transition-colors"
               >
-                View Ledger Details
-                <span className="material-symbols-outlined text-sm">
-                  arrow_forward
-                </span>
+                {t("producers.viewLedger")}
+                <ChevronRight size={14} />
               </Link>
             </div>
           );
@@ -346,9 +303,7 @@ export default function ProducerNetworkPage() {
           <div className="absolute inset-0 p-8 flex flex-col justify-end">
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-2xl">
               <div className="flex items-center gap-3 mb-3">
-                <span className="material-symbols-outlined text-emerald-400 filled">
-                  verified
-                </span>
+                <Shield size={18} className="text-emerald-400" />
                 <span className="text-white font-bold text-sm">
                   Quality Certificate #8293
                 </span>

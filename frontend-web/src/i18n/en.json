@@ -32,7 +32,9 @@
     "back": "Back",
     "submit": "Submit",
     "delete": "Delete",
-    "edit": "Edit"
+    "edit": "Edit",
+    "saving": "Saving...",
+    "confirm": "Confirm"
   },
   "dashboard": {
     "greeting": "Good morning, Green Farm!",
@@ -144,7 +146,18 @@
     "verifiedNodes": "Verified by {{count}} network nodes",
     "organicProof": "100% Organic Proof",
     "certNumber": "Cert #{{number}}",
-    "geotaggedOrigin": "Geotagged Origin"
+    "geotaggedOrigin": "Geotagged Origin",
+    "title": "Batch Details",
+    "loadError": "Failed to load batch data",
+    "stageError": "Error adding stage",
+    "verifiedOnChain": "Verified On-Chain",
+    "lifecycleProgress": "Lifecycle Progress",
+    "updateStage": "Update Stage",
+    "updateStageTitle": "Update Stage",
+    "newStage": "New Stage",
+    "selectStage": "Select stage...",
+    "descriptionOptional": "Description (Optional)",
+    "descPlaceholder": "Describe the activity..."
   },
   "createBatch": {
     "title": "Create New Batch",
