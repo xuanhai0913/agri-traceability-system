@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
 import Skeleton from "./components/ui/Skeleton";
+import { Construction } from "lucide-react";
 
 /* ── Lazy-loaded pages ─── */
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
@@ -31,9 +32,7 @@ function RouteFallback() {
 function ComingSoon({ title }) {
   return (
     <div className="flex flex-col items-center justify-center py-32 text-slate-400">
-      <span className="material-symbols-outlined text-6xl mb-4">
-        construction
-      </span>
+      <Construction size={48} className="mb-4" />
       <h2 className="text-2xl font-bold text-on-surface mb-2 font-headline">
         {title}
       </h2>

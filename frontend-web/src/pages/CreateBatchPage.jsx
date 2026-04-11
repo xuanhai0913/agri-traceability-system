@@ -1,6 +1,10 @@
 import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import {
+  CheckCircle, QrCode, ChevronRight, AlertCircle, X, FileText,
+  MapPin, Lock, CloudUpload, Loader2, Wallet,
+} from "lucide-react";
 import { createBatch, uploadImage } from "../services/api";
 
 export default function CreateBatchPage() {
@@ -106,9 +110,7 @@ export default function CreateBatchPage() {
     return (
       <div className="max-w-lg mx-auto mt-16 text-center">
         <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
-          <span className="material-symbols-outlined text-4xl text-emerald-600 filled">
-            check_circle
-          </span>
+          <CheckCircle size={40} className="text-emerald-600" />
         </div>
         <h1 className="text-3xl font-extrabold text-on-surface font-headline mb-3">
           {t("createBatch.success")}
@@ -128,7 +130,7 @@ export default function CreateBatchPage() {
             to={`/batches/${success.batchId}`}
             className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2"
           >
-            <span className="material-symbols-outlined text-lg">qr_code_2</span>
+            <QrCode size={18} />
             Xem & In QR Code
           </Link>
           <button
@@ -155,9 +157,7 @@ export default function CreateBatchPage() {
         <Link to="/" className="hover:text-primary transition-colors">
           Ledger
         </Link>
-        <span className="material-symbols-outlined text-xs">
-          chevron_right
-        </span>
+        <ChevronRight size={12} />
         <span className="text-primary font-bold">New Batch Entry</span>
       </nav>
 
@@ -171,10 +171,10 @@ export default function CreateBatchPage() {
       {/* Error banner */}
       {error && (
         <div className="bg-error-container text-on-error-container px-6 py-4 rounded-2xl mb-8 flex items-center gap-3">
-          <span className="material-symbols-outlined">error</span>
+          <AlertCircle size={20} />
           <span className="text-sm font-medium">{error}</span>
           <button className="ml-auto" onClick={() => setError(null)}>
-            <span className="material-symbols-outlined text-lg">close</span>
+            <X size={18} />
           </button>
         </div>
       )}
@@ -185,9 +185,7 @@ export default function CreateBatchPage() {
           <div className="lg:col-span-7 space-y-8">
             <div className="bg-surface-container-lowest p-8 rounded-2xl ghost-border">
               <h2 className="text-xl font-bold mb-8 text-on-surface flex items-center gap-2 font-headline">
-                <span className="material-symbols-outlined text-emerald-600">
-                  description
-                </span>
+                <FileText size={22} className="text-emerald-600" />
                 Thông tin cơ bản
               </h2>
 
@@ -213,9 +211,7 @@ export default function CreateBatchPage() {
                     Vị trí trang trại / Nguồn gốc
                   </label>
                   <div className="flex items-center bg-surface-container-low rounded-t-xl overflow-hidden">
-                    <span className="material-symbols-outlined text-slate-400 px-3">
-                      location_on
-                    </span>
+                    <MapPin size={18} className="text-slate-400 mx-3" />
                     <input
                       name="origin"
                       value={form.origin}
@@ -246,7 +242,7 @@ export default function CreateBatchPage() {
             {/* On-chain info */}
             <div className="flex items-center gap-4 p-5 bg-emerald-50 rounded-2xl">
               <div className="w-11 h-11 rounded-full bg-emerald-600 flex items-center justify-center text-white shrink-0">
-                <span className="material-symbols-outlined filled">lock</span>
+                <Lock size={20} />
               </div>
               <div>
                 <h4 className="font-bold text-emerald-900 text-sm">
@@ -307,9 +303,7 @@ export default function CreateBatchPage() {
               ) : (
                 <>
                   <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-4xl">
-                      cloud_upload
-                    </span>
+                    <CloudUpload size={36} />
                   </div>
                   <h3 className="text-xl font-bold text-on-surface mb-2 font-headline">
                     Hình ảnh thực tế
@@ -349,18 +343,14 @@ export default function CreateBatchPage() {
               >
                 {submitting ? (
                   <>
-                    <span className="material-symbols-outlined animate-spin">
-                      progress_activity
-                    </span>
+                    <Loader2 size={22} className="animate-spin" />
                     {uploading
                       ? "Đang tải ảnh lên..."
                       : "Đang ghi lên Blockchain..."}
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined filled">
-                      account_balance_wallet
-                    </span>
+                    <Wallet size={22} />
                     {t("createBatch.submitBtn")}
                   </>
                 )}
