@@ -125,11 +125,11 @@ export default function BatchDetailPage() {
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
         orientation: "portrait",
-        unit: "mm",
-        format: [60, 90], // 60mm x 90mm label size
+        unit: "px",
+        format: [canvas.width, canvas.height],
       });
 
-      pdf.addImage(imgData, "PNG", 0, 0, 60, 90);
+      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
       pdf.save(`AgriTrace_${batchCode}.pdf`);
     } catch (err) {
       console.error("PDF Export Error:", err);
@@ -164,14 +164,14 @@ export default function BatchDetailPage() {
 
   return (
     <>
-      {/* ── Hidden Label for PDF Export (60mm x 90mm ratio -> roughly 300x450px) ── */}
-      <div className="fixed -left-[9999px] top-0 pointer-events-none">
+      {/* ── Hidden Label for PDF Export (Flexible height) ── */}
+      <div className="absolute top-0 left-0 opacity-0 -z-50 pointer-events-none">
         <div
           ref={printRef}
-          className="bg-white overflow-hidden"
+          className="bg-white"
           style={{
             width: "300px",
-            height: "450px",
+            minHeight: "450px",
             padding: "24px",
             display: "flex",
             flexDirection: "column",
