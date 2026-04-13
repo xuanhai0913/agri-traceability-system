@@ -120,7 +120,7 @@ export default function BatchDetailPage() {
         scale: 3, // High res for print
         useCORS: true,
         backgroundColor: "#ffffff",
-        windowWidth: 300,
+        windowWidth: 320,
         windowHeight: printRef.current.scrollHeight,
       });
 
@@ -170,59 +170,59 @@ export default function BatchDetailPage() {
       <div className="absolute top-0 left-0 opacity-0 -z-50 pointer-events-none">
         <div
           ref={printRef}
-          className="bg-white relative"
+          className="relative overflow-hidden flex flex-col items-center box-border"
           style={{
-            width: "300px",
-            minHeight: "450px",
-            padding: "24px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "space-between",
+            width: "320px",
+            minHeight: "480px",
+            backgroundColor: "#f8fafc",
+            border: "2px solid #0f766e",
           }}
         >
-          {/* Decorative Watermark */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-             <img src="/images/logo.png" alt="" className="w-[180px] h-[180px] object-contain opacity-[0.03]" crossOrigin="anonymous" />
+          {/* Background Dotted Pattern */}
+          <div className="absolute inset-0 z-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(#10b98125 1.5px, transparent 1.5px)", backgroundSize: "16px 16px" }}></div>
+
+          {/* Dark Header Curve */}
+          <div className="w-full relative z-10 flex flex-col items-center pt-8 pb-12 shadow-2xl" style={{ backgroundColor: "#064e3b", borderBottomLeftRadius: "40px", borderBottomRightRadius: "40px" }}>
+            <div className="p-2.5 mb-2 rounded-[20px] shadow-lg" style={{ backgroundColor: "#ffffff" }}>
+              <img src="/images/logo.png" alt="Logo" className="w-[48px] h-[48px] object-contain" crossOrigin="anonymous" />
+            </div>
+            <h1 className="text-2xl font-black tracking-widest text-white mt-1" style={{ fontFamily: "sans-serif" }}>AGRITRACE</h1>
+            <div className="mt-2.5 px-3 py-1 border rounded-full" style={{ backgroundColor: "#10b981", borderColor: "#34d399" }}>
+              <p className="text-[8px] font-bold tracking-[0.2em] uppercase text-white leading-none pt-0.5">Verified Blockchain</p>
+            </div>
           </div>
 
-          {/* Header */}
-          <div className="flex flex-col items-center text-center relative z-10">
-            <img src="/images/logo.png" alt="Logo" className="w-[64px] h-[64px] mb-1.5 object-contain" crossOrigin="anonymous" />
-            <h1 className="text-2xl font-black leading-normal tracking-tighter" style={{ fontFamily: "sans-serif", color: "#064e3b" }}>AgriTrace</h1>
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase mt-1" style={{ color: "#059669" }}>Verified Blockchain</p>
-          </div>
-
-          {/* Product Name Box */}
-          <div className="text-center w-full py-3 px-3 rounded-xl my-3 border relative z-10" style={{ backgroundColor: "#ecfdf5", borderColor: "#d1fae5" }}>
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-2 leading-none" style={{ color: "#059669" }}>{t("dashboard.productName")}</p>
-            <p className="text-lg font-bold leading-normal uppercase pb-0.5" style={{ color: "#022c22", fontFamily: "sans-serif" }}>{batch.name}</p>
+          {/* Product Name Box (Overlapping Header) */}
+          <div className="w-[85%] rounded-[18px] shadow-xl p-4 text-center relative z-20 flex flex-col items-center justify-center" style={{ marginTop: "-26px", backgroundColor: "#ffffff", border: "1px solid #d1fae5", minHeight: "85px" }}>
+            <p className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "#059669" }}>{t("dashboard.productName")}</p>
+            <p className="text-[17px] font-bold leading-snug uppercase px-2" style={{ color: "#022c22", fontFamily: "sans-serif" }}>{batch.name}</p>
           </div>
 
           {/* QR Code Canvas */}
-          <div className="p-2">
+          <div className="mt-5 p-3 rounded-2xl relative z-10" style={{ backgroundColor: "#ffffff", border: "2px dashed #059669" }}>
             <QRCodeCanvas
               value={qrValue}
-              size={170}
+              size={150}
               level="H"
               bgColor="#ffffff"
-              fgColor="#022c22" // very dark emerald
+              fgColor="#022c22"
             />
+            {/* Subtle watermark in QR center */}
+            <img src="/images/logo.png" alt="" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60px] h-[60px] pointer-events-none" style={{ opacity: 0.15 }} crossOrigin="anonymous" />
           </div>
 
           {/* Footer Identifier */}
-          <div className="text-center w-full mt-2 relative z-10">
-            <div className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full mb-3" style={{ backgroundColor: "#d1fae5" }}>
-              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwNDc4NTciIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTEuMDhWMTJhMTAgMTAgMCAxIDEtNS45My05LjE0Ij48L3BhdGg+PHBvbHlsaW5lIHBvaW50cz0iMjIgNCAxMiAxNC4wMSA5IDExLjAxIj48L3BvbHlsaW5lPjwvc3ZnPg==" alt="Check" className="w-[14px] h-[14px]" />
-              <span className="text-sm font-bold tracking-wider" style={{ color: "#064e3b", fontFamily: "monospace", display: "inline-block", transform: "translateY(1px)" }}>{batchCode}</span>
+          <div className="flex-1 w-full flex flex-col justify-end items-center pb-6 mt-4 relative z-10 w-[85%]">
+            <div className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full mb-3 shadow-md w-full" style={{ backgroundColor: "#064e3b" }}>
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNhN2YzZDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTEuMDhWMTJhMTAgMTAgMCAxIDEtNS45My05LjE0Ij48L3BhdGg+PHBvbHlsaW5lIHBvaW50cz0iMjIgNCAxMiAxNC4wMSA5IDExLjAxIj48L3BvbHlsaW5lPjwvc3ZnPg==" alt="Check" className="w-[16px] h-[16px]" />
+              <span className="text-[14px] font-bold tracking-widest" style={{ color: "#ffffff", fontFamily: "monospace", display: "inline-block", transform: "translateY(1px)" }}>{batchCode}</span>
             </div>
             {batch.origin && (
-              <p className="text-[10px] mb-1.5 font-medium leading-normal px-2 flex justify-center items-center gap-1" style={{ color: "#64748b" }}>
-                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NDc0OGIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgMTBjMCA0Ljk5My01LjUzOSAxMC4xOTMtNy4zOTkgMTEuNzk5YTEgMSAwIDAgMS0xLjIwMiAwQzkuNTM5IDIwLjE5MyA0IDE0Ljk5MyA0IDEwYTggOCAwIDAgMSAxNiAwIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMCIgcj0iMyIvPjwvc3ZnPg==" alt="Location" className="w-[10px] h-[10px]" />
+              <p className="text-[10px] font-semibold leading-normal px-2 text-center flex justify-center items-center gap-1.5" style={{ color: "#475569" }}>
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NzU1NjkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgMTBjMCA0Ljk5My01LjUzOSAxMC4xOTMtNy4zOTkgMTEuNzk5YTEgMSAwIDAgMS0xLjIwMiAwQzkuNTM5IDIwLjE5MyA0IDE0Ljk5MyA0IDEwYTggOCAwIDAgMSAxNiAwIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMCIgcj0iMyIvPjwvc3ZnPg==" alt="Location" className="w-[10px] h-[10px]" />
                 {batch.origin}
               </p>
             )}
-            <p className="text-[8px] font-medium tracking-wide uppercase" style={{ color: "#94a3b8" }}>{t("batchDetail.scanToVerify")}</p>
           </div>
         </div>
       </div>
