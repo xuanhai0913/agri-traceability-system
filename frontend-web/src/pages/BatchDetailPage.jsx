@@ -120,6 +120,8 @@ export default function BatchDetailPage() {
         scale: 3, // High res for print
         useCORS: true,
         backgroundColor: "#ffffff",
+        windowWidth: 300,
+        windowHeight: printRef.current.scrollHeight,
       });
 
       const imgData = canvas.toDataURL("image/png");
@@ -182,14 +184,14 @@ export default function BatchDetailPage() {
           {/* Header */}
           <div className="flex flex-col items-center text-center">
             <img src="/images/logo.png" alt="Logo" className="w-[64px] h-[64px] mb-1.5 object-contain" crossOrigin="anonymous" />
-            <h1 className="text-2xl font-black leading-tight tracking-tighter" style={{ fontFamily: "sans-serif", color: "#064e3b" }}>AgriTrace</h1>
+            <h1 className="text-2xl font-black leading-normal tracking-tighter" style={{ fontFamily: "sans-serif", color: "#064e3b" }}>AgriTrace</h1>
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase mt-1" style={{ color: "#059669" }}>Verified Blockchain</p>
           </div>
 
           {/* Product Name Box */}
-          <div className="text-center w-full py-3 px-2 rounded-xl my-3 border" style={{ backgroundColor: "#ecfdf5", borderColor: "#d1fae5" }}>
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#059669" }}>{t("dashboard.productName")}</p>
-            <p className="text-lg font-bold leading-tight uppercase font-sans line-clamp-2" style={{ color: "#022c22" }}>{batch.name}</p>
+          <div className="text-center w-full py-3 px-3 rounded-xl my-3 border" style={{ backgroundColor: "#ecfdf5", borderColor: "#d1fae5" }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-2 leading-none" style={{ color: "#059669" }}>{t("dashboard.productName")}</p>
+            <p className="text-lg font-bold leading-normal uppercase pb-0.5" style={{ color: "#022c22", fontFamily: "sans-serif" }}>{batch.name}</p>
           </div>
 
           {/* QR Code Canvas */}
@@ -205,12 +207,12 @@ export default function BatchDetailPage() {
 
           {/* Footer Identifier */}
           <div className="text-center w-full mt-2">
-            <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full mb-3" style={{ backgroundColor: "#d1fae5" }}>
+            <div className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full mb-3" style={{ backgroundColor: "#d1fae5" }}>
               <BadgeCheck size={14} color="#047857" />
-              <span className="text-sm font-mono font-bold tracking-wider" style={{ color: "#064e3b" }}>{batchCode}</span>
+              <span className="text-sm font-bold tracking-wider" style={{ color: "#064e3b", fontFamily: "monospace", display: "inline-block", transform: "translateY(1px)" }}>{batchCode}</span>
             </div>
             {batch.origin && (
-              <p className="text-[10px] line-clamp-1 mb-1 font-medium" style={{ color: "#64748b" }}><MapPin size={10} className="inline mr-1 -mt-0.5" color="#64748b" />{batch.origin}</p>
+              <p className="text-[10px] mb-1.5 font-medium leading-normal px-2" style={{ color: "#64748b" }}><MapPin size={10} className="inline mr-1" color="#64748b" />{batch.origin}</p>
             )}
             <p className="text-[8px] font-medium tracking-wide uppercase" style={{ color: "#94a3b8" }}>{t("batchDetail.scanToVerify")}</p>
           </div>
