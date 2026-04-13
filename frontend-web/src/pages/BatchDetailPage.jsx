@@ -116,20 +116,26 @@ export default function BatchDetailPage() {
       // Wait a tick for safety
       await new Promise((resolve) => setTimeout(resolve, 100));
 
+      const scale = 2;
       const canvas = await html2canvas(printRef.current, {
-        scale: 2, // Reduce scale to prevent heavy huge PDF
+        scale: scale, // Reduce scale to prevent heavy huge PDF
         useCORS: true,
         backgroundColor: "#ffffff"
       });
 
       const imgData = canvas.toDataURL("image/png");
+      
+      // Use exact DOM dimensions to prevent any scaling clip
+      const pdfWidth = printRef.current.offsetWidth;
+      const pdfHeight = printRef.current.offsetHeight;
+
       const pdf = new jsPDF({
         orientation: "portrait",
-        unit: "pt",
-        format: [300, 450],
+        unit: "px",
+        format: [pdfWidth, pdfHeight],
       });
 
-      pdf.addImage(imgData, "PNG", 0, 0, 300, 450);
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`AgriTrace_${batchCode}.pdf`);
     } catch (err) {
       console.error("PDF Export Error:", err);
