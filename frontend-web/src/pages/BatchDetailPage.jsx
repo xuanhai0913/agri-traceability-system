@@ -170,7 +170,7 @@ export default function BatchDetailPage() {
       <div className="absolute top-0 left-0 opacity-0 -z-50 pointer-events-none">
         <div
           ref={printRef}
-          className="bg-white"
+          className="bg-white relative"
           style={{
             width: "300px",
             minHeight: "450px",
@@ -181,15 +181,20 @@ export default function BatchDetailPage() {
             justifyContent: "space-between",
           }}
         >
+          {/* Decorative Watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+             <img src="/images/logo.png" alt="" className="w-[180px] h-[180px] object-contain opacity-[0.03]" crossOrigin="anonymous" />
+          </div>
+
           {/* Header */}
-          <div className="flex flex-col items-center text-center">
+          <div className="flex flex-col items-center text-center relative z-10">
             <img src="/images/logo.png" alt="Logo" className="w-[64px] h-[64px] mb-1.5 object-contain" crossOrigin="anonymous" />
             <h1 className="text-2xl font-black leading-normal tracking-tighter" style={{ fontFamily: "sans-serif", color: "#064e3b" }}>AgriTrace</h1>
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase mt-1" style={{ color: "#059669" }}>Verified Blockchain</p>
           </div>
 
           {/* Product Name Box */}
-          <div className="text-center w-full py-3 px-3 rounded-xl my-3 border" style={{ backgroundColor: "#ecfdf5", borderColor: "#d1fae5" }}>
+          <div className="text-center w-full py-3 px-3 rounded-xl my-3 border relative z-10" style={{ backgroundColor: "#ecfdf5", borderColor: "#d1fae5" }}>
             <p className="text-[10px] font-bold uppercase tracking-wider mb-2 leading-none" style={{ color: "#059669" }}>{t("dashboard.productName")}</p>
             <p className="text-lg font-bold leading-normal uppercase pb-0.5" style={{ color: "#022c22", fontFamily: "sans-serif" }}>{batch.name}</p>
           </div>
@@ -206,13 +211,16 @@ export default function BatchDetailPage() {
           </div>
 
           {/* Footer Identifier */}
-          <div className="text-center w-full mt-2">
+          <div className="text-center w-full mt-2 relative z-10">
             <div className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full mb-3" style={{ backgroundColor: "#d1fae5" }}>
-              <BadgeCheck size={14} color="#047857" />
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwNDc4NTciIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTEuMDhWMTJhMTAgMTAgMCAxIDEtNS45My05LjE0Ij48L3BhdGg+PHBvbHlsaW5lIHBvaW50cz0iMjIgNCAxMiAxNC4wMSA5IDExLjAxIj48L3BvbHlsaW5lPjwvc3ZnPg==" alt="Check" className="w-[14px] h-[14px]" />
               <span className="text-sm font-bold tracking-wider" style={{ color: "#064e3b", fontFamily: "monospace", display: "inline-block", transform: "translateY(1px)" }}>{batchCode}</span>
             </div>
             {batch.origin && (
-              <p className="text-[10px] mb-1.5 font-medium leading-normal px-2" style={{ color: "#64748b" }}><MapPin size={10} className="inline mr-1" color="#64748b" />{batch.origin}</p>
+              <p className="text-[10px] mb-1.5 font-medium leading-normal px-2 flex justify-center items-center gap-1" style={{ color: "#64748b" }}>
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NDc0OGIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgMTBjMCA0Ljk5My01LjUzOSAxMC4xOTMtNy4zOTkgMTEuNzk5YTEgMSAwIDAgMS0xLjIwMiAwQzkuNTM5IDIwLjE5MyA0IDE0Ljk5MyA0IDEwYTggOCAwIDAgMSAxNiAwIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMCIgcj0iMyIvPjwvc3ZnPg==" alt="Location" className="w-[10px] h-[10px]" />
+                {batch.origin}
+              </p>
             )}
             <p className="text-[8px] font-medium tracking-wide uppercase" style={{ color: "#94a3b8" }}>{t("batchDetail.scanToVerify")}</p>
           </div>
