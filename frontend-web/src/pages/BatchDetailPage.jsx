@@ -182,14 +182,14 @@ export default function BatchDetailPage() {
           {/* Header */}
           <div className="flex flex-col items-center text-center">
             <img src="/images/logo.png" alt="Logo" className="w-[64px] h-[64px] mb-1.5 object-contain" crossOrigin="anonymous" />
-            <h1 className="text-2xl font-black text-emerald-900 leading-tight tracking-tighter" style={{ fontFamily: "sans-serif" }}>AgriTrace</h1>
-            <p className="text-[10px] text-emerald-600 font-bold tracking-[0.2em] uppercase mt-1">Verified Blockchain</p>
+            <h1 className="text-2xl font-black leading-tight tracking-tighter" style={{ fontFamily: "sans-serif", color: "#064e3b" }}>AgriTrace</h1>
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase mt-1" style={{ color: "#059669" }}>Verified Blockchain</p>
           </div>
 
           {/* Product Name Box */}
-          <div className="text-center w-full bg-emerald-50/80 py-3 px-2 rounded-xl my-3 border border-emerald-100/50">
-            <p className="text-[10px] text-emerald-600/80 font-bold uppercase tracking-wider mb-1">{t("dashboard.productName")}</p>
-            <p className="text-lg font-bold text-emerald-950 leading-tight uppercase font-sans line-clamp-2">{batch.name}</p>
+          <div className="text-center w-full py-3 px-2 rounded-xl my-3 border" style={{ backgroundColor: "#ecfdf5", borderColor: "#d1fae5" }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#059669" }}>{t("dashboard.productName")}</p>
+            <p className="text-lg font-bold leading-tight uppercase font-sans line-clamp-2" style={{ color: "#022c22" }}>{batch.name}</p>
           </div>
 
           {/* QR Code Canvas */}
@@ -205,14 +205,14 @@ export default function BatchDetailPage() {
 
           {/* Footer Identifier */}
           <div className="text-center w-full mt-2">
-            <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-100 rounded-full mb-3">
-              <BadgeCheck size={14} className="text-emerald-700" />
-              <span className="text-sm font-mono font-bold text-emerald-900 tracking-wider">{batchCode}</span>
+            <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full mb-3" style={{ backgroundColor: "#d1fae5" }}>
+              <BadgeCheck size={14} color="#047857" />
+              <span className="text-sm font-mono font-bold tracking-wider" style={{ color: "#064e3b" }}>{batchCode}</span>
             </div>
             {batch.origin && (
-              <p className="text-[10px] text-slate-500 line-clamp-1 mb-1 font-medium"><MapPin size={10} className="inline mr-1 -mt-0.5" />{batch.origin}</p>
+              <p className="text-[10px] line-clamp-1 mb-1 font-medium" style={{ color: "#64748b" }}><MapPin size={10} className="inline mr-1 -mt-0.5" color="#64748b" />{batch.origin}</p>
             )}
-            <p className="text-[8px] text-slate-400 font-medium tracking-wide uppercase">{t("batchDetail.scanToVerify")}</p>
+            <p className="text-[8px] font-medium tracking-wide uppercase" style={{ color: "#94a3b8" }}>{t("batchDetail.scanToVerify")}</p>
           </div>
         </div>
       </div>
