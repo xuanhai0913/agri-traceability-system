@@ -40,13 +40,13 @@ export default function Sidebar({ open, onClose }) {
     >
       {/* Logo */}
       <div className="px-6 py-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src="/images/logo.png" alt="AgriTrace Logo" className="w-12 h-12 rounded-xl object-contain shadow-sm border border-emerald-100" />
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-emerald-900 font-headline leading-tight">
+        <div className="flex items-center gap-2">
+          <img src="/images/logo.png" alt="AgriTrace Logo" className="w-16 h-16 object-contain drop-shadow-md" />
+          <div className="-mt-1">
+            <h1 className="text-2xl font-extrabold tracking-tight text-emerald-900 font-headline leading-tight">
               AgriTrace
             </h1>
-            <p className="text-emerald-600/70 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+            <p className="text-emerald-600/80 text-[10px] font-black uppercase tracking-widest mt-0.5">
               Blockchain System
             </p>
           </div>

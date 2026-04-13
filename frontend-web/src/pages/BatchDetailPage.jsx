@@ -181,7 +181,7 @@ export default function BatchDetailPage() {
         >
           {/* Header */}
           <div className="flex flex-col items-center text-center">
-            <img src="/images/logo.png" alt="Logo" className="w-14 h-14 rounded-xl mb-2 object-contain" crossOrigin="anonymous" />
+            <img src="/images/logo.png" alt="Logo" className="w-[64px] h-[64px] mb-1.5 object-contain" crossOrigin="anonymous" />
             <h1 className="text-2xl font-black text-emerald-900 leading-tight tracking-tighter" style={{ fontFamily: "sans-serif" }}>AgriTrace</h1>
             <p className="text-[10px] text-emerald-600 font-bold tracking-[0.2em] uppercase mt-1">Verified Blockchain</p>
           </div>
