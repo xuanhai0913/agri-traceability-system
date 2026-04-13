@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import {
   Check, ChevronRight, AlertCircle, X, Leaf, BadgeCheck,
   Printer, Share2, PlusCircle, RefreshCw, Shield, MapPin,
@@ -43,6 +45,10 @@ export default function BatchDetailPage() {
   const [showAddStage, setShowAddStage] = useState(false);
   const [newStage, setNewStage] = useState({ stage: "", description: "" });
   const [addingStage, setAddingStage] = useState(false);
+  
+  // PDF Printing
+  const printRef = useRef(null);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
     loadBatchData();
@@ -103,9 +109,34 @@ export default function BatchDetailPage() {
     return new Date(timestamp * 1000).toLocaleString(i18n.language === "vi" ? "vi-VN" : "en-US");
   }
 
-  function handlePrint() {
-    window.print();
-  }
+  const handlePrint = async () => {
+    if (!printRef.current) return;
+    try {
+      setIsPrinting(true);
+      // Wait a tick for safety
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(printRef.current, {
+        scale: 3, // High res for print
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [60, 90], // 60mm x 90mm label size
+      });
+
+      pdf.addImage(imgData, "PNG", 0, 0, 60, 90);
+      pdf.save(`AgriTrace_${batchCode}.pdf`);
+    } catch (err) {
+      console.error("PDF Export Error:", err);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
 
   if (loading) {
     return <BatchDetailSkeleton />;
@@ -133,6 +164,59 @@ export default function BatchDetailPage() {
 
   return (
     <>
+      {/* ── Hidden Label for PDF Export (60mm x 90mm ratio -> roughly 300x450px) ── */}
+      <div className="fixed -left-[9999px] top-0 pointer-events-none">
+        <div
+          ref={printRef}
+          className="bg-white overflow-hidden"
+          style={{
+            width: "300px",
+            height: "450px",
+            padding: "24px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          {/* Header */}
+          <div className="flex flex-col items-center text-center">
+            <img src="/images/logo.png" alt="Logo" className="w-14 h-14 rounded-xl mb-2 object-contain" crossOrigin="anonymous" />
+            <h1 className="text-2xl font-black text-emerald-900 leading-tight tracking-tighter" style={{ fontFamily: "sans-serif" }}>AgriTrace</h1>
+            <p className="text-[10px] text-emerald-600 font-bold tracking-[0.2em] uppercase mt-1">Verified Blockchain</p>
+          </div>
+
+          {/* Product Name Box */}
+          <div className="text-center w-full bg-emerald-50/80 py-3 px-2 rounded-xl my-3 border border-emerald-100/50">
+            <p className="text-[10px] text-emerald-600/80 font-bold uppercase tracking-wider mb-1">{t("dashboard.productName")}</p>
+            <p className="text-lg font-bold text-emerald-950 leading-tight uppercase font-sans line-clamp-2">{batch.name}</p>
+          </div>
+
+          {/* QR Code Canvas */}
+          <div className="p-2">
+            <QRCodeCanvas
+              value={qrValue}
+              size={170}
+              level="H"
+              bgColor="#ffffff"
+              fgColor="#022c22" // very dark emerald
+            />
+          </div>
+
+          {/* Footer Identifier */}
+          <div className="text-center w-full mt-2">
+            <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-100 rounded-full mb-3">
+              <BadgeCheck size={14} className="text-emerald-700" />
+              <span className="text-sm font-mono font-bold text-emerald-900 tracking-wider">{batchCode}</span>
+            </div>
+            {batch.origin && (
+              <p className="text-[10px] text-slate-500 line-clamp-1 mb-1 font-medium"><MapPin size={10} className="inline mr-1 -mt-0.5" />{batch.origin}</p>
+            )}
+            <p className="text-[8px] text-slate-400 font-medium tracking-wide uppercase">{t("batchDetail.scanToVerify")}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-xs text-outline mb-6">
         <Link to="/" className="hover:text-primary transition-colors">
@@ -264,10 +348,11 @@ export default function BatchDetailPage() {
               <div className="flex items-center gap-4">
                 <button
                   onClick={handlePrint}
-                  className="px-8 py-4 btn-primary-gradient rounded-2xl font-bold shadow-lg shadow-emerald-900/20 flex items-center gap-3"
+                  disabled={isPrinting}
+                  className="px-8 py-4 btn-primary-gradient rounded-2xl font-bold shadow-lg shadow-emerald-900/20 flex items-center gap-3 disabled:opacity-70 disabled:cursor-wait"
                 >
-                  <Printer size={20} />
-                  {t("batchDetail.printQR")}
+                  {isPrinting ? <Loader2 size={20} className="animate-spin" /> : <Printer size={20} />}
+                  {isPrinting ? t("common.loading") || "Exporting..." : t("batchDetail.printQR")}
                 </button>
                 <button className="p-4 bg-surface-container-high text-on-surface rounded-2xl hover:bg-surface-variant transition-colors">
                   <Share2 size={20} />
