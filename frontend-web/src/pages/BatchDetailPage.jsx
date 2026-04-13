@@ -117,21 +117,19 @@ export default function BatchDetailPage() {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(printRef.current, {
-        scale: 3, // High res for print
+        scale: 2, // Reduce scale to prevent heavy huge PDF
         useCORS: true,
-        backgroundColor: "#ffffff",
-        windowWidth: 320,
-        windowHeight: printRef.current.scrollHeight,
+        backgroundColor: "#ffffff"
       });
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
         orientation: "portrait",
-        unit: "px",
-        format: [canvas.width, canvas.height],
+        unit: "pt",
+        format: [300, 450],
       });
 
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.addImage(imgData, "PNG", 0, 0, 300, 450);
       pdf.save(`AgriTrace_${batchCode}.pdf`);
     } catch (err) {
       console.error("PDF Export Error:", err);
@@ -166,65 +164,46 @@ export default function BatchDetailPage() {
 
   return (
     <>
-      {/* ── Hidden Label for PDF Export (Flexible height) ── */}
+      {/* ── Hidden Label for PDF Export (Simple Static Layout) ── */}
       <div className="absolute top-0 left-0 opacity-0 -z-50 pointer-events-none">
         <div
           ref={printRef}
-          className="relative bg-white flex flex-col items-center box-border"
           style={{
-            width: "320px",
-            minHeight: "480px",
-            border: "2px solid #0f766e",
+            width: "300px",
+            height: "450px", // Fixed geometry to prevent stretch
+            backgroundColor: "#ffffff",
+            padding: "20px",
+            boxSizing: "border-box",
+            border: "2px solid #d1fae5",
+            fontFamily: "sans-serif"
           }}
         >
-          {/* Subtle Background Pattern */}
-          <div className="absolute inset-0 z-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(#10b98125 1.5px, transparent 1.5px)", backgroundSize: "16px 16px" }}></div>
-
-          {/* Secure Header */}
-          <div className="w-full flex flex-col items-center pt-6 pb-5 relative z-10 border-b-4" style={{ backgroundColor: "#064e3b", borderColor: "#0f766e" }}>
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="p-1 rounded-full bg-white shadow-sm flex items-center justify-center">
-                <img src="/images/logo.png" alt="Logo" className="w-[28px] h-[28px] object-contain" crossOrigin="anonymous" />
-              </div>
-              <h1 className="text-2xl font-black tracking-widest text-white" style={{ fontFamily: "sans-serif" }}>AGRITRACE</h1>
-            </div>
-            <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-emerald-200">Verified Blockchain</p>
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: "20px", paddingTop: "10px" }}>
+            <img src="/images/logo.png" style={{ width: "60px", height: "60px", objectFit: "contain", marginBottom: "5px" }} crossOrigin="anonymous" alt="Logo" />
+            <h1 style={{ fontSize: "24px", color: "#064e3b", margin: "0", fontWeight: "900", letterSpacing: "1px" }}>AgriTrace</h1>
+            <p style={{ fontSize: "10px", color: "#059669", margin: "4px 0 0 0", textTransform: "uppercase", fontWeight: "bold", letterSpacing: "2px" }}>Verified Blockchain</p>
           </div>
 
-          {/* Body Content */}
-          <div className="w-full flex flex-col items-center px-4 relative z-10 flex-1 pt-6 pb-6">
-            
-            {/* Product Name */}
-            <div className="text-center w-full py-3 mb-5 rounded-xl shadow-sm" style={{ backgroundColor: "#ffffff", border: "1px solid #10b981" }}>
-              <p className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "#059669" }}>{t("dashboard.productName")}</p>
-              <p className="text-[16px] font-bold leading-snug uppercase px-2" style={{ color: "#022c22", fontFamily: "sans-serif" }}>{batch.name}</p>
-            </div>
+          {/* Product Name */}
+          <div style={{ backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: "8px", padding: "12px", textAlign: "center", marginBottom: "24px" }}>
+            <p style={{ fontSize: "10px", color: "#059669", margin: "0 0 4px 0", textTransform: "uppercase", fontWeight: "bold" }}>{t("dashboard.productName")}</p>
+            <p style={{ fontSize: "18px", color: "#022c22", margin: "0", fontWeight: "bold", textTransform: "uppercase" }}>{batch.name}</p>
+          </div>
 
-            {/* QR box */}
-            <div className="mb-5 p-3 rounded-2xl bg-white relative" style={{ border: "2px dashed #059669" }}>
-              <QRCodeCanvas
-                value={qrValue}
-                size={160}
-                level="H"
-                bgColor="#ffffff"
-                fgColor="#022c22"
-              />
-              <img src="/images/logo.png" alt="" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60px] h-[60px] pointer-events-none" style={{ opacity: 0.15 }} crossOrigin="anonymous" />
-            </div>
+          {/* QR Code */}
+          <div style={{ textAlign: "center", marginBottom: "24px", display: "flex", justifyContent: "center" }}>
+            <QRCodeCanvas value={qrValue} size={140} level="H" bgColor="#ffffff" fgColor="#022c22" />
+          </div>
 
-            {/* Footer */}
-            <div className="flex-1 flex flex-col justify-end w-full space-y-3 mt-1">
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl shadow-sm" style={{ backgroundColor: "#064e3b" }}>
-                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNhN2YzZDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTEuMDhWMTJhMTAgMTAgMCAxIDEtNS45My05LjE0Ij48L3BhdGg+PHBvbHlsaW5lIHBvaW50cz0iMjIgNCAxMiAxNC4wMSA5IDExLjAxIj48L3BvbHlsaW5lPjwvc3ZnPg==" alt="Check" className="w-[14px] h-[14px]" />
-                <span className="text-[14px] font-bold tracking-widest" style={{ color: "#ffffff", fontFamily: "monospace", display: "inline-block", transform: "translateY(1px)" }}>{batchCode}</span>
-              </div>
-              {batch.origin && (
-                <p className="text-[10px] font-semibold leading-normal text-center flex justify-center items-center gap-1.5" style={{ color: "#475569" }}>
-                  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NzU1NjkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgMTBjMCA0Ljk5My01LjUzOSAxMC4xOTMtNy4zOTkgMTEuNzk5YTEgMSAwIDAgMS0xLjIwMiAwQzkuNTM5IDIwLjE5MyA0IDE0Ljk5MyA0IDEwYTggOCAwIDAgMSAxNiAwIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMCIgcj0iMyIvPjwvc3ZnPg==" alt="Location" className="w-[10px] h-[10px]" />
-                  {batch.origin}
-                </p>
-              )}
+          {/* Footer */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ display: "inline-block", backgroundColor: "#d1fae5", padding: "6px 20px", borderRadius: "20px", marginBottom: "8px" }}>
+              <span style={{ fontSize: "16px", color: "#064e3b", fontWeight: "bold", letterSpacing: "1px", fontFamily: "monospace" }}>{batchCode}</span>
             </div>
+            {batch.origin && (
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0", fontWeight: "500" }}>{batch.origin}</p>
+            )}
           </div>
         </div>
       </div>
