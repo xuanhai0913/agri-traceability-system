@@ -4,20 +4,23 @@ import { StatusBar } from "expo-status-bar";
 import HomeScreen from "./src/screens/HomeScreen";
 import ScannerScreen from "./src/screens/ScannerScreen";
 import BatchDetailScreen from "./src/screens/BatchDetailScreen";
+import ScanningHistoryScreen from "./src/screens/ScanningHistoryScreen"; // Thêm mới
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <StatusBar style="light" />
+      {/* Đổi status bar sang phông chữ tối vì nền app màu trắng */}
+      <StatusBar style="dark" />
       <Stack.Navigator
         initialRouteName="Home"
         screenOptions={{
-          headerStyle: { backgroundColor: "#0f172a" },
-          headerTintColor: "#f8fafc",
+          headerStyle: { backgroundColor: "#ffffff" },
+          headerTintColor: "#1e293b",
           headerTitleStyle: { fontWeight: "600" },
-          contentStyle: { backgroundColor: "#0f172a" },
+          contentStyle: { backgroundColor: "#f8fafc" },
+          headerShadowVisible: false, // Bỏ viền dưới của header cho mượt
         }}
       >
         <Stack.Screen
@@ -28,12 +31,17 @@ export default function App() {
         <Stack.Screen
           name="Scanner"
           component={ScannerScreen}
-          options={{ title: "Quet QR" }}
+          options={{ title: "Quét mã QR", headerTransparent: true, headerTintColor: "#fff" }}
+        />
+        <Stack.Screen
+          name="ScanningHistory"
+          component={ScanningHistoryScreen}
+          options={{ title: "Lịch sử quét" }}
         />
         <Stack.Screen
           name="BatchDetail"
           component={BatchDetailScreen}
-          options={{ title: "Chi tiet lo hang" }}
+          options={{ headerShown: false }} // Ẩn header mặc định để làm header custom có ảnh
         />
       </Stack.Navigator>
     </NavigationContainer>

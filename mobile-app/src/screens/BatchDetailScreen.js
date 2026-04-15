@@ -1,252 +1,145 @@
-import { useEffect, useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-} from "react-native";
-import { getBatch, getStageHistory } from "../services/api";
+import React from "react";
+import { StyleSheet, Text, View, ScrollView, Image, SafeAreaView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-// Maps stage index to Vietnamese label
-const STAGE_LABELS = {
-  0: "Gieo trong",
-  1: "Phat trien",
-  2: "Bon phan",
-  3: "Thu hoach",
-  4: "Dong goi",
-  5: "Van chuyen",
-  6: "Hoan thanh",
-};
+// MOCK DATA CÓ CHỨA LINK CLOUDINARY THỰC TẾ ĐỂ TEST
+const DUMMY_TIMELINE = [
+  {
+    id: 1,
+    stageName: "Đóng gói & Phân phối",
+    time: "14/10/2023 • 09:42 AM",
+    icon: "cube-outline",
+    handler: { name: "Nguyễn Xuân Hải" },
+    // Link Cloudinary test (Sử dụng chuẩn HTTPS)
+    images: ["https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg"],
+    metadata: [ { label: "Nhiệt độ kho", value: "22°C" } ],
+  },
+  {
+    id: 2,
+    stageName: "Thu hoạch & Sơ chế",
+    time: "28/09/2023 • Nông trại Đà Lạt",
+    icon: "leaf-outline",
+    handler: { name: "Trần Gia Huy" },
+    images: [],
+    metadata: [ { label: "Phương pháp", value: "Sơ chế khô (Natural)" } ],
+  },
+  {
+    id: 3,
+    stageName: "Bón phân & Chăm sóc",
+    time: "15/06/2023 • Nông trại Đà Lạt",
+    icon: "water-outline",
+    handler: { name: "Trần Gia Huy" },
+    images: ["https://res.cloudinary.com/demo/image/upload/v1612459992/sample_fruit.jpg"],
+    metadata: [ { label: "Loại phân", value: "Hữu cơ sinh học" } ],
+  }
+];
 
-/**
- * BatchDetailScreen
- * Shows product info + timeline of growth stages
- * Sequence diagram steps 5-14:
- * - Loading state (step 5)
- * - GET /api/batches/{batchId} (step 6)
- * - Parallel image loading from Cloudinary (step 10)
- * - Render timeline (step 13)
- */
 export default function BatchDetailScreen({ route }) {
-  const { batchId } = route.params;
-  const [batch, setBatch] = useState(null);
-  const [stages, setStages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    loadBatchData();
-  }, [batchId]);
-
-  async function loadBatchData() {
-    try {
-      setLoading(true);
-      // Parallel fetch: batch info + stage history (matching "par" block in sequence diagram)
-      const [batchRes, historyRes] = await Promise.all([
-        getBatch(batchId),
-        getStageHistory(batchId),
-      ]);
-
-      setBatch(batchRes.data.data);
-      setStages(historyRes.data.data.stages);
-    } catch (err) {
-      setError(err.response?.data?.message || "Khong the tai du lieu");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#10b981" />
-        <Text style={styles.loadingText}>Dang tai du lieu...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
+  const { batchId } = route.params || { batchId: "N/A" };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Batch info header */}
-      <View style={styles.header}>
-        <Text style={styles.batchName}>{batch?.name}</Text>
-        <Text style={styles.origin}>{batch?.origin}</Text>
-        <View style={styles.statusRow}>
-          <View
-            style={[
-              styles.badge,
-              batch?.isActive ? styles.badgeActive : styles.badgeCompleted,
-            ]}
-          >
-            <Text style={styles.badgeText}>
-              {batch?.isActive ? "Dang xu ly" : "Hoan thanh"}
-            </Text>
-          </View>
-          <Text style={styles.stageLabel}>
-            {STAGE_LABELS[batch?.currentStageIndex] || batch?.currentStage}
-          </Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Header thông tin Lô Hàng */}
+        <View style={styles.headerBlock}>
+          <Text style={styles.headerTitle}>Chi tiết lô hàng</Text>
+          <Text style={styles.batchIdText}>#{batchId}</Text>
         </View>
-      </View>
 
-      {/* Timeline */}
-      <Text style={styles.sectionTitle}>Hanh trinh san pham</Text>
-      {stages.map((stage, index) => (
-        <View key={index} style={styles.timelineItem}>
-          <View style={styles.timelineDot} />
-          {index < stages.length - 1 && <View style={styles.timelineLine} />}
+        {/* Khối TIMELINE tự code - Chuẩn UI UX */}
+        <View style={styles.timelineContainer}>
+          {DUMMY_TIMELINE.map((item, index) => {
+            const isLast = index === DUMMY_TIMELINE.length - 1;
+            
+            return (
+              <View key={item.id} style={styles.timelineItem}>
+                
+                {/* Cột trái: Nút icon & Đường kẻ */}
+                <View style={styles.leftCol}>
+                  <View style={styles.timelineIcon}>
+                    <Ionicons name={item.icon} size={20} color="#fff" />
+                  </View>
+                  {/* Không vẽ đường thẳng nếu là item cuối cùng */}
+                  {!isLast && <View style={styles.timelineLine} />}
+                </View>
 
-          <View style={styles.timelineContent}>
-            <Text style={styles.stageName}>
-              {STAGE_LABELS[stage.stageIndex] || stage.stage}
-            </Text>
-            {stage.description ? (
-              <Text style={styles.stageDesc}>{stage.description}</Text>
-            ) : null}
-            <Text style={styles.stageTime}>
-              {new Date(stage.timestamp * 1000).toLocaleString("vi-VN")}
-            </Text>
-            {stage.imageUrl ? (
-              <Image
-                source={{ uri: stage.imageUrl }}
-                style={styles.stageImage}
-                resizeMode="cover"
-              />
-            ) : null}
-          </View>
+                {/* Cột phải: Nội dung chi tiết */}
+                <View style={[styles.rightCol, isLast && styles.rightColLast]}>
+                  <Text style={styles.stageTitle}>{item.stageName}</Text>
+                  <Text style={styles.timeText}>{item.time}</Text>
+                  
+                  {/* Người phụ trách */}
+                  <View style={styles.handlerRow}>
+                    <Ionicons name="person-circle-outline" size={16} color="#64748b" />
+                    <Text style={styles.handlerText}>{item.handler.name}</Text>
+                  </View>
+
+                  {/* Hiển thị hình ảnh từ Cloudinary */}
+                  {item.images && item.images.length > 0 && (
+                    <View style={styles.imageGrid}>
+                      {item.images.map((imgUrl, imgIdx) => (
+                        <Image 
+                          key={imgIdx} 
+                          source={{ uri: imgUrl }} 
+                          style={styles.stageImage}
+                          resizeMode="cover" // Tránh vỡ ảnh
+                        />
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Hiển thị Metadata bổ sung */}
+                  {item.metadata && (
+                    <View style={styles.metaBox}>
+                      {item.metadata.map((meta, mIdx) => (
+                        <Text key={mIdx} style={styles.metaText}>
+                          <Text style={styles.metaLabel}>{meta.label}: </Text>
+                          {meta.value}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+
+              </View>
+            );
+          })}
         </View>
-      ))}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0f172a",
-  },
-  centered: {
-    flex: 1,
-    backgroundColor: "#0f172a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: {
-    color: "#94a3b8",
-    marginTop: 12,
-  },
-  errorText: {
-    color: "#ef4444",
-    fontSize: 16,
-    padding: 24,
-    textAlign: "center",
-  },
-  header: {
-    padding: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1e293b",
-  },
-  batchName: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#f8fafc",
-    marginBottom: 4,
-  },
-  origin: {
-    fontSize: 14,
-    color: "#94a3b8",
-    marginBottom: 12,
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  badgeActive: {
-    backgroundColor: "rgba(16,185,129,0.15)",
-  },
-  badgeCompleted: {
-    backgroundColor: "rgba(251,191,36,0.15)",
-  },
-  badgeText: {
-    color: "#10b981",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  stageLabel: {
-    color: "#94a3b8",
-    fontSize: 13,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#f8fafc",
-    padding: 24,
-    paddingBottom: 12,
-  },
-  timelineItem: {
-    flexDirection: "row",
-    paddingHorizontal: 24,
-    marginBottom: 2,
-  },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#10b981",
-    marginTop: 4,
-    marginRight: 16,
-    zIndex: 1,
-  },
-  timelineLine: {
-    position: "absolute",
-    left: 29,
-    top: 16,
-    bottom: -2,
-    width: 2,
-    backgroundColor: "#1e293b",
-  },
-  timelineContent: {
-    flex: 1,
-    paddingBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1e293b",
-    marginBottom: 12,
-  },
-  stageName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#f8fafc",
-    marginBottom: 4,
-  },
-  stageDesc: {
-    fontSize: 14,
-    color: "#94a3b8",
-    marginBottom: 4,
-  },
-  stageTime: {
-    fontSize: 12,
-    color: "#64748b",
-    marginBottom: 8,
-  },
-  stageImage: {
-    width: "100%",
-    height: 180,
-    borderRadius: 8,
-    marginTop: 8,
-  },
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  scrollContent: { padding: 20 },
+  
+  headerBlock: { marginBottom: 30, paddingBottom: 20, borderBottomWidth: 1, borderColor: "#e2e8f0" },
+  headerTitle: { fontSize: 24, fontWeight: "700", color: "#0f172a" },
+  batchIdText: { fontSize: 16, color: "#10b981", fontWeight: "600", marginTop: 4 },
+
+  timelineContainer: { marginTop: 10 },
+  timelineItem: { flexDirection: "row" },
+  
+  // Left Column (Icon & Line)
+  leftCol: { alignItems: "center", width: 40, marginRight: 12 },
+  timelineIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#10b981", justifyContent: "center", alignItems: "center", zIndex: 2 },
+  timelineLine: { width: 2, flex: 1, backgroundColor: "#cbd5e1", marginTop: -4, marginBottom: -4, zIndex: 1 },
+  
+  // Right Column (Content Card)
+  rightCol: { flex: 1, paddingBottom: 32 },
+  rightColLast: { paddingBottom: 0 }, // Căn bỏ khoảng trống dưới cùng nếu là bước cuối
+  stageTitle: { fontSize: 18, fontWeight: "600", color: "#1e293b", marginBottom: 4 },
+  timeText: { fontSize: 13, color: "#64748b", marginBottom: 8 },
+  handlerRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  handlerText: { fontSize: 14, color: "#475569", marginLeft: 6 },
+  
+  // Image Rendering (Cloudinary)
+  imageGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  stageImage: { width: "100%", height: 160, borderRadius: 12, backgroundColor: "#e2e8f0" }, // Dùng tỷ lệ hình chữ nhật cho đẹp
+  
+  // Metadata Box
+  metaBox: { backgroundColor: "#f1f5f9", padding: 12, borderRadius: 8 },
+  metaText: { fontSize: 13, color: "#334155", marginBottom: 2 },
+  metaLabel: { fontWeight: "600", color: "#64748b" },
 });
