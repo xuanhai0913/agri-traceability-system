@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import {
   ChevronRight, AlertCircle, X, FileText,
   MapPin, Lock, CloudUpload, Loader2, Wallet,
-  Save, Trash2,
+  Save, Trash2, UserCheck,
 } from "lucide-react";
-import { createBatch, uploadImage } from "../services/api";
+import { createBatch, getProducers, uploadImage } from "../services/api";
 import { toast } from "react-hot-toast";
 
 const DRAFT_KEY = "agritrace:create-batch-draft";
@@ -20,7 +20,11 @@ export default function CreateBatchPage() {
     name: "",
     origin: "",
     description: "",
+    producerId: "",
+    producerRole: "primary_producer",
   });
+  const [producers, setProducers] = useState([]);
+  const [producersLoading, setProducersLoading] = useState(true);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -38,6 +42,8 @@ export default function CreateBatchPage() {
         name: parsed.name || "",
         origin: parsed.origin || "",
         description: parsed.description || "",
+        producerId: parsed.producerId || "",
+        producerRole: parsed.producerRole || "primary_producer",
       });
       if (parsed.savedAt) setDraftMeta({ savedAt: parsed.savedAt, restored: true });
     } catch {
@@ -45,8 +51,35 @@ export default function CreateBatchPage() {
     }
   }, []);
 
+  useEffect(() => {
+    async function loadProducers() {
+      try {
+        setProducersLoading(true);
+        const res = await getProducers();
+        setProducers(res.data.data || []);
+      } catch {
+        setProducers([]);
+      } finally {
+        setProducersLoading(false);
+      }
+    }
+
+    loadProducers();
+  }, []);
+
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  function handleProducerChange(e) {
+    const producerId = e.target.value;
+    const producer = producers.find((item) => String(item.id) === producerId);
+
+    setForm((current) => ({
+      ...current,
+      producerId,
+      origin: current.origin || producer?.location || "",
+    }));
   }
 
   function handleFileSelect(e) {
@@ -92,6 +125,11 @@ export default function CreateBatchPage() {
       return;
     }
 
+    if (producers.length > 0 && !form.producerId) {
+      setError("Vui lòng chọn nhà sản xuất/đối tác để liên kết lô hàng.");
+      return;
+    }
+
     try {
       setSubmitting(true);
       let imageUrl = "";
@@ -109,6 +147,9 @@ export default function CreateBatchPage() {
         name: form.name.trim(),
         origin: form.origin.trim(),
         imageUrl,
+        producerId: form.producerId ? Number(form.producerId) : undefined,
+        producerRole: form.producerRole,
+        producerNotes: "Linked from AgriTrace Create Batch form",
       });
 
       const batchId = res.data.data.batchId;
@@ -147,6 +188,8 @@ export default function CreateBatchPage() {
       name: "",
       origin: "",
       description: "",
+      producerId: "",
+      producerRole: "primary_producer",
     });
     setImageFile(null);
     setImagePreview(null);
@@ -154,6 +197,10 @@ export default function CreateBatchPage() {
     setDraftMeta(null);
     toast.success("Đã xóa bản nháp.", { duration: 2500 });
   }
+
+  const selectedProducer = producers.find(
+    (producer) => String(producer.id) === String(form.producerId)
+  );
 
   function formatDraftTime(value) {
     if (!value) return "";
@@ -242,6 +289,59 @@ export default function CreateBatchPage() {
                     placeholder={t("createBatch.namePlaceholder")}
                     required
                   />
+                </div>
+
+                {/* Producer Link */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
+                    Nhà sản xuất / đối tác liên kết
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-3">
+                    <select
+                      name="producerId"
+                      value={form.producerId}
+                      onChange={handleProducerChange}
+                      className="input-ledger"
+                      disabled={producersLoading}
+                      required={producers.length > 0}
+                    >
+                      <option value="">
+                        {producersLoading
+                          ? "Đang tải danh sách..."
+                          : "Chọn producer từ database"}
+                      </option>
+                      {producers.map((producer) => (
+                        <option key={producer.id} value={producer.id}>
+                          {producer.name} — {producer.location}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      name="producerRole"
+                      value={form.producerRole}
+                      onChange={handleChange}
+                      className="input-ledger"
+                    >
+                      <option value="primary_producer">NSX chính</option>
+                      <option value="distributor">Nhà phân phối</option>
+                      <option value="processor">Đơn vị xử lý</option>
+                      <option value="inspector">Đơn vị kiểm định</option>
+                    </select>
+                  </div>
+                  {selectedProducer && (
+                    <div className="mt-3 flex items-start gap-3 rounded-xl bg-emerald-50 border border-emerald-100 p-4">
+                      <UserCheck size={18} className="text-emerald-700 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-bold text-emerald-900">
+                          {selectedProducer.name}
+                        </p>
+                        <p className="text-xs text-emerald-700 mt-0.5">
+                          {selectedProducer.location} •{" "}
+                          {selectedProducer.linkedBatchCount || 0} lô hàng đã liên kết
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Origin (= "Vị trí trang trại" in design) */}

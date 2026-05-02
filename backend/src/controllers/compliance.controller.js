@@ -1,4 +1,8 @@
 const { getProvider, getReadOnlyContract } = require("../config/blockchain");
+const {
+  attachProducerLinksToBatches,
+  getBatchLinksByBatchIds,
+} = require("../services/batch-metadata.service");
 
 const STAGE_NAMES = [
   "Seeding",
@@ -77,12 +81,16 @@ async function loadBatchEvidence(contract) {
   }
 
   const active = items.filter((item) => item.isActive).length;
+  const producerLinks = await getBatchLinksByBatchIds(
+    items.map((item) => item.id)
+  ).catch(() => []);
+  const enrichedItems = attachProducerLinksToBatches(items, producerLinks);
 
   return {
     total,
     active,
-    completed: items.length - active,
-    items,
+    completed: enrichedItems.length - active,
+    items: enrichedItems,
     available: true,
   };
 }

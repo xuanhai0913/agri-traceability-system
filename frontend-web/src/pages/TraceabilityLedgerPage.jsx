@@ -90,6 +90,7 @@ export default function TraceabilityLedgerPage() {
       !search ||
       b.name.toLowerCase().includes(query) ||
       (b.origin || "").toLowerCase().includes(query) ||
+      (b.primaryProducer?.name || "").toLowerCase().includes(query) ||
       batchCode.includes(query.replace(/^#/, "")) ||
       batchId.includes(normalizedQuery);
     const matchStage =
@@ -243,7 +244,7 @@ export default function TraceabilityLedgerPage() {
                   <th className="px-6 py-4">{t("batchDetail.farmOrigin")}</th>
                   <th className="px-6 py-4">{t("dashboard.dateCreated")}</th>
                   <th className="px-6 py-4">{t("dashboard.status")}</th>
-                  <th className="px-6 py-4">{t("dashboard.status")}</th>
+                  <th className="px-6 py-4">Producer</th>
                   <th className="px-6 py-4 text-right">{t("dashboard.actions")}</th>
                 </tr>
               </thead>
@@ -291,15 +292,18 @@ export default function TraceabilityLedgerPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span
-                          className={`text-xs font-bold ${
-                            batch.isActive
-                              ? "text-emerald-600"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          {batch.isActive ? "Active" : "Completed"}
-                        </span>
+                        {batch.primaryProducer ? (
+                          <Link
+                            to={`/producers/${batch.primaryProducer.id}`}
+                            className="text-xs font-bold text-emerald-700 hover:underline"
+                          >
+                            {batch.primaryProducer.name}
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-slate-400">
+                            Chưa liên kết
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <Link

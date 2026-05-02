@@ -50,6 +50,11 @@ function normalizeProducerPayload(payload) {
 }
 
 function toApiProducer(row) {
+  const linkedBatchCount =
+    row.linked_batch_count === undefined || row.linked_batch_count === null
+      ? null
+      : Number(row.linked_batch_count);
+
   return {
     id: Number(row.id),
     name: row.name,
@@ -59,7 +64,11 @@ function toApiProducer(row) {
     location: row.location,
     status: row.status,
     certifications: row.certifications || [],
-    activeBatches: Number(row.active_batches || 0),
+    activeBatches:
+      linkedBatchCount === null ? Number(row.active_batches || 0) : linkedBatchCount,
+    linkedBatchCount:
+      linkedBatchCount === null ? Number(row.active_batches || 0) : linkedBatchCount,
+    profileActiveBatches: Number(row.active_batches || 0),
     image: row.image_url || DEFAULT_IMAGE,
     description: row.description || "",
     farmingMethods: row.farming_methods || [],
@@ -181,18 +190,57 @@ async function syncProducerIdentitySequence() {
 }
 
 async function listProducers() {
-  if (!hasDatabase()) return seedProducers;
+  if (!hasDatabase()) {
+    return seedProducers.map((producer) => ({
+      ...producer,
+      activeBatches: 0,
+      linkedBatchCount: 0,
+      profileActiveBatches: producer.activeBatches || 0,
+    }));
+  }
 
-  const res = await query("SELECT * FROM producers ORDER BY id ASC");
+  const res = await query(`
+    SELECT
+      p.*,
+      COALESCE(link_counts.count, 0)::int AS linked_batch_count
+    FROM producers p
+    LEFT JOIN (
+      SELECT producer_id, COUNT(*)::int AS count
+      FROM batch_producer_links
+      GROUP BY producer_id
+    ) link_counts ON link_counts.producer_id = p.id
+    ORDER BY p.id ASC
+  `);
   return res.rows.map(toApiProducer);
 }
 
 async function getProducerById(id) {
   if (!hasDatabase()) {
-    return seedProducers.find((producer) => producer.id === Number(id)) || null;
+    const producer = seedProducers.find((item) => item.id === Number(id));
+    if (!producer) return null;
+    return {
+      ...producer,
+      activeBatches: 0,
+      linkedBatchCount: 0,
+      profileActiveBatches: producer.activeBatches || 0,
+    };
   }
 
-  const res = await query("SELECT * FROM producers WHERE id = $1", [id]);
+  const res = await query(
+    `
+    SELECT
+      p.*,
+      COALESCE(link_counts.count, 0)::int AS linked_batch_count
+    FROM producers p
+    LEFT JOIN (
+      SELECT producer_id, COUNT(*)::int AS count
+      FROM batch_producer_links
+      GROUP BY producer_id
+    ) link_counts ON link_counts.producer_id = p.id
+    WHERE p.id = $1
+    `,
+    [id]
+  );
   return res.rows[0] ? toApiProducer(res.rows[0]) : null;
 }
 

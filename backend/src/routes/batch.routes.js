@@ -27,7 +27,7 @@ router.get("/", getAllBatches);
 /**
  * POST /api/batches
  * Tạo lô hàng mới
- * Body: { name, origin, imageUrl }
+ * Body: { name, origin, imageUrl, producerId, producerRole }
  */
 router.post("/", createBatch);
 

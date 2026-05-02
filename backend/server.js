@@ -1,11 +1,13 @@
 require("dotenv").config();
 const app = require("./src/app");
 const { initProducerStore } = require("./src/services/producer.service");
+const { initBatchMetadataStore } = require("./src/services/batch-metadata.service");
 
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   await initProducerStore();
+  await initBatchMetadataStore();
 
   // Bind 0.0.0.0 — required by Render/Railway/Koyeb
   app.listen(PORT, "0.0.0.0", () => {

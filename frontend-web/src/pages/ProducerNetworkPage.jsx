@@ -229,7 +229,7 @@ export default function ProducerNetworkPage() {
                 <div className="border-t border-emerald-50 pt-4">
                   <div className="flex justify-between items-center text-xs mb-3">
                     <span className="text-slate-400 font-medium">
-                      {t("producers.activeBatches")}
+                      {isVi ? "Lô hàng liên kết thật" : "Linked batches"}
                     </span>
                     <span className="text-emerald-900 font-bold">
                       {producer.activeBatches} {t("common.batches")}

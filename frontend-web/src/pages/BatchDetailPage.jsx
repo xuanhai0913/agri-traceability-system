@@ -6,8 +6,8 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import {
   Check, ChevronRight, AlertCircle, X, Leaf, BadgeCheck,
-  Printer, PlusCircle, RefreshCw, Shield, MapPin,
-  Loader2, Copy, Share2,
+  Printer, PlusCircle, RefreshCw, Shield,
+  Loader2, Copy, Share2, Users, ExternalLink,
 } from "lucide-react";
 import { getBatch, getStageHistory, addStage } from "../services/api";
 import { BatchDetailSkeleton } from "../components/ui/Skeleton";
@@ -194,6 +194,8 @@ export default function BatchDetailPage() {
   const batchCode = `BTC-${String(batch.id).padStart(4, "0")}`;
   const qrValue = `${window.location.origin}/batches/${batch.id}`;
   const currentStageIdx = batch.currentStageIndex ?? 0;
+  const producerLinks = batch.producerLinks || [];
+  const primaryProducer = batch.primaryProducer;
 
   return (
     <>
@@ -285,6 +287,30 @@ export default function BatchDetailPage() {
                 <p className="font-headline font-bold text-emerald-900">
                   {batch.origin || "—"}
                 </p>
+              </div>
+              <div>
+                <p className="text-xs text-outline mb-1">Producer link</p>
+                {primaryProducer ? (
+                  <Link
+                    to={`/producers/${primaryProducer.id}`}
+                    className="group flex items-start gap-2 rounded-xl bg-emerald-50 p-3 hover:bg-emerald-100 transition-colors"
+                  >
+                    <Users size={16} className="text-emerald-700 shrink-0 mt-0.5" />
+                    <span className="min-w-0">
+                      <span className="block font-headline font-bold text-emerald-900 group-hover:underline">
+                        {primaryProducer.name}
+                      </span>
+                      <span className="block text-[10px] text-emerald-700 mt-0.5">
+                        {batch.primaryProducerRoleLabel || "Đã liên kết metadata"}
+                      </span>
+                    </span>
+                    <ExternalLink size={13} className="text-emerald-700 ml-auto shrink-0" />
+                  </Link>
+                ) : (
+                  <p className="text-xs text-slate-500 rounded-xl bg-surface-container-low p-3">
+                    Chưa có producer metadata cho lô này.
+                  </p>
+                )}
               </div>
               <div>
                 <p className="text-xs text-outline mb-1">{t("dashboard.dateCreated")}</p>
@@ -559,13 +585,18 @@ export default function BatchDetailPage() {
         </div>
         <div className="bg-surface-container-low p-5 rounded-2xl flex items-center gap-4">
           <div className="w-11 h-11 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
-            <MapPin size={22} />
+            <Users size={22} />
           </div>
           <div>
             <h4 className="font-bold text-on-surface text-sm">
-              Origin Tracked
+              Producer Linked
             </h4>
             <p className="text-xs text-outline">{batch.origin || "—"}</p>
+            {producerLinks.length > 0 && (
+              <p className="text-[10px] text-emerald-700 mt-0.5">
+                {producerLinks.length} metadata link
+              </p>
+            )}
           </div>
         </div>
       </div>

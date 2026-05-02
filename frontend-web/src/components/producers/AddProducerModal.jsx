@@ -17,7 +17,6 @@ const INITIAL_FORM = {
   coordinates: "",
   totalArea: "",
   elevation: "",
-  activeBatches: "0",
   certifications: "",
   audits: "",
   farmingMethods: "",
@@ -83,7 +82,6 @@ export default function AddProducerModal({ onClose, onCreated }) {
         ...form,
         name: form.name.trim(),
         location: form.location.trim(),
-        activeBatches: Number(form.activeBatches) || 0,
         certifications: toList(form.certifications),
         audits: parseAudits(form.audits),
         farmingMethods: toList(form.farmingMethods),
@@ -143,7 +141,8 @@ export default function AddProducerModal({ onClose, onCreated }) {
                   Dữ liệu nhập ở đây được lưu vào PostgreSQL backend.
                 </p>
                 <p className="text-xs text-emerald-700 mt-1">
-                  Chứng nhận và kiểm định demo nên ghi rõ Demo/Test để tránh bị hiểu là chứng nhận pháp lý thật.
+                  Số lô hàng không nhập tay nữa; hệ thống tự tính từ các batch on-chain đã liên kết.
+                  Chứng nhận và kiểm định demo nên ghi rõ Demo/Test.
                 </p>
               </div>
             </div>
@@ -210,13 +209,6 @@ export default function AddProducerModal({ onClose, onCreated }) {
                 value={form.elevation}
                 onChange={(value) => updateField("elevation", value)}
                 placeholder="Demo/Test profile"
-              />
-              <Field
-                label="Lô đang hoạt động"
-                value={form.activeBatches}
-                onChange={(value) => updateField("activeBatches", value)}
-                type="number"
-                min="0"
               />
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">

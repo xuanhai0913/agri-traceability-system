@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   getProducer,
+  getProducerBatches,
   getProducers,
   postProducer,
   requireAdminToken,
@@ -19,6 +20,12 @@ router.get("/", getProducers);
  * Create producer profile from admin UI
  */
 router.post("/", requireAdminToken, postProducer);
+
+/**
+ * GET /api/producers/:id/batches
+ * List on-chain batches linked to a producer profile
+ */
+router.get("/:id/batches", getProducerBatches);
 
 /**
  * GET /api/producers/:id

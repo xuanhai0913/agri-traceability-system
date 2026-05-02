@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import {
   MapPin, Package, ShieldCheck, Leaf, CheckCircle,
   Users, Globe, Droplets, Scale, ClipboardCheck, Sprout,
-  Phone, Mail, ExternalLink, Contact, Satellite,
+  Phone, Mail, ExternalLink, Contact, Satellite, ArrowRight,
 } from "lucide-react";
-import { getProducer } from "../services/api";
+import { getProducer, getProducerBatches } from "../services/api";
 import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
 
 const AUDIT_ICONS = {
@@ -19,6 +19,7 @@ export default function ProducerDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
   const [producer, setProducer] = useState(null);
+  const [linkedBatches, setLinkedBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showContact, setShowContact] = useState(false);
 
@@ -29,8 +30,15 @@ export default function ProducerDetailPage() {
   async function loadProducer() {
     try {
       setLoading(true);
-      const res = await getProducer(id);
-      setProducer(res.data.data);
+      const producerRes = await getProducer(id);
+      setProducer(producerRes.data.data);
+      try {
+        const batchesRes = await getProducerBatches(id);
+        setLinkedBatches(batchesRes.data.data.batches || []);
+      } catch (batchError) {
+        console.error("Producer batch link load error:", batchError);
+        setLinkedBatches([]);
+      }
     } catch (err) {
       console.error("Producer load error:", err);
     } finally {
@@ -63,12 +71,8 @@ export default function ProducerDetailPage() {
     );
   }
 
-  const activeBatchItems = Array.isArray(producer.activeBatches)
-    ? producer.activeBatches
-    : [];
-  const activeBatchCount = Array.isArray(producer.activeBatches)
-    ? activeBatchItems.length
-    : producer.activeBatches || 0;
+  const activeBatchItems = linkedBatches;
+  const activeBatchCount = linkedBatches.length;
   const certifications = producer.certifications || [];
   const farmingMethods = producer.farmingMethods || [];
   const socialImpact = producer.socialImpact || [];
@@ -80,6 +84,15 @@ export default function ProducerDetailPage() {
     : "";
   const mapQuery = encodeURIComponent(producer.coordinates || producer.location || "");
   const satelliteUrl = `https://www.google.com/maps?q=${mapQuery}&t=k`;
+
+  function formatDate(timestamp) {
+    if (!timestamp) return "—";
+    return new Date(timestamp * 1000).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
 
   return (
     <>
@@ -311,74 +324,65 @@ export default function ProducerDetailPage() {
             </div>
           </section>
 
-          {/* Active Batches */}
-          {activeBatchItems.length > 0 && (
-            <section>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-emerald-900 font-headline">
-                  {t("producerDetail.activeBatchesTitle")}
-                </h2>
-                <Link
-                  to="/batches"
-                  className="text-sm font-semibold text-primary hover:underline"
-                >
-                  {t("producerDetail.viewLedger")}
-                </Link>
+          {/* Linked Batches */}
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-emerald-900 font-headline">
+                {t("producerDetail.activeBatchesTitle")}
+              </h2>
+              <Link
+                to="/batches"
+                className="text-sm font-semibold text-primary hover:underline"
+              >
+                {t("producerDetail.viewLedger")}
+              </Link>
+            </div>
+            {activeBatchItems.length === 0 ? (
+              <div className="bg-surface-container-low p-6 rounded-2xl text-sm text-slate-500">
+                Chưa có lô hàng on-chain nào liên kết với hồ sơ này. Khi tạo lô
+                hàng mới và chọn producer, danh sách thật sẽ xuất hiện ở đây.
               </div>
+            ) : (
               <div className="space-y-4">
                 {activeBatchItems.map((batch) => (
-                  <div
+                  <Link
                     key={batch.id}
-                    className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient"
+                    to={`/batches/${batch.id}`}
+                    className="block bg-surface-container-lowest p-6 rounded-2xl shadow-ambient hover:bg-emerald-50/50 transition-colors"
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-bold text-emerald-900">
-                          Batch #{batch.id}
+                          #BTC-{String(batch.id).padStart(4, "0")}
                         </p>
-                        <p className="text-xs text-slate-500">
-                          {batch.name} • Harvested {batch.harvestDate}
+                        <p className="text-base font-black text-on-surface mt-1">
+                          {batch.name}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {batch.origin || "Chưa có nguồn gốc"} •{" "}
+                          {formatDate(batch.createdAt)}
                         </p>
                       </div>
-                      <span
-                        className={`px-3 py-1 text-[10px] font-black rounded-full uppercase ${
-                          batch.activeStage === 2
-                            ? "bg-secondary-container text-on-secondary-container"
-                            : "bg-tertiary-container/10 text-tertiary"
-                        }`}
-                      >
-                        {batch.stage}
+                      <ArrowRight size={18} className="text-emerald-700 shrink-0 mt-1" />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase">
+                        {batch.currentStage}
                       </span>
-                    </div>
-                    <div className="w-full bg-surface-container-low h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${
-                          batch.activeStage >= 2 ? "bg-primary" : "bg-tertiary"
-                        }`}
-                        style={{ width: `${batch.progress}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between mt-2">
-                      {batch.stages.map((s, i) => (
-                        <span
-                          key={s}
-                          className={`text-[10px] font-bold ${
-                            i === batch.activeStage
-                              ? i >= 2
-                                ? "text-emerald-600"
-                                : "text-tertiary"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          {s}
+                      <span className="px-3 py-1 rounded-full bg-surface-container-low text-slate-600 text-[10px] font-black uppercase">
+                        {batch.producerRoleLabel}
+                      </span>
+                      {batch.unavailable && (
+                        <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-black uppercase">
+                          Metadata only
                         </span>
-                      ))}
+                      )}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
-            </section>
-          )}
+            )}
+          </section>
         </div>
 
         {/* Right Column */}

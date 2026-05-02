@@ -31,8 +31,22 @@ export function getStageHistory(batchId) {
   return api.get(`/batches/${batchId}/history`);
 }
 
-export function createBatch({ name, origin, imageUrl }) {
-  return api.post("/batches", { name, origin, imageUrl });
+export function createBatch({
+  name,
+  origin,
+  imageUrl,
+  producerId,
+  producerRole,
+  producerNotes,
+}) {
+  return api.post("/batches", {
+    name,
+    origin,
+    imageUrl,
+    producerId,
+    producerRole,
+    producerNotes,
+  });
 }
 
 export function addStage(batchId, { stage, description, imageUrl }) {
@@ -62,6 +76,10 @@ export function getProducers() {
 
 export function getProducer(producerId) {
   return api.get(`/producers/${producerId}`);
+}
+
+export function getProducerBatches(producerId) {
+  return api.get(`/producers/${producerId}/batches`);
 }
 
 export function createProducer(payload, adminToken) {

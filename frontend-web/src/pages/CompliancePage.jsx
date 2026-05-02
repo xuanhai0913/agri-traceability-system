@@ -286,6 +286,7 @@ export default function CompliancePage() {
                   <th className="px-6 py-4">{isVi ? "Mã lô" : "Batch ID"}</th>
                   <th className="px-6 py-4">{isVi ? "Sản phẩm" : "Product"}</th>
                   <th className="px-6 py-4">{isVi ? "Nguồn gốc" : "Origin"}</th>
+                  <th className="px-6 py-4">Producer</th>
                   <th className="px-6 py-4">{isVi ? "Giai đoạn" : "Stage"}</th>
                   <th className="px-6 py-4">{isVi ? "Ngày tạo" : "Created"}</th>
                   <th className="px-6 py-4 text-right">{isVi ? "Xác minh" : "Verify"}</th>
@@ -299,6 +300,20 @@ export default function CompliancePage() {
                     </td>
                     <td className="px-6 py-4 font-bold text-on-surface">{batch.name}</td>
                     <td className="px-6 py-4 text-slate-500">{batch.origin || "N/A"}</td>
+                    <td className="px-6 py-4">
+                      {batch.primaryProducer ? (
+                        <Link
+                          to={`/producers/${batch.primaryProducer.id}`}
+                          className="text-xs font-bold text-emerald-700 hover:underline"
+                        >
+                          {batch.primaryProducer.name}
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-slate-400">
+                          {isVi ? "Chưa liên kết" : "Unlinked"}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-slate-500">
                       {STAGE_NAMES[batch.currentStageIndex] || "N/A"}
                     </td>

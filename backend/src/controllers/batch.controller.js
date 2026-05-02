@@ -1,4 +1,12 @@
 const { getContract, getReadOnlyContract } = require("../config/blockchain");
+const {
+  attachProducerLinksToBatch,
+  attachProducerLinksToBatches,
+  getBatchLinksByBatchIds,
+  getBatchProducerLinks,
+  getProducerReference,
+  linkBatchToProducer,
+} = require("../services/batch-metadata.service");
 
 /**
  * Batch Controller
@@ -16,19 +24,57 @@ const STAGE_NAMES = [
   "Completed",    // 6
 ];
 
+function formatBatch(batch) {
+  return {
+    id: Number(batch.id),
+    name: batch.name,
+    origin: batch.origin,
+    owner: batch.owner,
+    currentStage: STAGE_NAMES[Number(batch.currentStage)],
+    currentStageIndex: Number(batch.currentStage),
+    createdAt: Number(batch.createdAt),
+    isActive: batch.isActive,
+    totalStages: Number(batch.totalStages),
+  };
+}
+
+function parseProducerId(value) {
+  if (value === undefined || value === null || value === "") return null;
+
+  const producerId = Number(value);
+  if (!Number.isInteger(producerId) || producerId <= 0) {
+    const err = new Error("producerId không hợp lệ");
+    err.status = 400;
+    throw err;
+  }
+
+  return producerId;
+}
+
 /**
  * POST /api/batches
  * Tạo lô hàng mới trên blockchain
  */
 const createBatch = async (req, res, next) => {
   try {
-    const { name, origin, imageUrl } = req.body;
+    const { name, origin, imageUrl, producerRole, producerNotes } = req.body;
+    const producerId = parseProducerId(req.body.producerId);
 
     if (!name) {
       return res.status(400).json({
         success: false,
         message: "Tên lô hàng (name) là bắt buộc",
       });
+    }
+
+    if (producerId) {
+      const producer = await getProducerReference(producerId);
+      if (!producer) {
+        return res.status(400).json({
+          success: false,
+          message: "Nhà sản xuất được chọn không tồn tại trong database",
+        });
+      }
     }
 
     const contract = getContract();
@@ -52,6 +98,22 @@ const createBatch = async (req, res, next) => {
       .find((e) => e?.name === "BatchCreated");
 
     const batchId = event ? Number(event.args.batchId) : null;
+    let producerLink = null;
+    let metadataWarning = null;
+
+    if (batchId && producerId) {
+      try {
+        producerLink = await linkBatchToProducer({
+          batchId,
+          producerId,
+          producerRole,
+          notes: producerNotes || "Linked from Create Batch form",
+        });
+      } catch (metadataError) {
+        console.error("Batch producer link failed:", metadataError);
+        metadataWarning = "Batch was created on-chain, but producer metadata was not linked.";
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -59,6 +121,9 @@ const createBatch = async (req, res, next) => {
         batchId,
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
+        producerLink,
+        metadataLinked: Boolean(producerLink),
+        metadataWarning,
       },
     });
   } catch (error) {
@@ -123,20 +188,12 @@ const getBatch = async (req, res, next) => {
     }
 
     const batch = await contract.getBatch(Number(id));
+    const formattedBatch = formatBatch(batch);
+    const producerLinks = await getBatchProducerLinks(Number(id));
 
     res.status(200).json({
       success: true,
-      data: {
-        id: Number(batch.id),
-        name: batch.name,
-        origin: batch.origin,
-        owner: batch.owner,
-        currentStage: STAGE_NAMES[Number(batch.currentStage)],
-        currentStageIndex: Number(batch.currentStage),
-        createdAt: Number(batch.createdAt),
-        isActive: batch.isActive,
-        totalStages: Number(batch.totalStages),
-      },
+      data: attachProducerLinksToBatch(formattedBatch, producerLinks),
     });
   } catch (error) {
     next(error);
@@ -234,26 +291,21 @@ const getAllBatches = async (req, res, next) => {
     for (let i = end; i >= start; i--) {
       try {
         const batch = await contract.getBatch(i);
-        batches.push({
-          id: Number(batch.id),
-          name: batch.name,
-          origin: batch.origin,
-          owner: batch.owner,
-          currentStage: STAGE_NAMES[Number(batch.currentStage)],
-          currentStageIndex: Number(batch.currentStage),
-          createdAt: Number(batch.createdAt),
-          isActive: batch.isActive,
-          totalStages: Number(batch.totalStages),
-        });
+        batches.push(formatBatch(batch));
       } catch {
         // Skip batches that fail to load
       }
     }
 
+    const producerLinks = await getBatchLinksByBatchIds(
+      batches.map((batch) => batch.id)
+    );
+    const enrichedBatches = attachProducerLinksToBatches(batches, producerLinks);
+
     res.status(200).json({
       success: true,
       data: {
-        batches,
+        batches: enrichedBatches,
         pagination: {
           total,
           page,
