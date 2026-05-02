@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   MapPin, Package, ShieldCheck, Leaf, CheckCircle,
   Users, Globe, Droplets, Scale, ClipboardCheck, Sprout,
+  Phone, Mail, ExternalLink, Contact, Satellite,
 } from "lucide-react";
 import { getProducer } from "../services/api";
 import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
@@ -19,6 +20,7 @@ export default function ProducerDetailPage() {
   const { id } = useParams();
   const [producer, setProducer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showContact, setShowContact] = useState(false);
 
   useEffect(() => {
     loadProducer();
@@ -67,6 +69,17 @@ export default function ProducerDetailPage() {
   const activeBatchCount = Array.isArray(producer.activeBatches)
     ? activeBatchItems.length
     : producer.activeBatches || 0;
+  const certifications = producer.certifications || [];
+  const farmingMethods = producer.farmingMethods || [];
+  const socialImpact = producer.socialImpact || [];
+  const audits = producer.audits || [];
+  const websiteUrl = producer.website?.startsWith("http")
+    ? producer.website
+    : producer.website
+    ? `https://${producer.website}`
+    : "";
+  const mapQuery = encodeURIComponent(producer.coordinates || producer.location || "");
+  const satelliteUrl = `https://www.google.com/maps?q=${mapQuery}&t=k`;
 
   return (
     <>
@@ -110,8 +123,63 @@ export default function ProducerDetailPage() {
             </div>
           </div>
 
+          <div className="flex flex-wrap gap-2">
+            {(producer.phone || producer.email || producer.website) && (
+              <button
+                type="button"
+                onClick={() => setShowContact((value) => !value)}
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-xs font-bold text-white flex items-center gap-2 transition-colors"
+              >
+                <Contact size={15} />
+                Contact
+              </button>
+            )}
+            <a
+              href={satelliteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-xs font-bold text-white flex items-center gap-2 transition-colors"
+            >
+              <Satellite size={15} />
+              Satellite View
+            </a>
+          </div>
         </div>
       </div>
+
+      {showContact && (
+        <section className="mt-6 bg-surface-container-lowest p-5 rounded-2xl shadow-ambient grid grid-cols-1 md:grid-cols-3 gap-3">
+          {producer.phone && (
+            <a
+              href={`tel:${producer.phone}`}
+              className="flex items-center gap-3 p-4 rounded-xl bg-surface-container-low hover:bg-emerald-50 transition-colors"
+            >
+              <Phone size={18} className="text-emerald-700" />
+              <span className="text-sm font-bold text-emerald-900">{producer.phone}</span>
+            </a>
+          )}
+          {producer.email && (
+            <a
+              href={`mailto:${producer.email}`}
+              className="flex items-center gap-3 p-4 rounded-xl bg-surface-container-low hover:bg-emerald-50 transition-colors"
+            >
+              <Mail size={18} className="text-emerald-700" />
+              <span className="text-sm font-bold text-emerald-900 truncate">{producer.email}</span>
+            </a>
+          )}
+          {websiteUrl && (
+            <a
+              href={websiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 p-4 rounded-xl bg-surface-container-low hover:bg-emerald-50 transition-colors"
+            >
+              <ExternalLink size={18} className="text-emerald-700" />
+              <span className="text-sm font-bold text-emerald-900 truncate">{producer.website}</span>
+            </a>
+          )}
+        </section>
+      )}
 
       {/* Stats Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 mb-8">
@@ -134,7 +202,7 @@ export default function ProducerDetailPage() {
               {t("producerDetail.certifications")}
             </p>
             <p className="text-3xl font-black text-emerald-900 font-headline">
-              {producer.certifications.length}
+              {certifications.length}
             </p>
           </div>
           <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
@@ -177,7 +245,10 @@ export default function ProducerDetailPage() {
                   {t("producerDetail.farmingMethods")}
                 </h3>
                 <ul className="space-y-2">
-                  {producer.farmingMethods.map((m) => (
+                  {farmingMethods.length === 0 && (
+                    <li className="text-sm text-slate-500">Demo/Test profile chưa có phương pháp cụ thể.</li>
+                  )}
+                  {farmingMethods.map((m) => (
                     <li
                       key={m}
                       className="flex items-center gap-2 text-on-surface text-sm"
@@ -193,7 +264,10 @@ export default function ProducerDetailPage() {
                   {t("producerDetail.socialImpact")}
                 </h3>
                 <ul className="space-y-2">
-                  {producer.socialImpact.map((s) => (
+                  {socialImpact.length === 0 && (
+                    <li className="text-sm text-slate-500">Chưa có ghi chú tác động xã hội.</li>
+                  )}
+                  {socialImpact.map((s) => (
                     <li
                       key={s}
                       className="flex items-center gap-2 text-on-surface text-sm"
@@ -213,7 +287,12 @@ export default function ProducerDetailPage() {
               {t("producerDetail.certifications")}
             </h2>
             <div className="flex flex-wrap gap-4">
-              {producer.certifications.map((cert) => (
+              {certifications.length === 0 && (
+                <p className="text-sm text-slate-500">
+                  Chưa có chứng nhận được khai báo cho hồ sơ này.
+                </p>
+              )}
+              {certifications.map((cert) => (
                   <div
                     key={cert}
                     className="group bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:border-primary transition-colors flex flex-col items-center text-center w-28"
@@ -223,6 +302,9 @@ export default function ProducerDetailPage() {
                     </div>
                     <span className="text-[10px] font-black uppercase text-slate-500">
                       {cert}
+                    </span>
+                    <span className="mt-2 text-[9px] font-black uppercase tracking-wide text-amber-600">
+                      Demo/Test
                     </span>
                   </div>
               ))}
@@ -316,22 +398,31 @@ export default function ProducerDetailPage() {
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-500 font-medium">Coordinates</span>
                 <span className="font-mono text-emerald-900">
-                  {producer.coordinates}
+                  {producer.coordinates || "Location only"}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-500 font-medium">Total Area</span>
                 <span className="font-mono text-emerald-900">
-                  {producer.totalArea}
+                  {producer.totalArea || "Demo/Test"}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-500 font-medium">Elevation</span>
                 <span className="font-mono text-emerald-900">
-                  {producer.elevation}
+                  {producer.elevation || "Demo/Test"}
                 </span>
               </div>
             </div>
+            <a
+              href={satelliteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 w-full py-3 rounded-xl bg-emerald-900 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-800 transition-colors"
+            >
+              <Satellite size={17} />
+              Open Satellite View
+            </a>
           </section>
 
           {/* Blockchain Ledger */}
@@ -371,13 +462,13 @@ export default function ProducerDetailPage() {
           </section>
 
           {/* Compliance Audit */}
-          {producer.audits.length > 0 && (
+          {audits.length > 0 && (
             <section className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient">
               <h2 className="text-sm font-black text-emerald-900 mb-4 uppercase tracking-wider">
                 Compliance Audit
               </h2>
               <div className="space-y-4">
-                {producer.audits.map((audit, i) => (
+                {audits.map((audit, i) => (
                   <div key={i} className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
@@ -386,7 +477,7 @@ export default function ProducerDetailPage() {
                           return <AuditIcon size={16} />;
                         })()}
                       </div>
-                      {i < producer.audits.length - 1 && (
+                      {i < audits.length - 1 && (
                         <div className="w-0.5 flex-1 bg-slate-100 mt-1"></div>
                       )}
                     </div>
@@ -397,6 +488,11 @@ export default function ProducerDetailPage() {
                       <p className="text-xs text-slate-500">
                         {audit.date} • {audit.result}
                       </p>
+                      {audit.isDemo && (
+                        <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[9px] font-black uppercase tracking-wide">
+                          Demo/Test record
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}

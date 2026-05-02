@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MapPin, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Filter, Shield, Clock, ChevronRight } from "lucide-react";
+import { MapPin, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Filter, Shield, Clock, ChevronRight, UserPlus } from "lucide-react";
 import { getProducers } from "../services/api";
+import AddProducerModal from "../components/producers/AddProducerModal";
 
 const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 
@@ -11,11 +12,13 @@ const SORTS = ["Default", "Region", "Status"];
 
 export default function ProducerNetworkPage() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const isVi = i18n.language === "vi";
   const [producers, setProducers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [sort, setSort] = useState("Default");
+  const [showAddProducer, setShowAddProducer] = useState(false);
 
   useEffect(() => {
     loadProducers();
@@ -49,10 +52,16 @@ export default function ProducerNetworkPage() {
   const verifiedCount = producers.filter((p) => p.status === "verified").length;
   const pendingCount = producers.filter((p) => p.status === "audit_pending").length;
 
+  async function handleProducerCreated(producer) {
+    setShowAddProducer(false);
+    await loadProducers();
+    navigate(`/producers/${producer.id}`);
+  }
+
   return (
     <>
       {/* Header */}
-      <section className="mb-10">
+      <section className="mb-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
         <div>
           <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em]">
             {t("producers.sectionLabel")}
@@ -64,6 +73,14 @@ export default function ProducerNetworkPage() {
             {t("producers.subtitle")}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setShowAddProducer(true)}
+          className="btn-primary-gradient px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
+        >
+          <UserPlus size={18} />
+          {isVi ? "Thêm nhà sản xuất" : "Add Producer"}
+        </button>
       </section>
 
       {/* Source-backed summary */}
@@ -149,6 +166,7 @@ export default function ProducerNetworkPage() {
           </div>
         ) : filtered.map((producer) => {
           const IconComp = PRODUCT_ICONS[producer.id % PRODUCT_ICONS.length];
+          const certifications = producer.certifications || [];
 
           return (
             <div
@@ -197,7 +215,7 @@ export default function ProducerNetworkPage() {
 
                 {/* Certifications */}
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {producer.certifications.map((cert) => (
+                  {certifications.map((cert) => (
                     <span
                       key={cert}
                       className="px-2 py-1 bg-surface-container-low text-[10px] font-bold rounded uppercase tracking-wider text-tertiary"
@@ -245,6 +263,12 @@ export default function ProducerNetworkPage() {
         })}
       </div>
 
+      {showAddProducer && (
+        <AddProducerModal
+          onClose={() => setShowAddProducer(false)}
+          onCreated={handleProducerCreated}
+        />
+      )}
     </>
   );
 }

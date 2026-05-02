@@ -29,6 +29,15 @@ const STAGE_COLORS = {
 const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 const PAGE_SIZE = 8;
 
+function normalizeSearch(value) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^#/, "")
+    .replace(/^btc-/, "")
+    .replace(/^0+/, "");
+}
+
 export default function TraceabilityLedgerPage() {
   const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -73,10 +82,16 @@ export default function TraceabilityLedgerPage() {
 
   // Filtering
   const filtered = batches.filter((b) => {
+    const query = search.trim().toLowerCase();
+    const normalizedQuery = normalizeSearch(search);
+    const batchId = String(b.id);
+    const batchCode = `btc-${batchId.padStart(4, "0")}`;
     const matchSearch =
       !search ||
-      b.name.toLowerCase().includes(search.toLowerCase()) ||
-      String(b.id).includes(search);
+      b.name.toLowerCase().includes(query) ||
+      (b.origin || "").toLowerCase().includes(query) ||
+      batchCode.includes(query.replace(/^#/, "")) ||
+      batchId.includes(normalizedQuery);
     const matchStage =
       filterStage === null || b.currentStageIndex === filterStage;
     return matchSearch && matchStage;

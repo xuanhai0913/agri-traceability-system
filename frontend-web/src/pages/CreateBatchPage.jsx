@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   ChevronRight, AlertCircle, X, FileText,
   MapPin, Lock, CloudUpload, Loader2, Wallet,
+  Save, Trash2,
 } from "lucide-react";
 import { createBatch, uploadImage } from "../services/api";
 import { toast } from "react-hot-toast";
@@ -25,6 +26,7 @@ export default function CreateBatchPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [draftMeta, setDraftMeta] = useState(null);
 
   useEffect(() => {
     const savedDraft = localStorage.getItem(DRAFT_KEY);
@@ -37,6 +39,7 @@ export default function CreateBatchPage() {
         origin: parsed.origin || "",
         description: parsed.description || "",
       });
+      if (parsed.savedAt) setDraftMeta({ savedAt: parsed.savedAt, restored: true });
     } catch {
       localStorage.removeItem(DRAFT_KEY);
     }
@@ -129,8 +132,30 @@ export default function CreateBatchPage() {
   }
 
   function handleSaveDraft() {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    const draft = {
+      ...form,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    setDraftMeta({ savedAt: draft.savedAt, restored: false });
     toast.success("Đã lưu bản nháp trên trình duyệt.", { duration: 3000 });
+  }
+
+  function handleClearDraft() {
+    localStorage.removeItem(DRAFT_KEY);
+    setDraftMeta(null);
+    toast.success("Đã xóa bản nháp.", { duration: 2500 });
+  }
+
+  function formatDraftTime(value) {
+    if (!value) return "";
+    return new Date(value).toLocaleString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   }
 
   // ── Form State ──────────────────────────────────
@@ -159,6 +184,28 @@ export default function CreateBatchPage() {
           <span className="text-sm font-medium">{error}</span>
           <button className="ml-auto" onClick={() => setError(null)}>
             <X size={18} />
+          </button>
+        </div>
+      )}
+
+      {draftMeta && (
+        <div className="bg-emerald-50 border border-emerald-100 text-emerald-900 px-6 py-4 rounded-2xl mb-8 flex flex-col sm:flex-row sm:items-center gap-3">
+          <Save size={20} className="shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-bold">
+              {draftMeta.restored ? "Đã khôi phục bản nháp" : "Bản nháp đã lưu"}
+            </p>
+            <p className="text-xs text-emerald-700 mt-0.5">
+              Lưu lúc {formatDraftTime(draftMeta.savedAt)}. Bản nháp chỉ gồm trường text, không lưu file ảnh.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearDraft}
+            className="px-3 py-2 rounded-lg bg-white text-emerald-900 text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-100"
+          >
+            <Trash2 size={14} />
+            Xóa bản nháp
           </button>
         </div>
       )}
@@ -343,8 +390,9 @@ export default function CreateBatchPage() {
               <button
                 type="button"
                 onClick={handleSaveDraft}
-                className="w-full py-3 text-slate-500 font-bold text-sm hover:text-on-surface transition-colors"
+                className="w-full py-3 text-slate-500 font-bold text-sm hover:text-on-surface transition-colors flex items-center justify-center gap-2"
               >
+                <Save size={16} />
                 Lưu bản nháp
               </button>
             </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,7 +13,7 @@ import {
   Server,
   ShieldCheck,
 } from "lucide-react";
-import { getBatch, getTotalBatches, healthCheck } from "../services/api";
+import { getComplianceEvidence } from "../services/api";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -25,25 +25,11 @@ const STAGE_NAMES = [
   "Hoàn thành",
 ];
 
-const EXTERNAL_EVIDENCE = [
-  {
-    label: "Amoy Polygonscan",
-    value: "0xCBe061...CAac5f",
-    href: "https://amoy.polygonscan.com/address/0xCBe061edb5159ac5E61Ff3C87e2402e5a4CAac5f",
-  },
-  {
-    label: "Sourcify verified source",
-    value: "0x295699...AF487b3",
-    href: "https://repo.sourcify.dev/80002/0x29569935f27d966DcA1C308B2b00f6A1BAF487b3",
-  },
-];
-
 export default function CompliancePage() {
   const { i18n } = useTranslation();
   const isVi = i18n.language === "vi";
   const [loading, setLoading] = useState(true);
-  const [health, setHealth] = useState(null);
-  const [batches, setBatches] = useState([]);
+  const [evidence, setEvidence] = useState(null);
   const [error, setError] = useState(null);
   const [checkedAt, setCheckedAt] = useState(null);
 
@@ -56,25 +42,9 @@ export default function CompliancePage() {
       setLoading(true);
       setError(null);
 
-      const [healthRes, totalRes] = await Promise.all([
-        healthCheck(),
-        getTotalBatches(),
-      ]);
-
-      const total = totalRes.data.data.total;
-      const batchList = [];
-      for (let id = total; id >= 1; id -= 1) {
-        try {
-          const batchRes = await getBatch(id);
-          batchList.push(batchRes.data.data);
-        } catch {
-          // A missing batch should not block the compliance overview.
-        }
-      }
-
-      setHealth(healthRes.data);
-      setBatches(batchList);
-      setCheckedAt(new Date());
+      const res = await getComplianceEvidence();
+      setEvidence(res.data.data);
+      setCheckedAt(new Date(res.data.data.generatedAt));
     } catch (err) {
       setError(err.response?.data?.message || "Không thể tải dữ liệu kiểm chứng.");
     } finally {
@@ -82,18 +52,22 @@ export default function CompliancePage() {
     }
   }
 
-  const activeBatches = useMemo(
-    () => batches.filter((batch) => batch.isActive).length,
-    [batches]
-  );
-  const completedBatches = batches.length - activeBatches;
+  const batches = evidence?.batches?.items || [];
+  const activeBatches = evidence?.batches?.active || 0;
+  const completedBatches = evidence?.batches?.completed || 0;
+  const externalLinks = evidence?.externalLinks || [];
+  const network = evidence?.network;
+  const contract = evidence?.contract;
+  const apiOnline = evidence?.api?.status === "online";
 
   const checks = [
     {
       icon: Server,
       title: isVi ? "API đang hoạt động" : "API health is online",
-      body: health?.message || (isVi ? "Endpoint /api/health phản hồi thành công." : "/api/health responded successfully."),
-      status: Boolean(health?.success),
+      body: isVi
+        ? "Endpoint /api/compliance/evidence phản hồi thành công và gom dữ liệu demo từ backend."
+        : evidence?.api?.message || "The backend returned compliance evidence successfully.",
+      status: apiOnline,
     },
     {
       icon: Database,
@@ -105,11 +79,11 @@ export default function CompliancePage() {
     },
     {
       icon: GitBranch,
-      title: isVi ? "Vòng đời lô hàng có trạng thái" : "Batch lifecycle has stage state",
+      title: isVi ? "Kết nối blockchain có bằng chứng" : "Blockchain evidence is available",
       body: isVi
-        ? "Mỗi lô có currentStageIndex để thể hiện giai đoạn truy xuất hiện tại."
-        : "Each batch exposes currentStageIndex for the current traceability stage.",
-      status: batches.every((batch) => Number.isInteger(batch.currentStageIndex)),
+        ? `${network?.name || "Polygon Amoy"}${network?.latestBlock ? ` đang ở block ${network.latestBlock}` : ""}.`
+        : `${network?.name || "Polygon Amoy"}${network?.latestBlock ? ` is at block ${network.latestBlock}` : ""}.`,
+      status: Boolean(network?.available),
     },
     {
       icon: QrCode,
@@ -123,11 +97,16 @@ export default function CompliancePage() {
       icon: FileSearch,
       title: isVi ? "Có đường dẫn kiểm chứng bên ngoài" : "External verification links exist",
       body: isVi
-        ? "Trang này dẫn ra Polygonscan/Sourcify để đối chiếu giao dịch và mã nguồn contract."
-        : "This page links to Polygonscan/Sourcify for transaction and contract source review.",
-      status: true,
+        ? "Trang này dẫn ra Polygonscan/Sourcify để đối chiếu contract và mã nguồn xác minh."
+        : "This page links to Polygonscan/Sourcify for contract and source review.",
+      status: externalLinks.length > 0,
     },
   ];
+
+  function shortValue(value) {
+    if (!value || value.length <= 18) return value || "N/A";
+    return `${value.slice(0, 10)}...${value.slice(-6)}`;
+  }
 
   function formatDate(timestamp) {
     if (!timestamp) return "N/A";
@@ -174,7 +153,7 @@ export default function CompliancePage() {
         <MetricCard
           icon={ShieldCheck}
           label={isVi ? "Trạng thái API" : "API Status"}
-          value={health?.success ? "Online" : loading ? "Checking" : "Unknown"}
+          value={apiOnline ? "Online" : loading ? "Checking" : "Unknown"}
           detail={checkedAt ? checkedAt.toLocaleString(isVi ? "vi-VN" : "en-US") : "N/A"}
         />
         <MetricCard
@@ -186,8 +165,14 @@ export default function CompliancePage() {
         <MetricCard
           icon={Lock}
           label={isVi ? "Mạng kiểm chứng" : "Verification Network"}
-          value="Polygon Amoy"
-          detail={isVi ? "Testnet dùng cho đồ án" : "Testnet for thesis demo"}
+          value={network?.name || "Polygon Amoy"}
+          detail={
+            network?.latestBlock
+              ? `Block ${network.latestBlock}`
+              : isVi
+              ? "Testnet dùng cho đồ án"
+              : "Testnet for thesis demo"
+          }
         />
       </section>
 
@@ -236,7 +221,14 @@ export default function CompliancePage() {
               : "Use these links when reviewers ask how to verify data outside the app."}
           </p>
           <div className="space-y-3">
-            {EXTERNAL_EVIDENCE.map((link) => (
+            {externalLinks.length === 0 && (
+              <div className="bg-white/10 border border-white/10 rounded-xl p-4 text-xs text-emerald-100">
+                {isVi
+                  ? "Chưa có contract address để tạo link đối chiếu."
+                  : "No contract address is configured for external links."}
+              </div>
+            )}
+            {externalLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
@@ -249,11 +241,21 @@ export default function CompliancePage() {
                   <ExternalLink size={16} />
                 </span>
                 <span className="block mt-2 text-xs font-mono text-emerald-100">
-                  {link.value}
+                  {shortValue(link.value)}
                 </span>
               </a>
             ))}
           </div>
+          {contract?.address && (
+            <div className="mt-5 pt-5 border-t border-white/10">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200">
+                Contract
+              </p>
+              <p className="mt-2 text-xs font-mono text-white break-all">
+                {contract.address}
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -317,7 +319,9 @@ export default function CompliancePage() {
   );
 }
 
-function MetricCard({ icon: Icon, label, value, detail }) {
+function MetricCard({ icon, label, value, detail }) {
+  const MetricIcon = icon;
+
   return (
     <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient flex items-center justify-between gap-4">
       <div>
@@ -330,7 +334,7 @@ function MetricCard({ icon: Icon, label, value, detail }) {
         <p className="text-xs text-slate-500 mt-2">{detail}</p>
       </div>
       <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-        <Icon size={24} />
+        <MetricIcon size={24} />
       </div>
     </div>
   );

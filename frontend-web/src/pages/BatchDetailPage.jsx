@@ -7,11 +7,12 @@ import jsPDF from "jspdf";
 import {
   Check, ChevronRight, AlertCircle, X, Leaf, BadgeCheck,
   Printer, PlusCircle, RefreshCw, Shield, MapPin,
-  Loader2,
+  Loader2, Copy, Share2,
 } from "lucide-react";
 import { getBatch, getStageHistory, addStage } from "../services/api";
 import { BatchDetailSkeleton } from "../components/ui/Skeleton";
 import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
+import { toast } from "react-hot-toast";
 
 const STAGE_NAMES = [
   "Gieo hạt",
@@ -143,6 +144,35 @@ export default function BatchDetailPage() {
       setIsPrinting(false);
     }
   };
+
+  async function handleCopyVerificationLink() {
+    try {
+      await navigator.clipboard.writeText(qrValue);
+      toast.success("Đã copy link xác minh QR.");
+    } catch {
+      toast.error("Không thể copy link. Vui lòng thử lại.");
+    }
+  }
+
+  async function handleShareVerificationLink() {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `AgriTrace ${batchCode}`,
+          text: `Xác minh nguồn gốc lô hàng ${batchCode}`,
+          url: qrValue,
+        });
+        return;
+      }
+
+      await navigator.clipboard.writeText(qrValue);
+      toast.success("Trình duyệt chưa hỗ trợ share, đã copy link xác minh.");
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        toast.error("Không thể chia sẻ link xác minh.");
+      }
+    }
+  }
 
   if (loading) {
     return <BatchDetailSkeleton />;
@@ -339,7 +369,7 @@ export default function BatchDetailPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <button
                   onClick={handlePrint}
                   disabled={isPrinting}
@@ -347,6 +377,22 @@ export default function BatchDetailPage() {
                 >
                   {isPrinting ? <Loader2 size={20} className="animate-spin" /> : <Printer size={20} />}
                   {isPrinting ? t("common.loading") || "Exporting..." : t("batchDetail.printQR")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyVerificationLink}
+                  className="px-5 py-4 bg-surface-container-low hover:bg-emerald-50 text-emerald-900 rounded-2xl font-bold flex items-center gap-2 transition-colors"
+                >
+                  <Copy size={18} />
+                  Copy link
+                </button>
+                <button
+                  type="button"
+                  onClick={handleShareVerificationLink}
+                  className="px-5 py-4 bg-surface-container-low hover:bg-emerald-50 text-emerald-900 rounded-2xl font-bold flex items-center gap-2 transition-colors"
+                >
+                  <Share2 size={18} />
+                  Share QR
                 </button>
               </div>
             </div>

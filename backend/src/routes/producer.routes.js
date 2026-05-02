@@ -1,5 +1,10 @@
 const express = require("express");
-const producers = require("../data/producers.json");
+const {
+  getProducer,
+  getProducers,
+  postProducer,
+  requireAdminToken,
+} = require("../controllers/producer.controller");
 
 const router = express.Router();
 
@@ -7,32 +12,18 @@ const router = express.Router();
  * GET /api/producers
  * List all producers
  */
-router.get("/", (_req, res) => {
-  res.json({
-    success: true,
-    data: producers,
-  });
-});
+router.get("/", getProducers);
+
+/**
+ * POST /api/producers
+ * Create producer profile from admin UI
+ */
+router.post("/", requireAdminToken, postProducer);
 
 /**
  * GET /api/producers/:id
  * Get a single producer by ID
  */
-router.get("/:id", (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const producer = producers.find((p) => p.id === id);
-
-  if (!producer) {
-    return res.status(404).json({
-      success: false,
-      message: `Producer #${id} not found`,
-    });
-  }
-
-  res.json({
-    success: true,
-    data: producer,
-  });
-});
+router.get("/:id", getProducer);
 
 module.exports = router;

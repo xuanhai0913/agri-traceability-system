@@ -64,6 +64,18 @@ export function getProducer(producerId) {
   return api.get(`/producers/${producerId}`);
 }
 
+export function createProducer(payload, adminToken) {
+  return api.post("/producers", payload, {
+    headers: { "x-admin-token": adminToken },
+  });
+}
+
+// ── Compliance evidence endpoint ─────────────────────
+
+export function getComplianceEvidence() {
+  return api.get("/compliance/evidence");
+}
+
 // ── Health check ─────────────────────────────────────
 
 export function healthCheck() {
