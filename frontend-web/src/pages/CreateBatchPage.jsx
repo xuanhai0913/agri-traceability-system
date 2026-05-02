@@ -143,6 +143,14 @@ export default function CreateBatchPage() {
 
   function handleClearDraft() {
     localStorage.removeItem(DRAFT_KEY);
+    setForm({
+      name: "",
+      origin: "",
+      description: "",
+    });
+    setImageFile(null);
+    setImagePreview(null);
+    setError(null);
     setDraftMeta(null);
     toast.success("Đã xóa bản nháp.", { duration: 2500 });
   }
