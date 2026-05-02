@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Plus, Search, ChevronLeft, ChevronRight, Eye, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2 } from "lucide-react";
 import { getTotalBatches, getBatch } from "../services/api";
@@ -31,23 +31,28 @@ const PAGE_SIZE = 8;
 
 export default function TraceabilityLedgerPage() {
   const { t, i18n } = useTranslation();
-  const [totalBatches, setTotalBatches] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlSearch = searchParams.get("search") || "";
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(urlSearch);
   const [filterStage, setFilterStage] = useState(null);
 
   useEffect(() => {
     loadBatches();
   }, []);
 
+  useEffect(() => {
+    setSearch(urlSearch);
+    setCurrentPage(1);
+  }, [urlSearch]);
+
   async function loadBatches() {
     try {
       setLoading(true);
       const totalRes = await getTotalBatches();
       const total = totalRes.data.data.total;
-      setTotalBatches(total);
 
       const batchList = [];
       for (let i = total; i > 0; i--) {
@@ -128,8 +133,16 @@ export default function TraceabilityLedgerPage() {
               placeholder={t("ledger.searchPlaceholder")}
               value={search}
               onChange={(e) => {
-                setSearch(e.target.value);
+                const nextSearch = e.target.value;
+                setSearch(nextSearch);
                 setCurrentPage(1);
+                const nextParams = new URLSearchParams(searchParams);
+                if (nextSearch.trim()) {
+                  nextParams.set("search", nextSearch);
+                } else {
+                  nextParams.delete("search");
+                }
+                setSearchParams(nextParams, { replace: true });
               }}
             />
           </div>

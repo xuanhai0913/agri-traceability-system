@@ -1,14 +1,24 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Search, Languages, Menu, Bell, Wallet, User } from "lucide-react";
+import { Search, Languages, Menu, Wallet } from "lucide-react";
 
 export default function TopNav({ onMenuToggle }) {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
 
   const toggleLang = () => {
     const newLang = i18n.language === "vi" ? "en" : "vi";
     i18n.changeLanguage(newLang);
     localStorage.setItem("lang", newLang);
   };
+
+  function handleSearchSubmit(e) {
+    e.preventDefault();
+    const trimmed = query.trim();
+    navigate(trimmed ? `/batches?search=${encodeURIComponent(trimmed)}` : "/batches");
+  }
 
   return (
     <header className="md:ml-64 flex justify-between items-center px-4 md:px-8 py-4 h-16 glass-overlay sticky top-0 z-30 shadow-sm shadow-emerald-900/5">
@@ -24,16 +34,28 @@ export default function TopNav({ onMenuToggle }) {
         </button>
 
         {/* Search — wider on desktop, icon-only trigger on small mobile */}
-        <div className="relative hidden sm:block">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <form onSubmit={handleSearchSubmit} className="relative hidden sm:block">
+          <button
+            type="submit"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+            aria-label={t("common.search")}
+          >
+            <Search size={16} />
+          </button>
           <input
             className="bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-sm w-48 md:w-72 focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-slate-400"
             placeholder={t("topnav.searchPlaceholder")}
             type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
-        </div>
+        </form>
         {/* Mobile search icon */}
-        <button className="sm:hidden p-2 rounded-lg text-slate-500 hover:bg-emerald-100 transition-colors">
+        <button
+          onClick={() => navigate("/batches")}
+          className="sm:hidden p-2 rounded-lg text-slate-500 hover:bg-emerald-100 transition-colors"
+          aria-label={t("common.search")}
+        >
           <Search size={20} />
         </button>
       </div>
@@ -56,18 +78,6 @@ export default function TopNav({ onMenuToggle }) {
           <span className="hidden sm:inline">{t("topnav.connected")}: 0x12...4f5</span>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 md:gap-3">
-          <button className="relative text-slate-400 hover:text-primary transition-colors p-1">
-            <Bell size={20} />
-            <span className="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
-          </button>
-
-          {/* Avatar */}
-          <div className="w-9 h-9 rounded-full bg-emerald-200 ring-2 ring-emerald-100 flex items-center justify-center overflow-hidden">
-            <User size={18} className="text-emerald-700" />
-          </div>
-        </div>
       </div>
     </header>
   );

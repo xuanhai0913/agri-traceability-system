@@ -1,12 +1,14 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  CheckCircle, QrCode, ChevronRight, AlertCircle, X, FileText,
+  ChevronRight, AlertCircle, X, FileText,
   MapPin, Lock, CloudUpload, Loader2, Wallet,
 } from "lucide-react";
 import { createBatch, uploadImage } from "../services/api";
 import { toast } from "react-hot-toast";
+
+const DRAFT_KEY = "agritrace:create-batch-draft";
 
 export default function CreateBatchPage() {
   const { t } = useTranslation();
@@ -23,6 +25,22 @@ export default function CreateBatchPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_KEY);
+    if (!savedDraft) return;
+
+    try {
+      const parsed = JSON.parse(savedDraft);
+      setForm({
+        name: parsed.name || "",
+        origin: parsed.origin || "",
+        description: parsed.description || "",
+      });
+    } catch {
+      localStorage.removeItem(DRAFT_KEY);
+    }
+  }, []);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -91,6 +109,7 @@ export default function CreateBatchPage() {
       });
 
       const batchId = res.data.data.batchId;
+      localStorage.removeItem(DRAFT_KEY);
       toast.success(
         <div>
           <b>Thêm lô hàng thành công!</b>
@@ -107,6 +126,11 @@ export default function CreateBatchPage() {
       setSubmitting(false);
       setUploading(false);
     }
+  }
+
+  function handleSaveDraft() {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    toast.success("Đã lưu bản nháp trên trình duyệt.", { duration: 3000 });
   }
 
   // ── Form State ──────────────────────────────────
@@ -318,6 +342,7 @@ export default function CreateBatchPage() {
 
               <button
                 type="button"
+                onClick={handleSaveDraft}
                 className="w-full py-3 text-slate-500 font-bold text-sm hover:text-on-surface transition-colors"
               >
                 Lưu bản nháp

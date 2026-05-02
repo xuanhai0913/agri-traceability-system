@@ -6,9 +6,6 @@
     "status": "verified",
     "certifications": ["VietGAP", "Organic"],
     "activeBatches": 8,
-    "totalBatches": 56,
-    "avgQuality": 4.5,
-    "complianceScore": 95,
     "image": "/images/hero-coffee-farm.png",
     "description": "Nông trại Xanh chuyên sản xuất cà phê Arabica và rau sạch theo tiêu chuẩn VietGAP. Cam kết minh bạch từ gieo trồng đến thu hoạch.",
     "farmingMethods": ["Canh tác hữu cơ", "Sử dụng phân vi sinh", "Che phủ đất tự nhiên"],
@@ -19,8 +16,8 @@
     "latestVerification": "0x44f1...cCB5",
     "smartContract": "Traceability_v1",
     "audits": [
-      { "icon": "clipboard-check", "title": "VietGAP Compliance", "date": "Mar 15, 2026", "result": "Passed (95/100)" },
-      { "icon": "droplets", "title": "Water Quality Review", "date": "Feb 20, 2026", "result": "Passed (92/100)" }
+      { "icon": "clipboard-check", "title": "VietGAP Compliance", "date": "Mar 15, 2026", "result": "Passed" },
+      { "icon": "droplets", "title": "Water Quality Review", "date": "Feb 20, 2026", "result": "Passed" }
     ]
   },
   {
@@ -30,9 +27,6 @@
     "status": "verified",
     "certifications": ["GlobalGAP", "Fair Trade"],
     "activeBatches": 15,
-    "totalBatches": 420,
-    "avgQuality": 4.7,
-    "complianceScore": 97,
     "image": "/images/hero-rice-field.png",
     "description": "Hợp tác xã chuyên sản xuất gạo ST25 chất lượng cao, phục vụ xuất khẩu. Áp dụng công nghệ blockchain để truy xuất nguồn gốc.",
     "farmingMethods": ["Canh tác lúa nước bền vững", "IPM (Quản lý dịch hại tổng hợp)", "Tiết kiệm nước"],
@@ -43,7 +37,7 @@
     "latestVerification": "0xe5b5...6609",
     "smartContract": "Traceability_v1",
     "audits": [
-      { "icon": "clipboard-check", "title": "GlobalGAP Annual Audit", "date": "Jan 20, 2026", "result": "Passed (97/100)" },
+      { "icon": "clipboard-check", "title": "GlobalGAP Annual Audit", "date": "Jan 20, 2026", "result": "Passed" },
       { "icon": "scale", "title": "Fair Trade Certification", "date": "Dec 15, 2025", "result": "Verified" }
     ]
   },
@@ -54,9 +48,6 @@
     "status": "verified",
     "certifications": ["Organic", "Rainforest Alliance"],
     "activeBatches": 28,
-    "totalBatches": 180,
-    "avgQuality": 4.9,
-    "complianceScore": 99,
     "image": "/images/farm-cooperative.png",
     "description": "Chuyên trồng trà Oolong cao cấp trên sườn đồi ở độ cao 900m. Ba thế hệ kinh nghiệm canh tác với phương pháp thủ công truyền thống.",
     "farmingMethods": ["Trồng trà shade-grown", "Thu hái thủ công", "Ủ phân xanh tự nhiên"],
@@ -67,8 +58,8 @@
     "latestVerification": "0x7c98...d90d8",
     "smartContract": "Traceability_v1",
     "audits": [
-      { "icon": "clipboard-check", "title": "Organic Soil Test", "date": "Mar 02, 2026", "result": "Passed (100/100)" },
-      { "icon": "droplets", "title": "Water Usage Review", "date": "Feb 15, 2026", "result": "Passed (98/100)" },
+      { "icon": "clipboard-check", "title": "Organic Soil Test", "date": "Mar 02, 2026", "result": "Passed" },
+      { "icon": "droplets", "title": "Water Usage Review", "date": "Feb 15, 2026", "result": "Passed" },
       { "icon": "scale", "title": "Annual Labor Cert", "date": "Jan 10, 2026", "result": "Verified" }
     ]
   },
@@ -79,9 +70,6 @@
     "status": "verified",
     "certifications": ["UTZ Certified", "4C Association"],
     "activeBatches": 12,
-    "totalBatches": 1284,
-    "avgQuality": 4.8,
-    "complianceScore": 96,
     "image": "/images/farm-highland.png",
     "description": "Hợp tác xã cà phê Robusta lớn nhất Tây Nguyên. Tiên phong áp dụng blockchain trong chuỗi cung ứng cà phê Việt Nam.",
     "farmingMethods": ["Nông lâm kết hợp", "Phân bón hữu cơ vi sinh", "Canh tác đa dạng sinh học"],
@@ -92,7 +80,7 @@
     "latestVerification": "0x00e6...397a7",
     "smartContract": "Traceability_v1",
     "audits": [
-      { "icon": "clipboard-check", "title": "UTZ Annual Audit", "date": "Feb 28, 2026", "result": "Passed (96/100)" }
+      { "icon": "clipboard-check", "title": "UTZ Annual Audit", "date": "Feb 28, 2026", "result": "Passed" }
     ]
   },
   {
@@ -102,9 +90,6 @@
     "status": "audit_pending",
     "certifications": ["Chỉ dẫn địa lý"],
     "activeBatches": 6,
-    "totalBatches": 95,
-    "avgQuality": 4.6,
-    "complianceScore": 92,
     "image": "/images/harvest-scene.png",
     "description": "Trang trại hồ tiêu truyền thống Phú Quốc, nổi tiếng với hạt tiêu đỏ quý hiếm. Đang trong quá trình đăng ký chứng nhận Organic quốc tế.",
     "farmingMethods": ["Trồng trụ sống tự nhiên", "Phơi nắng truyền thống", "Không thuốc trừ sâu"],
@@ -123,9 +108,6 @@
     "status": "verified",
     "certifications": ["Organic", "GMP"],
     "activeBatches": 4,
-    "totalBatches": 38,
-    "avgQuality": 4.4,
-    "complianceScore": 93,
     "image": "/images/smart-farm.png",
     "description": "Chuyên sản xuất thảo dược và rau hữu cơ vùng cao. Kết hợp kiến thức truyền thống của đồng bào H'Mông với công nghệ IoT hiện đại.",
     "farmingMethods": ["Canh tác ruộng bậc thang", "IoT monitoring", "Thu hái bằng tay"],
@@ -136,7 +118,7 @@
     "latestVerification": "0x3af2...891b",
     "smartContract": "Traceability_v1",
     "audits": [
-      { "icon": "clipboard-check", "title": "GMP Compliance", "date": "Mar 10, 2026", "result": "Passed (93/100)" }
+      { "icon": "clipboard-check", "title": "GMP Compliance", "date": "Mar 10, 2026", "result": "Passed" }
     ]
   }
 ]

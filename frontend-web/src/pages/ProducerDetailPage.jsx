@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  MapPin, Package, Star, ShieldCheck, Send, Share2, Leaf, CheckCircle,
+  MapPin, Package, ShieldCheck, Leaf, CheckCircle,
   Users, Globe, Droplets, Scale, ClipboardCheck, Sprout,
 } from "lucide-react";
 import { getProducer } from "../services/api";
@@ -14,12 +14,9 @@ const AUDIT_ICONS = {
   "scale": Scale,
 };
 
-const TABS = ["Overview", "Active Batches", "Compliance History", "Location"];
-
 export default function ProducerDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState("Overview");
   const [producer, setProducer] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -64,6 +61,13 @@ export default function ProducerDetailPage() {
     );
   }
 
+  const activeBatchItems = Array.isArray(producer.activeBatches)
+    ? producer.activeBatches
+    : [];
+  const activeBatchCount = Array.isArray(producer.activeBatches)
+    ? activeBatchItems.length
+    : producer.activeBatches || 0;
+
   return (
     <>
       {/* Hero Banner */}
@@ -106,15 +110,6 @@ export default function ProducerDetailPage() {
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3">
-            <button className="px-6 py-2.5 bg-white text-emerald-900 font-bold rounded-xl hover:scale-105 transition-transform text-sm">
-              {t("producerDetail.contactFarmer")}
-            </button>
-            <button className="p-2.5 bg-white/20 backdrop-blur-md text-white rounded-xl hover:bg-white/30 transition-colors">
-              <Share2 size={20} />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -123,10 +118,10 @@ export default function ProducerDetailPage() {
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">
-              {t("producerDetail.totalBatches")}
+              {t("producers.activeBatches")}
             </p>
             <p className="text-3xl font-black text-emerald-900 font-headline">
-              {producer.totalBatches.toLocaleString()}
+              {activeBatchCount}
             </p>
           </div>
           <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
@@ -136,47 +131,31 @@ export default function ProducerDetailPage() {
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">
-              {t("producerDetail.avgQuality")}
+              {t("producerDetail.certifications")}
             </p>
             <p className="text-3xl font-black text-emerald-900 font-headline">
-              {producer.avgQuality}
-              <span className="text-lg text-slate-400">/5.0</span>
+              {producer.certifications.length}
             </p>
           </div>
-          <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600">
-            <Star size={24} fill="currentColor" />
+          <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
+            <Leaf size={24} />
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">
-              {t("producerDetail.complianceScore")}
+              {t("dashboard.status")}
             </p>
-            <p className="text-3xl font-black text-emerald-900 font-headline">
-              {producer.complianceScore}%
+            <p className="text-xl font-black text-emerald-900 font-headline">
+              {producer.status === "verified"
+                ? t("common.verified")
+                : t("common.auditPending")}
             </p>
           </div>
           <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-white">
             <ShieldCheck size={24} />
           </div>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-4 md:gap-8 border-b border-slate-200 mb-8 overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0 scrollbar-hide">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`pb-4 text-sm font-bold transition-colors whitespace-nowrap ${
-              activeTab === tab
-                ? "text-emerald-600 border-b-2 border-emerald-600"
-                : "text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
       </div>
 
       {/* Content Area — 2 columns */}
@@ -251,7 +230,7 @@ export default function ProducerDetailPage() {
           </section>
 
           {/* Active Batches */}
-          {producer.activeBatches.length > 0 && (
+          {activeBatchItems.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-emerald-900 font-headline">
@@ -265,7 +244,7 @@ export default function ProducerDetailPage() {
                 </Link>
               </div>
               <div className="space-y-4">
-                {producer.activeBatches.map((batch) => (
+                {activeBatchItems.map((batch) => (
                   <div
                     key={batch.id}
                     className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient"
@@ -353,9 +332,6 @@ export default function ProducerDetailPage() {
                 </span>
               </div>
             </div>
-            <button className="w-full mt-6 py-2 text-sm font-bold text-primary border border-primary/20 rounded-xl hover:bg-emerald-50 transition-colors">
-              Open Satellite View
-            </button>
           </section>
 
           {/* Blockchain Ledger */}
@@ -365,8 +341,8 @@ export default function ProducerDetailPage() {
               Blockchain Ledger
             </h2>
             <p className="text-emerald-100 text-xs leading-relaxed mb-6 relative z-10">
-              Every batch from this producer is cryptographically hashed and
-              anchored to the mainnet. Immutable proof of origin and compliance.
+              Hồ sơ nhà sản xuất được dùng để đối chiếu với các lô hàng đã ghi
+              trên AgriTrace ledger và demo trên Polygon Amoy.
             </p>
             <div className="space-y-4 relative z-10">
               <div className="flex items-start gap-3">

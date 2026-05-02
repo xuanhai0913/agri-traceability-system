@@ -92,8 +92,6 @@
     "verifiedOnChain": "Verified On-Chain",
     "integritySecured": "Integrity Secured",
     "globalDist": "Global Distribution",
-    "activeRegions": "Active in {{count}} Regions",
-    "fromLastMonth": "+12% from last month",
     "viewLedger": "View Ledger Details",
     "activeBatches": "Active Batches",
     "networkIntegrity": "NETWORK INTEGRITY",
@@ -104,10 +102,7 @@
     "auditCoverage": "Audit Coverage"
   },
   "producerDetail": {
-    "contactFarmer": "Contact Farmer",
     "totalBatches": "Total Batches",
-    "avgQuality": "Average Quality",
-    "complianceScore": "Compliance Score",
     "tabs": {
       "overview": "Overview",
       "activeBatches": "Active Batches",
@@ -124,7 +119,6 @@
     "coordinates": "Coordinates",
     "totalArea": "Total Area",
     "elevation": "Elevation",
-    "openSatellite": "Open Satellite View",
     "blockchainLedger": "BLOCKCHAIN LEDGER",
     "blockchainDesc": "Every batch from this producer is cryptographically hashed and anchored to the Mainnet. Immutable proof of origin and compliance.",
     "latestVerification": "LATEST VERIFICATION",
@@ -144,7 +138,6 @@
     "onChainTracking": "ON-CHAIN TRACKING",
     "immutableLedger": "Immutable Ledger",
     "verifiedNodes": "Verified by {{count}} network nodes",
-    "organicProof": "100% Organic Proof",
     "certNumber": "Cert #{{number}}",
     "geotaggedOrigin": "Geotagged Origin",
     "title": "Batch Details",

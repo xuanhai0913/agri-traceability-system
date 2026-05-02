@@ -92,8 +92,6 @@
     "verifiedOnChain": "Đã xác thực On-Chain",
     "integritySecured": "Bảo mật toàn vẹn",
     "globalDist": "Phân phối toàn cầu",
-    "activeRegions": "Hoạt động tại {{count}} khu vực",
-    "fromLastMonth": "+12% so với tháng trước",
     "viewLedger": "Xem sổ cái",
     "activeBatches": "Lô đang xử lý",
     "networkIntegrity": "TÍNH TOÀN VẸN MẠNG LƯỚI",
@@ -104,10 +102,7 @@
     "auditCoverage": "Kiểm định"
   },
   "producerDetail": {
-    "contactFarmer": "Liên hệ nông dân",
     "totalBatches": "Tổng lô hàng",
-    "avgQuality": "Chất lượng TB",
-    "complianceScore": "Điểm tuân thủ",
     "tabs": {
       "overview": "Tổng quan",
       "activeBatches": "Lô đang xử lý",
@@ -124,7 +119,6 @@
     "coordinates": "Tọa độ",
     "totalArea": "Tổng diện tích",
     "elevation": "Độ cao",
-    "openSatellite": "Xem vệ tinh",
     "blockchainLedger": "SỔ CÁI BLOCKCHAIN",
     "blockchainDesc": "Mỗi lô hàng từ nhà sản xuất này đều được mã hóa và neo vào Mainnet. Bằng chứng bất biến về nguồn gốc và tuân thủ.",
     "latestVerification": "XÁC THỰC MỚI NHẤT",
@@ -144,7 +138,6 @@
     "onChainTracking": "THEO DÕI ON-CHAIN",
     "immutableLedger": "Sổ cái bất biến",
     "verifiedNodes": "Đã xác thực bởi {{count}} node mạng",
-    "organicProof": "100% Chứng nhận Organic",
     "certNumber": "Cert #{{number}}",
     "geotaggedOrigin": "Nguồn gốc định vị",
     "title": "Chi tiết lô hàng",

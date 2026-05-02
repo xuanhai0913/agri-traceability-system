@@ -2,7 +2,6 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
 import Skeleton from "./components/ui/Skeleton";
-import { Construction } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
 /* ── Lazy-loaded pages ─── */
@@ -13,6 +12,7 @@ const CreateBatchPage = lazy(() => import("./pages/CreateBatchPage"));
 const BatchDetailPage = lazy(() => import("./pages/BatchDetailPage"));
 const ProducerNetworkPage = lazy(() => import("./pages/ProducerNetworkPage"));
 const ProducerDetailPage = lazy(() => import("./pages/ProducerDetailPage"));
+const CompliancePage = lazy(() => import("./pages/CompliancePage"));
 
 /** Route-level loading fallback */
 function RouteFallback() {
@@ -26,18 +26,6 @@ function RouteFallback() {
         <Skeleton className="h-32 rounded-2xl" />
       </div>
       <Skeleton className="h-64 rounded-2xl mt-4" />
-    </div>
-  );
-}
-
-function ComingSoon({ title }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-32 text-slate-400">
-      <Construction size={48} className="mb-4" />
-      <h2 className="text-2xl font-bold text-on-surface mb-2 font-headline">
-        {title}
-      </h2>
-      <p className="text-sm">Tính năng đang được phát triển...</p>
     </div>
   );
 }
@@ -106,7 +94,11 @@ export default function App() {
           />
           <Route
             path="/compliance"
-            element={<ComingSoon title="Compliance" />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <CompliancePage />
+              </Suspense>
+            }
           />
         </Route>
       </Routes>

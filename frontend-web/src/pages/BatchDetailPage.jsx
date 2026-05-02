@@ -6,7 +6,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import {
   Check, ChevronRight, AlertCircle, X, Leaf, BadgeCheck,
-  Printer, Share2, PlusCircle, RefreshCw, Shield, MapPin,
+  Printer, PlusCircle, RefreshCw, Shield, MapPin,
   Loader2,
 } from "lucide-react";
 import { getBatch, getStageHistory, addStage } from "../services/api";
@@ -164,9 +164,6 @@ export default function BatchDetailPage() {
   const batchCode = `BTC-${String(batch.id).padStart(4, "0")}`;
   const qrValue = `${window.location.origin}/batches/${batch.id}`;
   const currentStageIdx = batch.currentStageIndex ?? 0;
-
-  // Calculate next available stage for Add Stage form
-  const nextAvailableStage = currentStageIdx + 1;
 
   return (
     <>
@@ -350,9 +347,6 @@ export default function BatchDetailPage() {
                 >
                   {isPrinting ? <Loader2 size={20} className="animate-spin" /> : <Printer size={20} />}
                   {isPrinting ? t("common.loading") || "Exporting..." : t("batchDetail.printQR")}
-                </button>
-                <button className="p-4 bg-surface-container-high text-on-surface rounded-2xl hover:bg-surface-variant transition-colors">
-                  <Share2 size={20} />
                 </button>
               </div>
             </div>
