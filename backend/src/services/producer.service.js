@@ -120,7 +120,10 @@ async function initProducerStore() {
   `);
 
   const countRes = await query("SELECT COUNT(*)::int AS count FROM producers");
-  if (countRes.rows[0].count > 0) return;
+  if (countRes.rows[0].count > 0) {
+    await syncProducerIdentitySequence();
+    return;
+  }
 
   for (const producer of seedProducers) {
     const data = seedToRow(producer);
@@ -163,6 +166,18 @@ async function initProducerStore() {
       ]
     );
   }
+
+  await syncProducerIdentitySequence();
+}
+
+async function syncProducerIdentitySequence() {
+  await query(`
+    SELECT setval(
+      pg_get_serial_sequence('producers', 'id'),
+      GREATEST((SELECT COALESCE(MAX(id), 1) FROM producers), 1),
+      true
+    );
+  `);
 }
 
 async function listProducers() {
