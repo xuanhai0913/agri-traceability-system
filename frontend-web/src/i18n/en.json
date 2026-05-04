@@ -2,11 +2,9 @@
   "nav": {
     "dashboard": "Dashboard",
     "ledger": "Traceability Ledger",
-    "inventory": "Inventory",
+    "inventory": "Batch Inventory",
     "producers": "Producer Network",
     "compliance": "Compliance",
-    "settings": "Settings",
-    "support": "Support",
     "newBatch": "New Batch Entry"
   },
   "common": {
@@ -74,14 +72,14 @@
     "createFirstLink": "+ Create your first batch"
   },
   "inventory": {
-    "title": "Inventory",
-    "subtitle": "Monitor stock levels and agricultural product status.",
-    "sectionLabel": "STOCK MANAGEMENT",
-    "addItem": "Add Product",
-    "totalItems": "Total Products",
-    "inStock": "In Stock",
-    "lowStock": "Low Stock",
-    "outOfStock": "Out of Stock"
+    "title": "Batch Inventory",
+    "subtitle": "Track on-chain batches, stage progress, linked producers, and transaction evidence.",
+    "sectionLabel": "ON-CHAIN OPERATIONS",
+    "addItem": "Create Batch",
+    "totalItems": "Total Batches",
+    "inStock": "Processing",
+    "lowStock": "Needs Review",
+    "outOfStock": "Completed"
   },
   "producers": {
     "title": "Producer Network",
@@ -120,7 +118,7 @@
     "totalArea": "Total Area",
     "elevation": "Elevation",
     "blockchainLedger": "BLOCKCHAIN LEDGER",
-    "blockchainDesc": "Every batch from this producer is cryptographically hashed and anchored to the Mainnet. Immutable proof of origin and compliance.",
+    "blockchainDesc": "Every batch from this producer is written by the service wallet to Polygon Amoy testnet. Evidence is for the traceability demo, not a legal certificate.",
     "latestVerification": "LATEST VERIFICATION",
     "smartContract": "SMART CONTRACT",
     "complianceAudit": "COMPLIANCE AUDIT"

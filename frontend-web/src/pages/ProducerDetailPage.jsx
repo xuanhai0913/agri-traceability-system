@@ -5,12 +5,13 @@ import {
   MapPin, Package, ShieldCheck, Leaf, CheckCircle,
   Users, Globe, Droplets, Scale, ClipboardCheck, Sprout,
   Phone, Mail, ExternalLink, Contact, Satellite, ArrowRight,
-  Loader2, Clock3,
+  Loader2, Clock3, PencilLine,
 } from "lucide-react";
 import { getProducer, getProducerBatches, updateProducerStatus } from "../services/api";
 import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
 import { useAuth } from "../components/auth/useAuth";
 import { toast } from "react-hot-toast";
+import AddProducerModal from "../components/producers/AddProducerModal";
 
 const AUDIT_ICONS = {
   "clipboard-check": ClipboardCheck,
@@ -27,6 +28,7 @@ export default function ProducerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showContact, setShowContact] = useState(false);
+  const [showEditProducer, setShowEditProducer] = useState(false);
 
   useEffect(() => {
     loadProducer();
@@ -129,6 +131,11 @@ export default function ProducerDetailPage() {
     }
   }
 
+  function handleProducerSaved(updatedProducer) {
+    setProducer(updatedProducer);
+    setShowEditProducer(false);
+  }
+
   return (
     <>
       {/* Hero Banner */}
@@ -161,8 +168,8 @@ export default function ProducerDetailPage() {
               </h1>
               <span className="hidden md:inline-flex px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-wider uppercase">
                 {producer.status === "verified"
-                  ? "Verified Producer"
-                  : "Audit Pending"}
+                  ? "Đã xác thực"
+                  : "Chờ kiểm định"}
               </span>
             </div>
             <div className="flex items-center gap-2 mt-1 text-emerald-50">
@@ -179,7 +186,7 @@ export default function ProducerDetailPage() {
                 className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-xs font-bold text-white flex items-center gap-2 transition-colors"
               >
                 <Contact size={15} />
-                Contact
+                Liên hệ
               </button>
             )}
             <a
@@ -189,7 +196,7 @@ export default function ProducerDetailPage() {
               className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-xs font-bold text-white flex items-center gap-2 transition-colors"
             >
               <Satellite size={15} />
-              Satellite View
+              Bản đồ vệ tinh
             </a>
           </div>
         </div>
@@ -244,6 +251,14 @@ export default function ProducerDetailPage() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => setShowEditProducer(true)}
+              className="px-5 py-3 rounded-xl bg-surface-container-low text-emerald-900 font-bold text-sm inline-flex items-center justify-center gap-2 hover:bg-emerald-50 transition-colors"
+            >
+              <PencilLine size={17} />
+              Sửa hồ sơ
+            </button>
             {producer.status === "audit_pending" ? (
               <button
                 type="button"
@@ -500,7 +515,7 @@ export default function ProducerDetailPage() {
               className="mt-5 w-full py-3 rounded-xl bg-emerald-900 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-800 transition-colors"
             >
               <Satellite size={17} />
-              Open Satellite View
+              Mở bản đồ vệ tinh
             </a>
           </section>
 
@@ -580,6 +595,13 @@ export default function ProducerDetailPage() {
           )}
         </div>
       </div>
+      {showEditProducer && isAuthenticated && (
+        <AddProducerModal
+          producer={producer}
+          onClose={() => setShowEditProducer(false)}
+          onSaved={handleProducerSaved}
+        />
+      )}
     </>
   );
 }

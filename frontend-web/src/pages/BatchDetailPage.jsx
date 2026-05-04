@@ -875,11 +875,26 @@ export default function BatchDetailPage() {
                   >
                     <option value="">Service wallet only</option>
                     {producerLinks.map((link) => (
-                      <option key={link.id} value={link.producerId}>
+                      <option
+                        key={link.id}
+                        value={link.producerId}
+                        disabled={link.producer?.status === "audit_pending"}
+                      >
                         {link.producer?.name} — {link.producerRoleLabel}
+                        {link.producer?.status === "audit_pending"
+                          ? " — Chờ kiểm định"
+                          : ""}
                       </option>
                     ))}
                   </select>
+                  {producerLinks.some(
+                    (link) => link.producer?.status === "audit_pending"
+                  ) && (
+                    <p className="text-xs text-amber-700 mt-2">
+                      Partner đang chờ kiểm định sẽ không được chọn làm actor
+                      ghi stage cho tới khi admin xác thực hồ sơ.
+                    </p>
+                  )}
                 </div>
               )}
 

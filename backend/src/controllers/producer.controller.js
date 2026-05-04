@@ -2,6 +2,7 @@ const {
   createProducer,
   getProducerById,
   listProducers,
+  updateProducerProfile,
   updateProducerStatus,
 } = require("../services/producer.service");
 const { getReadOnlyContract } = require("../config/blockchain");
@@ -131,7 +132,23 @@ async function getProducerBatches(req, res, next) {
 async function postProducer(req, res, next) {
   try {
     const producer = await createProducer(req.body);
+    invalidateCacheKeys(["dashboard:summary"]);
     res.status(201).json({
+      success: true,
+      data: producer,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function patchProducer(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const producer = await updateProducerProfile(id, req.body);
+    invalidateCacheKeys(["dashboard:summary"]);
+
+    res.json({
       success: true,
       data: producer,
     });
@@ -159,6 +176,7 @@ module.exports = {
   getProducer,
   getProducerBatches,
   getProducers,
+  patchProducer,
   patchProducerStatus,
   postProducer,
 };

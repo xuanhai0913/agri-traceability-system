@@ -15,6 +15,7 @@ const ProducerNetworkPage = lazy(() => import("./pages/ProducerNetworkPage"));
 const ProducerDetailPage = lazy(() => import("./pages/ProducerDetailPage"));
 const CompliancePage = lazy(() => import("./pages/CompliancePage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 /** Route-level loading fallback */
 function RouteFallback() {
@@ -47,70 +48,78 @@ export default function App() {
             }
           />
           <Route element={<AppLayout />}>
-          <Route
-            index
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <DashboardPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/batches"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <TraceabilityLedgerPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/batches/new"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <CreateBatchPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/batches/:id"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <BatchDetailPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/inventory"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <InventoryPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/producers"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <ProducerNetworkPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/producers/:id"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <ProducerDetailPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/compliance"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <CompliancePage />
-              </Suspense>
-            }
-          />
+            <Route
+              index
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <DashboardPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/batches"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <TraceabilityLedgerPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/batches/new"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <CreateBatchPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/batches/:id"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <BatchDetailPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/inventory"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <InventoryPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/producers"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <ProducerNetworkPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/producers/:id"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <ProducerDetailPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/compliance"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <CompliancePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <NotFoundPage />
+                </Suspense>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>

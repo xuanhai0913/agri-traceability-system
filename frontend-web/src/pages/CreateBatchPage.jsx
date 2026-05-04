@@ -133,6 +133,13 @@ export default function CreateBatchPage() {
       return;
     }
 
+    if (selectedProducer?.status === "audit_pending") {
+      setError(
+        "Nhà sản xuất này đang chờ kiểm định. Hãy xác thực hồ sơ NSX trước khi tạo lô hàng."
+      );
+      return;
+    }
+
     try {
       setSubmitting(true);
       let imageUrl = "";
@@ -204,6 +211,9 @@ export default function CreateBatchPage() {
   const selectedProducer = producers.find(
     (producer) => String(producer.id) === String(form.producerId)
   );
+  const pendingProducerCount = producers.filter(
+    (producer) => producer.status === "audit_pending"
+  ).length;
 
   function formatDraftTime(value) {
     if (!value) return "";
@@ -257,7 +267,12 @@ export default function CreateBatchPage() {
         <div className="bg-error-container text-on-error-container px-6 py-4 rounded-2xl mb-8 flex items-center gap-3">
           <AlertCircle size={20} />
           <span className="text-sm font-medium">{error}</span>
-          <button className="ml-auto" onClick={() => setError(null)}>
+          <button
+            type="button"
+            className="ml-auto"
+            onClick={() => setError(null)}
+            aria-label="Đóng thông báo lỗi"
+          >
             <X size={18} />
           </button>
         </div>
@@ -323,16 +338,25 @@ export default function CreateBatchPage() {
                       onChange={handleProducerChange}
                       className="input-ledger"
                       disabled={producersLoading}
-                      required={producers.length > 0}
+                      required={producers.some(
+                        (producer) => producer.status === "verified"
+                      )}
                     >
                       <option value="">
                         {producersLoading
                           ? "Đang tải danh sách..."
-                          : "Chọn producer từ database"}
+                          : "Chọn producer đã xác thực từ database"}
                       </option>
                       {producers.map((producer) => (
-                        <option key={producer.id} value={producer.id}>
-                          {producer.name} — {producer.location}
+                        <option
+                          key={producer.id}
+                          value={producer.id}
+                          disabled={producer.status === "audit_pending"}
+                        >
+                          {producer.name} — {producer.location} —{" "}
+                          {producer.status === "verified"
+                            ? "Đã xác thực"
+                            : "Chờ kiểm định"}
                         </option>
                       ))}
                     </select>
@@ -348,17 +372,55 @@ export default function CreateBatchPage() {
                       <option value="inspector">Đơn vị kiểm định</option>
                     </select>
                   </div>
+                  {pendingProducerCount > 0 && (
+                    <p className="text-xs text-amber-700 mt-2 px-1">
+                      {pendingProducerCount} producer đang chờ kiểm định đã bị khóa
+                      trong form tạo lô. Vào Producer Detail để xác thực trước khi
+                      ghi dữ liệu on-chain.
+                    </p>
+                  )}
                   {selectedProducer && (
-                    <div className="mt-3 flex items-start gap-3 rounded-xl bg-emerald-50 border border-emerald-100 p-4">
-                      <UserCheck size={18} className="text-emerald-700 shrink-0 mt-0.5" />
+                    <div
+                      className={`mt-3 flex items-start gap-3 rounded-xl border p-4 ${
+                        selectedProducer.status === "verified"
+                          ? "bg-emerald-50 border-emerald-100"
+                          : "bg-amber-50 border-amber-100"
+                      }`}
+                    >
+                      <UserCheck
+                        size={18}
+                        className={`shrink-0 mt-0.5 ${
+                          selectedProducer.status === "verified"
+                            ? "text-emerald-700"
+                            : "text-amber-700"
+                        }`}
+                      />
                       <div>
                         <p className="text-sm font-bold text-emerald-900">
                           {selectedProducer.name}
                         </p>
-                        <p className="text-xs text-emerald-700 mt-0.5">
+                        <p
+                          className={`text-xs mt-0.5 ${
+                            selectedProducer.status === "verified"
+                              ? "text-emerald-700"
+                              : "text-amber-700"
+                          }`}
+                        >
                           {selectedProducer.location} •{" "}
                           {selectedProducer.linkedBatchCount || 0} lô hàng đã liên kết
+                          {" "}•{" "}
+                          {selectedProducer.status === "verified"
+                            ? "Đủ điều kiện tạo lô"
+                            : "Chờ kiểm định"}
                         </p>
+                        {selectedProducer.status === "audit_pending" && (
+                          <Link
+                            to={`/producers/${selectedProducer.id}`}
+                            className="inline-flex mt-2 text-xs font-bold text-amber-800 hover:underline"
+                          >
+                            Mở hồ sơ để xác thực NSX
+                          </Link>
+                        )}
                       </div>
                     </div>
                   )}
@@ -419,7 +481,16 @@ export default function CreateBatchPage() {
           <div className="lg:col-span-5 space-y-6">
             {/* Upload Zone */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-label="Tải ảnh minh chứng cho lô hàng"
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
               className={`bg-surface-container-lowest p-8 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center min-h-[340px] cursor-pointer transition-colors group ${
@@ -429,6 +500,7 @@ export default function CreateBatchPage() {
               }`}
             >
               <input
+                id="batch-image-upload"
                 ref={fileInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -527,7 +599,13 @@ export default function CreateBatchPage() {
 
             {/* Quote card */}
             <div className="relative h-28 rounded-2xl overflow-hidden">
-              <img src="/images/quote-tea-field.png" alt="Tea field" className="w-full h-full object-cover" />
+              <img
+                src="/images/quote-tea-field.png"
+                alt="Tea field"
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover"
+              />
               <div className="absolute inset-0 flex items-center p-6">
                 <p className="text-white text-xs italic font-medium leading-relaxed">
                   "Sự minh bạch là gốc rễ của niềm tin trong nông nghiệp hiện

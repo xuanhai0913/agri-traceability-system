@@ -60,6 +60,16 @@ function parseProducerId(value) {
   return producerId;
 }
 
+function assertVerifiedProducer(producer) {
+  if (!producer || producer.status === "verified") return;
+
+  const err = new Error(
+    "Producer đang chờ kiểm định. Hãy xác thực hồ sơ NSX trước khi ghi batch/stage on-chain."
+  );
+  err.status = 400;
+  throw err;
+}
+
 async function loadBatchPage({ contract, page, limit }) {
   const total = Number(await contract.getTotalBatches());
   const start = (page - 1) * limit + 1;
@@ -124,6 +134,7 @@ const createBatch = async (req, res, next) => {
           message: "Nhà sản xuất được chọn không tồn tại trong database",
         });
       }
+      assertVerifiedProducer(producer);
     }
 
     const contract = getContract();
@@ -222,6 +233,7 @@ const addStage = async (req, res, next) => {
           message: "Actor/partner được chọn không tồn tại trong database",
         });
       }
+      assertVerifiedProducer(producer);
     }
 
     const contract = getContract();

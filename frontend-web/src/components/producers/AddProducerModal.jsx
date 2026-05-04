@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { X, Loader2, Shield, UserPlus, ClipboardCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Loader2, Shield, UserPlus, ClipboardCheck, Save } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { createProducer } from "../../services/api";
+import { createProducer, updateProducer } from "../../services/api";
 
 const INITIAL_FORM = {
   name: "",
@@ -46,10 +46,47 @@ function parseAudits(value) {
     .filter((audit) => audit.title);
 }
 
-export default function AddProducerModal({ onClose, onCreated }) {
-  const [form, setForm] = useState(INITIAL_FORM);
+function formatAudits(audits = []) {
+  return audits
+    .map((audit) =>
+      [audit.title, audit.date, audit.result]
+        .filter(Boolean)
+        .join(" | ")
+    )
+    .join("\n");
+}
+
+function producerToForm(producer) {
+  if (!producer) return { ...INITIAL_FORM };
+
+  return {
+    name: producer.name || "",
+    website: producer.website || "",
+    phone: producer.phone || "",
+    email: producer.email || "",
+    location: producer.location || "",
+    status: producer.status || "verified",
+    description: producer.description || "",
+    imageUrl: producer.image || "",
+    coordinates: producer.coordinates || "",
+    totalArea: producer.totalArea || "",
+    elevation: producer.elevation || "",
+    certifications: (producer.certifications || []).join(", "),
+    audits: formatAudits(producer.audits || []),
+    farmingMethods: (producer.farmingMethods || []).join(", "),
+    socialImpact: (producer.socialImpact || []).join(", "),
+  };
+}
+
+export default function AddProducerModal({ producer, onClose, onCreated, onSaved }) {
+  const isEditing = Boolean(producer?.id);
+  const [form, setForm] = useState(() => producerToForm(producer));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setForm(producerToForm(producer));
+  }, [producer]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -77,13 +114,24 @@ export default function AddProducerModal({ onClose, onCreated }) {
         socialImpact: toList(form.socialImpact),
       };
 
-      const res = await createProducer(payload);
-      toast.success("Đã thêm nhà sản xuất vào database.");
-      onCreated(res.data.data);
+      const res = isEditing
+        ? await updateProducer(producer.id, payload)
+        : await createProducer(payload);
+      toast.success(
+        isEditing
+          ? "Đã cập nhật hồ sơ nhà sản xuất."
+          : "Đã thêm nhà sản xuất vào database."
+      );
+
+      if (isEditing) {
+        onSaved?.(res.data.data);
+      } else {
+        onCreated?.(res.data.data);
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Không thể thêm producer. Kiểm tra lại phiên đăng nhập hoặc backend env."
+          "Không thể lưu producer. Kiểm tra lại phiên đăng nhập hoặc backend env."
       );
     } finally {
       setSaving(false);
@@ -101,8 +149,8 @@ export default function AddProducerModal({ onClose, onCreated }) {
               Admin Producer
             </span>
             <h2 className="text-2xl font-black text-emerald-900 font-headline mt-1 flex items-center gap-2">
-              <UserPlus size={22} />
-              Thêm nhà sản xuất
+              {isEditing ? <Save size={22} /> : <UserPlus size={22} />}
+              {isEditing ? "Sửa hồ sơ nhà sản xuất" : "Thêm nhà sản xuất"}
             </h2>
           </div>
           <button
@@ -131,7 +179,7 @@ export default function AddProducerModal({ onClose, onCreated }) {
                 </p>
                 <p className="text-xs text-emerald-700 mt-1">
                   Số lô hàng không nhập tay nữa; hệ thống tự tính từ các batch on-chain đã liên kết.
-                  Chứng nhận và kiểm định testnet phải ghi rõ không phải chứng nhận pháp lý.
+                  Trạng thái xác thực nên cập nhật bằng panel duyệt NSX để có lịch sử kiểm định rõ ràng.
                 </p>
               </div>
             </div>
@@ -196,14 +244,20 @@ export default function AddProducerModal({ onClose, onCreated }) {
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                   Trạng thái
                 </label>
-                <select
-                  value={form.status}
-                  onChange={(e) => updateField("status", e.target.value)}
-                  className="input-ledger"
-                >
-                  <option value="verified">Verified</option>
-                  <option value="audit_pending">Audit Pending</option>
-                </select>
+                {isEditing ? (
+                  <div className="input-ledger text-sm text-slate-600">
+                    {form.status === "verified" ? "Đã xác thực" : "Chờ kiểm định"}
+                  </div>
+                ) : (
+                  <select
+                    value={form.status}
+                    onChange={(e) => updateField("status", e.target.value)}
+                    className="input-ledger"
+                  >
+                    <option value="verified">Đã xác thực</option>
+                    <option value="audit_pending">Chờ kiểm định</option>
+                  </select>
+                )}
               </div>
             </div>
 
@@ -264,8 +318,18 @@ export default function AddProducerModal({ onClose, onCreated }) {
                   disabled={saving}
                   className="px-6 py-3 rounded-xl btn-primary-gradient font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-wait"
                 >
-                  {saving ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
-                  {saving ? "Đang lưu..." : "Thêm producer"}
+                  {saving ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : isEditing ? (
+                    <Save size={18} />
+                  ) : (
+                    <UserPlus size={18} />
+                  )}
+                  {saving
+                    ? "Đang lưu..."
+                    : isEditing
+                    ? "Lưu hồ sơ"
+                    : "Thêm producer"}
                 </button>
               </div>
             </div>

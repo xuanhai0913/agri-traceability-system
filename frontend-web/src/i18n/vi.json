@@ -2,11 +2,9 @@
   "nav": {
     "dashboard": "Bảng điều khiển",
     "ledger": "Sổ cái truy xuất",
-    "inventory": "Kho hàng",
+    "inventory": "Kho lô hàng",
     "producers": "Mạng lưới NSX",
     "compliance": "Tuân thủ",
-    "settings": "Cài đặt",
-    "support": "Hỗ trợ",
     "newBatch": "Tạo lô hàng mới"
   },
   "common": {
@@ -74,14 +72,14 @@
     "createFirstLink": "+ Tạo lô hàng đầu tiên"
   },
   "inventory": {
-    "title": "Kho Hàng",
-    "subtitle": "Theo dõi tồn kho và trạng thái sản phẩm nông nghiệp.",
-    "sectionLabel": "QUẢN LÝ TỒN KHO",
-    "addItem": "Thêm sản phẩm",
-    "totalItems": "Tổng sản phẩm",
-    "inStock": "Còn hàng",
-    "lowStock": "Sắp hết",
-    "outOfStock": "Hết hàng"
+    "title": "Kho Lô Hàng",
+    "subtitle": "Theo dõi lô hàng on-chain, trạng thái stage, producer liên kết và bằng chứng giao dịch.",
+    "sectionLabel": "VẬN HÀNH ON-CHAIN",
+    "addItem": "Tạo lô hàng",
+    "totalItems": "Tổng lô hàng",
+    "inStock": "Đang xử lý",
+    "lowStock": "Cần theo dõi",
+    "outOfStock": "Đã hoàn thành"
   },
   "producers": {
     "title": "Mạng Lưới Nhà Sản Xuất",
@@ -120,7 +118,7 @@
     "totalArea": "Tổng diện tích",
     "elevation": "Độ cao",
     "blockchainLedger": "SỔ CÁI BLOCKCHAIN",
-    "blockchainDesc": "Mỗi lô hàng từ nhà sản xuất này đều được mã hóa và neo vào Mainnet. Bằng chứng bất biến về nguồn gốc và tuân thủ.",
+    "blockchainDesc": "Mỗi lô hàng từ nhà sản xuất này được ghi bằng service wallet lên Polygon Amoy testnet. Bằng chứng dùng cho demo truy xuất nguồn gốc, không phải chứng nhận pháp lý.",
     "latestVerification": "XÁC THỰC MỚI NHẤT",
     "smartContract": "SMART CONTRACT",
     "complianceAudit": "KIỂM ĐỊNH TUÂN THỦ"

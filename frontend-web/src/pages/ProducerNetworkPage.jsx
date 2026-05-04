@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { MapPin, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Filter, Shield, Clock, ChevronRight, UserPlus } from "lucide-react";
 import { getProducers } from "../services/api";
@@ -8,19 +8,35 @@ import { useAuth } from "../components/auth/useAuth";
 
 const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 
-const FILTERS = ["All", "Verified", "Audit Pending"];
-const SORTS = ["Default", "Region", "Status"];
+const FILTERS = [
+  { key: "all", labelVi: "Tất cả", labelEn: "All" },
+  { key: "verified", labelVi: "Đã xác thực", labelEn: "Verified" },
+  { key: "audit_pending", labelVi: "Chờ kiểm định", labelEn: "Audit Pending" },
+];
+const SORTS = [
+  { key: "default", labelVi: "Mặc định", labelEn: "Default" },
+  { key: "region", labelVi: "Khu vực", labelEn: "Region" },
+  { key: "status", labelVi: "Trạng thái", labelEn: "Status" },
+];
 
 export default function ProducerNetworkPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const isVi = i18n.language === "vi";
   const [producers, setProducers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [sort, setSort] = useState("Default");
   const [showAddProducer, setShowAddProducer] = useState(false);
+
+  const statusParam = searchParams.get("status");
+  const sortParam = searchParams.get("sort");
+  const activeFilter = FILTERS.some((filter) => filter.key === statusParam)
+    ? statusParam
+    : "all";
+  const sort = SORTS.some((item) => item.key === sortParam)
+    ? sortParam
+    : "default";
 
   useEffect(() => {
     loadProducers();
@@ -39,15 +55,13 @@ export default function ProducerNetworkPage() {
   }
 
   const filteredBase =
-    activeFilter === "All"
+    activeFilter === "all"
       ? producers
-      : activeFilter === "Verified"
-      ? producers.filter((p) => p.status === "verified")
-      : producers.filter((p) => p.status === "audit_pending");
+      : producers.filter((p) => p.status === activeFilter);
 
   const filtered = [...filteredBase].sort((a, b) => {
-    if (sort === "Region") return a.location.localeCompare(b.location);
-    if (sort === "Status") return a.status.localeCompare(b.status);
+    if (sort === "region") return a.location.localeCompare(b.location);
+    if (sort === "status") return a.status.localeCompare(b.status);
     return a.id - b.id;
   });
 
@@ -58,6 +72,20 @@ export default function ProducerNetworkPage() {
     setShowAddProducer(false);
     await loadProducers();
     navigate(`/producers/${producer.id}`);
+  }
+
+  function updateFilter(nextFilter) {
+    const params = new URLSearchParams(searchParams);
+    if (nextFilter === "all") params.delete("status");
+    else params.set("status", nextFilter);
+    setSearchParams(params, { replace: true });
+  }
+
+  function updateSort(nextSort) {
+    const params = new URLSearchParams(searchParams);
+    if (nextSort === "default") params.delete("sort");
+    else params.set("sort", nextSort);
+    setSearchParams(params, { replace: true });
   }
 
   return (
@@ -134,33 +162,36 @@ export default function ProducerNetworkPage() {
 
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 bg-surface-container-low p-3 md:p-4 rounded-xl gap-3">
-        <div className="flex gap-3">
-          {FILTERS.map((f) => (
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+          {FILTERS.map((filter) => (
             <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                activeFilter === f
+              key={filter.key}
+              type="button"
+              onClick={() => updateFilter(filter.key)}
+              className={`shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                activeFilter === filter.key
                   ? "bg-white shadow-sm text-emerald-900 border border-emerald-100"
                   : "text-slate-500 hover:text-emerald-700 hover:bg-white/50"
               }`}
             >
-              {f === "All" && (
+              {filter.key === "all" && (
                 <Filter size={14} className="inline mr-1 align-middle" />
               )}
-              {f}
+              {isVi ? filter.labelVi : filter.labelEn}
             </button>
           ))}
         </div>
         <div className="flex items-center gap-2 text-slate-500 text-sm">
-          <span>Sort by:</span>
+          <span>{t("common.sortBy")}:</span>
           <select
             value={sort}
-            onChange={(e) => setSort(e.target.value)}
+            onChange={(e) => updateSort(e.target.value)}
             className="bg-transparent border-none font-bold text-emerald-900 focus:ring-0 cursor-pointer text-sm"
           >
-            {SORTS.map((s) => (
-              <option key={s}>{s}</option>
+            {SORTS.map((item) => (
+              <option key={item.key} value={item.key}>
+                {isVi ? item.labelVi : item.labelEn}
+              </option>
             ))}
           </select>
         </div>
@@ -181,13 +212,15 @@ export default function ProducerNetworkPage() {
           return (
             <div
               key={producer.id}
-              className="bg-surface-container-lowest rounded-2xl overflow-hidden group hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-300"
+              className="bg-surface-container-lowest rounded-2xl overflow-hidden group hover:shadow-xl hover:shadow-emerald-900/5 transition-shadow duration-300"
             >
               {/* Cover Image */}
               <div className="h-32 relative overflow-hidden">
                 <img
                   src={producer.image || "/images/farm-highland.png"}
                   alt={producer.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
 

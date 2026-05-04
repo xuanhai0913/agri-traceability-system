@@ -102,6 +102,11 @@ h1, h2, h3, .font-headline {
   font-family: var(--font-headline);
 }
 
+:where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
 /* Material Symbols Outlined */
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined";
@@ -193,6 +198,11 @@ h1, h2, h3, .font-headline {
 }
 .input-ledger:focus {
   border-bottom-color: var(--color-primary);
+}
+
+.input-ledger:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
 }
 
 /* Stage badges */

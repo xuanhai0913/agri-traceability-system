@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { MapPin, CalendarDays, ArrowRight, PackagePlus, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Download, ExternalLink, ShieldCheck, Users } from "lucide-react";
 import { getAllBatches } from "../services/api";
@@ -31,12 +31,16 @@ const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 
 export default function InventoryPage() {
   const { t, i18n } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [slowLoading, setSlowLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [cacheInfo, setCacheInfo] = useState(null);
-  const [filter, setFilter] = useState("all"); // all | active | completed
+  const statusParam = searchParams.get("status");
+  const filter = ["active", "completed"].includes(statusParam)
+    ? statusParam
+    : "all";
 
   useEffect(() => {
     loadBatches();
@@ -69,6 +73,13 @@ export default function InventoryPage() {
       : filter === "active"
       ? batches.filter((b) => b.isActive)
       : batches.filter((b) => !b.isActive);
+
+  function updateFilter(nextFilter) {
+    const params = new URLSearchParams(searchParams);
+    if (nextFilter === "all") params.delete("status");
+    else params.set("status", nextFilter);
+    setSearchParams(params, { replace: true });
+  }
 
   function formatDate(timestamp) {
     if (!timestamp) return "—";
@@ -158,7 +169,7 @@ export default function InventoryPage() {
       />
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 mb-8">
+      <div className="flex items-center gap-2 mb-8 overflow-x-auto scrollbar-hide pb-1">
         {[
           { key: "all", label: t("common.all"), count: batches.length },
           {
@@ -174,8 +185,9 @@ export default function InventoryPage() {
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${
+            type="button"
+            onClick={() => updateFilter(tab.key)}
+            className={`shrink-0 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${
               filter === tab.key
                 ? "bg-primary text-white"
                 : "bg-surface-container-low text-slate-600 hover:bg-emerald-50"

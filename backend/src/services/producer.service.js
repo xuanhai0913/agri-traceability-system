@@ -370,6 +370,117 @@ async function createProducer(payload) {
   return toApiProducer(res.rows[0]);
 }
 
+async function updateProducerProfile(id, payload = {}) {
+  const producerId = Number(id);
+  if (!Number.isInteger(producerId) || producerId <= 0) {
+    const err = new Error("producerId không hợp lệ");
+    err.status = 400;
+    throw err;
+  }
+
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required to update producers");
+    err.status = 503;
+    throw err;
+  }
+
+  const current = await getProducerById(producerId);
+  if (!current) {
+    const err = new Error(`Producer #${producerId} not found`);
+    err.status = 404;
+    throw err;
+  }
+
+  const hasOwn = (field) => Object.prototype.hasOwnProperty.call(payload, field);
+  const data = normalizeProducerPayload({
+    name: hasOwn("name") ? payload.name : current.name,
+    website: hasOwn("website") ? payload.website : current.website,
+    phone: hasOwn("phone") ? payload.phone : current.phone,
+    email: hasOwn("email") ? payload.email : current.email,
+    location: hasOwn("location") ? payload.location : current.location,
+    status: hasOwn("status") ? payload.status : current.status,
+    description: hasOwn("description") ? payload.description : current.description,
+    imageUrl: hasOwn("imageUrl") || hasOwn("image")
+      ? payload.imageUrl || payload.image
+      : current.image,
+    coordinates: hasOwn("coordinates") ? payload.coordinates : current.coordinates,
+    totalArea: hasOwn("totalArea") ? payload.totalArea : current.totalArea,
+    elevation: hasOwn("elevation") ? payload.elevation : current.elevation,
+    activeBatches: current.profileActiveBatches || 0,
+    certifications: hasOwn("certifications")
+      ? payload.certifications
+      : current.certifications,
+    audits: hasOwn("audits") ? payload.audits : current.audits,
+    farmingMethods: hasOwn("farmingMethods")
+      ? payload.farmingMethods
+      : current.farmingMethods,
+    socialImpact: hasOwn("socialImpact") ? payload.socialImpact : current.socialImpact,
+  });
+
+  if (!data.name) {
+    const err = new Error("Tên nhà sản xuất là bắt buộc");
+    err.status = 400;
+    throw err;
+  }
+
+  if (!data.location) {
+    const err = new Error("Vị trí nhà sản xuất là bắt buộc");
+    err.status = 400;
+    throw err;
+  }
+
+  const res = await query(
+    `
+    UPDATE producers
+    SET
+      name = $2,
+      website = $3,
+      phone = $4,
+      email = $5,
+      location = $6,
+      status = $7,
+      description = $8,
+      image_url = $9,
+      coordinates = $10,
+      total_area = $11,
+      elevation = $12,
+      certifications = $13::jsonb,
+      audits = $14::jsonb,
+      farming_methods = $15::jsonb,
+      social_impact = $16::jsonb,
+      updated_at = now()
+    WHERE id = $1
+    RETURNING id
+    `,
+    [
+      producerId,
+      data.name,
+      data.website,
+      data.phone,
+      data.email,
+      data.location,
+      data.status,
+      data.description,
+      data.imageUrl,
+      data.coordinates,
+      data.totalArea,
+      data.elevation,
+      JSON.stringify(data.certifications),
+      JSON.stringify(data.audits),
+      JSON.stringify(data.farmingMethods),
+      JSON.stringify(data.socialImpact),
+    ]
+  );
+
+  if (res.rows.length === 0) {
+    const err = new Error(`Producer #${producerId} not found`);
+    err.status = 404;
+    throw err;
+  }
+
+  return getProducerById(producerId);
+}
+
 async function updateProducerStatus(id, payload = {}) {
   const producerId = Number(id);
   if (!Number.isInteger(producerId) || producerId <= 0) {
@@ -434,5 +545,6 @@ module.exports = {
   getProducerById,
   initProducerStore,
   listProducers,
+  updateProducerProfile,
   updateProducerStatus,
 };
