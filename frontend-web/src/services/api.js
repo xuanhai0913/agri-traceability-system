@@ -63,8 +63,14 @@ export function getTotalBatches() {
   return api.get("/batches/total");
 }
 
-export function getAllBatches(page = 1, limit = 20) {
-  return api.get(`/batches?page=${page}&limit=${limit}`);
+export function getAllBatches(page = 1, limit = 20, options = {}) {
+  return api.get("/batches", {
+    params: {
+      page,
+      limit,
+      ...(options.refresh ? { refresh: 1 } : {}),
+    },
+  });
 }
 
 export function getBatch(batchId) {
@@ -142,12 +148,16 @@ export function createProducer(payload) {
 
 // ── Compliance evidence endpoint ─────────────────────
 
-export function getComplianceEvidence() {
-  return api.get("/compliance/evidence");
+export function getComplianceEvidence(options = {}) {
+  return api.get("/compliance/evidence", {
+    params: options.refresh ? { refresh: 1 } : {},
+  });
 }
 
-export function getDashboardSummary() {
-  return api.get("/dashboard/summary");
+export function getDashboardSummary(options = {}) {
+  return api.get("/dashboard/summary", {
+    params: options.refresh ? { refresh: 1 } : {},
+  });
 }
 
 // ── Health check ─────────────────────────────────────

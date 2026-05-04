@@ -23,6 +23,8 @@ export function ImageWithSkeleton({ src, alt, className, wrapperClassName = "" }
       <img
         src={src}
         alt={alt}
+        loading="lazy"
+        decoding="async"
         className={`${className} object-cover w-full h-full transition-all duration-500 ${
           isLoaded && !hasError ? "opacity-100 scale-100" : "opacity-0 scale-105"
         }`}

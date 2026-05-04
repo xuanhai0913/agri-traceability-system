@@ -12,6 +12,10 @@ const {
   linkBatchToProducer,
   recordBatchTransaction,
 } = require("../services/batch-metadata.service");
+const {
+  invalidateTraceabilityReadCaches,
+  readThroughCache,
+} = require("../services/cache.service");
 
 /**
  * Batch Controller
@@ -54,6 +58,46 @@ function parseProducerId(value) {
   }
 
   return producerId;
+}
+
+async function loadBatchPage({ contract, page, limit }) {
+  const total = Number(await contract.getTotalBatches());
+  const start = (page - 1) * limit + 1;
+  const end = Math.min(start + limit - 1, total);
+  const ids = [];
+
+  for (let id = end; id >= start; id -= 1) {
+    ids.push(id);
+  }
+
+  const settledBatches = await Promise.allSettled(
+    ids.map((id) => contract.getBatch(id))
+  );
+  const batches = settledBatches
+    .map((result) =>
+      result.status === "fulfilled" ? formatBatch(result.value) : null
+    )
+    .filter(Boolean);
+
+  const batchIds = batches.map((batch) => batch.id);
+  const [producerLinks, transactionRecords] = await Promise.all([
+    getBatchLinksByBatchIds(batchIds),
+    getBatchTransactionsByBatchIds(batchIds),
+  ]);
+  const enrichedBatches = attachTransactionRecordsToBatches(
+    attachProducerLinksToBatches(batches, producerLinks),
+    transactionRecords
+  );
+
+  return {
+    batches: enrichedBatches,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 /**
@@ -134,6 +178,7 @@ const createBatch = async (req, res, next) => {
         notes: "Batch created by AgriTrace admin service wallet",
       });
     }
+    invalidateTraceabilityReadCaches();
 
     res.status(201).json({
       success: true,
@@ -199,6 +244,7 @@ const addStage = async (req, res, next) => {
       actorRole: actorRole || "primary_producer",
       notes: actorNotes || description || "Stage updated by AgriTrace admin service wallet",
     });
+    invalidateTraceabilityReadCaches();
 
     res.status(200).json({
       success: true,
@@ -335,43 +381,19 @@ const getAllBatches = async (req, res, next) => {
       });
     }
 
-    const total = Number(await contract.getTotalBatches());
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
-    const start = (page - 1) * limit + 1;
-    const end = Math.min(start + limit - 1, total);
-
-    const batches = [];
-    for (let i = end; i >= start; i--) {
-      try {
-        const batch = await contract.getBatch(i);
-        batches.push(formatBatch(batch));
-      } catch {
-        // Skip batches that fail to load
-      }
-    }
-
-    const producerLinks = await getBatchLinksByBatchIds(
-      batches.map((batch) => batch.id)
-    );
-    const transactionRecords = await getBatchTransactionsByBatchIds(
-      batches.map((batch) => batch.id)
-    );
-    const enrichedBatches = attachTransactionRecordsToBatches(
-      attachProducerLinksToBatches(batches, producerLinks),
-      transactionRecords
-    );
+    const { value, cache } = await readThroughCache({
+      key: `batches:${page}:${limit}`,
+      refresh: req.query.refresh,
+      loader: () => loadBatchPage({ contract, page, limit }),
+    });
 
     res.status(200).json({
       success: true,
       data: {
-        batches: enrichedBatches,
-        pagination: {
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
-        },
+        ...value,
+        cache,
       },
     });
   } catch (error) {

@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { getComplianceEvidence } from "../services/api";
+import SyncStatus from "../components/ui/SyncStatus";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -29,6 +30,7 @@ export default function CompliancePage() {
   const { i18n } = useTranslation();
   const isVi = i18n.language === "vi";
   const [loading, setLoading] = useState(true);
+  const [slowLoading, setSlowLoading] = useState(false);
   const [evidence, setEvidence] = useState(null);
   const [error, setError] = useState(null);
   const [checkedAt, setCheckedAt] = useState(null);
@@ -37,18 +39,21 @@ export default function CompliancePage() {
     loadComplianceData();
   }, []);
 
-  async function loadComplianceData() {
+  async function loadComplianceData(options = {}) {
+    const slowTimer = setTimeout(() => setSlowLoading(true), 1500);
     try {
       setLoading(true);
       setError(null);
 
-      const res = await getComplianceEvidence();
+      const res = await getComplianceEvidence(options);
       setEvidence(res.data.data);
       setCheckedAt(new Date(res.data.data.generatedAt));
     } catch (err) {
       setError(err.response?.data?.message || "Không thể tải dữ liệu kiểm chứng.");
     } finally {
+      clearTimeout(slowTimer);
       setLoading(false);
+      setSlowLoading(false);
     }
   }
 
@@ -135,12 +140,19 @@ export default function CompliancePage() {
         </div>
 
         <button
-          onClick={loadComplianceData}
+          onClick={() => loadComplianceData({ refresh: true })}
           className="px-5 py-3 bg-emerald-900 text-white rounded-xl font-bold text-sm hover:bg-emerald-800 transition-colors w-full lg:w-auto"
         >
           {isVi ? "Tải lại kiểm chứng" : "Refresh Evidence"}
         </button>
       </header>
+
+      <SyncStatus
+        slow={loading && slowLoading}
+        error={!loading ? error : ""}
+        cache={evidence?.cache}
+        onRetry={() => loadComplianceData({ refresh: true })}
+      />
 
       {error && (
         <div className="bg-error-container text-on-error-container px-6 py-4 rounded-2xl flex items-center gap-3">

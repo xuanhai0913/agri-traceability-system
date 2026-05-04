@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MapPin, CalendarDays, ArrowRight, PackagePlus, Warehouse, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Download } from "lucide-react";
-import { getTotalBatches, getBatch } from "../services/api";
+import { MapPin, CalendarDays, ArrowRight, PackagePlus, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Download, ExternalLink, ShieldCheck, Users } from "lucide-react";
+import { getAllBatches } from "../services/api";
 import { InventorySkeleton } from "../components/ui/Skeleton";
 import { EmptyInventoryIllustration } from "../components/ui/EmptyStateIllustrations";
+import SyncStatus from "../components/ui/SyncStatus";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -32,32 +33,33 @@ export default function InventoryPage() {
   const { t, i18n } = useTranslation();
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [slowLoading, setSlowLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [cacheInfo, setCacheInfo] = useState(null);
   const [filter, setFilter] = useState("all"); // all | active | completed
 
   useEffect(() => {
     loadBatches();
   }, []);
 
-  async function loadBatches() {
+  async function loadBatches(options = {}) {
+    const slowTimer = setTimeout(() => setSlowLoading(true), 1500);
     try {
       setLoading(true);
-      const totalRes = await getTotalBatches();
-      const total = totalRes.data.data.total;
-
-      const batchList = [];
-      for (let i = total; i > 0; i--) {
-        try {
-          const batchRes = await getBatch(i);
-          batchList.push(batchRes.data.data);
-        } catch {
-          // skip
-        }
-      }
-      setBatches(batchList);
+      setLoadError("");
+      const res = await getAllBatches(1, 50, options);
+      setBatches(res.data.data.batches || []);
+      setCacheInfo(res.data.data.cache || null);
     } catch (err) {
       console.error("Inventory load error:", err);
+      setLoadError(
+        err.response?.data?.message ||
+          "Không thể đồng bộ kho lô hàng từ backend."
+      );
     } finally {
+      clearTimeout(slowTimer);
       setLoading(false);
+      setSlowLoading(false);
     }
   }
 
@@ -77,21 +79,30 @@ export default function InventoryPage() {
     });
   }
 
-  if (loading) return <InventorySkeleton />;
+  function getLatestTransaction(batch) {
+    return batch.latestTransaction || batch.transactionRecords?.[0] || null;
+  }
+
+  function shortHash(value) {
+    if (!value) return "—";
+    return `${value.slice(0, 8)}...${value.slice(-6)}`;
+  }
 
   function handleExportCSV() {
     if (filtered.length === 0) return;
     
     const bom = "\uFEFF";
-    const headers = "Mã lô,Sản phẩm,Nguồn gốc,Giai đoạn,Ngày tạo,Trạng thái\n";
+    const headers = "Mã lô,Sản phẩm,Producer,Nguồn gốc,Giai đoạn,Ngày tạo,Trạng thái,Latest tx,Tx URL\n";
     
     const rows = filtered.map(b => {
       const status = b.isActive ? "Đang xử lý" : "Hoàn thành";
       const date = b.createdAt ? new Date(b.createdAt * 1000).toLocaleDateString("vi-VN") : "—";
       const stageName = b.currentStage || "—";
+      const producer = `"${b.primaryProducer?.name?.replace(/"/g, '""') || 'Chưa liên kết'}"`;
+      const tx = getLatestTransaction(b);
       const name = `"${b.name?.replace(/"/g, '""') || ''}"`;
       const origin = `"${b.origin?.replace(/"/g, '""') || ''}"`;
-      return `#BTC-${String(b.id).padStart(4, "0")},${name},${origin},${stageName},${date},${status}`;
+      return `#BTC-${String(b.id).padStart(4, "0")},${name},${producer},${origin},${stageName},${date},${status},${tx?.transactionHash || ""},${tx?.explorerUrl || ""}`;
     }).join("\n");
     
     const blob = new Blob([bom + headers + rows], { type: "text/csv;charset=utf-8;" });
@@ -111,13 +122,13 @@ export default function InventoryPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
         <div>
           <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em]">
-            {t("inventory.sectionLabel")}
+            ON-CHAIN OPERATIONS
           </span>
           <h1 className="text-2xl md:text-4xl font-extrabold text-on-surface tracking-tight mt-1 font-headline">
             {t("inventory.title")}
           </h1>
           <p className="text-slate-500 mt-2 text-sm md:text-base">
-            {t("inventory.subtitle")}
+            Theo dõi các lô hàng đang vận hành trên smart contract, trạng thái stage, producer liên kết và bằng chứng giao dịch.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full md:w-auto">
@@ -134,10 +145,17 @@ export default function InventoryPage() {
             className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 justify-center"
           >
             <PackagePlus size={18} />
-            {t("inventory.addItem")}
+            Tạo lô hàng
           </Link>
         </div>
       </div>
+
+      <SyncStatus
+        slow={slowLoading}
+        error={loadError}
+        cache={cacheInfo}
+        onRetry={() => loadBatches({ refresh: true })}
+      />
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 mb-8">
@@ -177,7 +195,20 @@ export default function InventoryPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <InventorySkeleton />
+      ) : loadError && batches.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-amber-700">
+          <p className="text-sm font-bold">Không thể tải kho lô hàng.</p>
+          <button
+            type="button"
+            onClick={() => loadBatches({ refresh: true })}
+            className="mt-4 px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 focus-visible:ring-2 focus-visible:ring-amber-600 text-xs font-bold transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-slate-400">
           <EmptyInventoryIllustration className="w-32 h-32 mb-4" />
           <p className="text-sm font-medium">{t("common.noData")}</p>
@@ -196,11 +227,12 @@ export default function InventoryPage() {
             const colors = STAGE_COLORS[stageIdx] || STAGE_COLORS[0];
             const IconComponent = PRODUCT_ICONS[batch.id % PRODUCT_ICONS.length];
             const progress = ((stageIdx + 1) / 7) * 100;
+            const latestTransaction = getLatestTransaction(batch);
 
             return (
               <div
                 key={batch.id}
-                className={`bg-surface-container-lowest rounded-2xl overflow-hidden shadow-ambient border-l-4 ${colors.border} group hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-300`}
+                className={`bg-surface-container-lowest rounded-2xl overflow-hidden shadow-ambient border-l-4 ${colors.border} group hover:shadow-xl hover:shadow-emerald-900/5 transition-shadow duration-300`}
               >
                 <div className="p-6">
                   {/* Top row */}
@@ -239,9 +271,25 @@ export default function InventoryPage() {
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Users size={14} className="text-slate-400 shrink-0" />
+                      {batch.primaryProducer?.name || "Chưa liên kết producer"}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
                       <CalendarDays size={14} className="text-slate-400 shrink-0" />
                       {formatDate(batch.createdAt)}
                     </div>
+                    {latestTransaction && (
+                      <a
+                        href={latestTransaction.explorerUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 text-xs text-primary font-mono hover:underline"
+                      >
+                        <ShieldCheck size={14} className="shrink-0" />
+                        {shortHash(latestTransaction.transactionHash)}
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
                   </div>
 
                   {/* Progress bar */}

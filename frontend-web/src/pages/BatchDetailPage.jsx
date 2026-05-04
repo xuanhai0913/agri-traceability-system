@@ -9,7 +9,7 @@ import {
   Printer, PlusCircle, RefreshCw, Shield,
   Loader2, Copy, Share2, Users, ExternalLink,
 } from "lucide-react";
-import { getBatch, getStageHistory, addStage } from "../services/api";
+import { getBatch, getStageHistory, addStage, getDashboardSummary } from "../services/api";
 import { BatchDetailSkeleton } from "../components/ui/Skeleton";
 import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
 import { toast } from "react-hot-toast";
@@ -41,6 +41,7 @@ export default function BatchDetailPage() {
   const { isAuthenticated } = useAuth();
   const [batch, setBatch] = useState(null);
   const [stages, setStages] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -67,12 +68,14 @@ export default function BatchDetailPage() {
   async function loadBatchData() {
     try {
       setLoading(true);
-      const [batchRes, historyRes] = await Promise.all([
+      const [batchRes, historyRes, summaryRes] = await Promise.all([
         getBatch(id),
         getStageHistory(id),
+        getDashboardSummary().catch(() => null),
       ]);
       setBatch(batchRes.data.data);
       setStages(historyRes.data.data.stages);
+      setSummary(summaryRes?.data?.data || null);
     } catch (err) {
       setError(
         err.response?.data?.message || t("batchDetail.loadError")
@@ -193,6 +196,21 @@ export default function BatchDetailPage() {
     }
   }
 
+  async function handleCopyTxHash(txHash) {
+    if (!txHash) return;
+    try {
+      await navigator.clipboard.writeText(txHash);
+      toast.success("Đã copy transaction hash.");
+    } catch {
+      toast.error("Không thể copy transaction hash.");
+    }
+  }
+
+  function shortHash(value) {
+    if (!value) return "—";
+    return `${value.slice(0, 10)}...${value.slice(-8)}`;
+  }
+
   if (loading) {
     return <BatchDetailSkeleton />;
   }
@@ -214,6 +232,19 @@ export default function BatchDetailPage() {
   const qrValue = `${window.location.origin}/batches/${batch.id}`;
   const currentStageIdx = batch.currentStageIndex ?? 0;
   const producerLinks = batch.producerLinks || [];
+  const transactionRecords = batch.transactionRecords || [];
+  const createTransaction =
+    transactionRecords.find((tx) => tx.action === "create_batch") || null;
+  const latestTransaction =
+    batch.latestTransaction ||
+    transactionRecords[transactionRecords.length - 1] ||
+    stages
+      .map((stage) => stage.transaction)
+      .filter(Boolean)
+      .at(-1) ||
+    null;
+  const contract = summary?.contract;
+  const serviceWallet = summary?.serviceWallet;
   const primaryProducer = batch.primaryProducer;
   const latestEvidenceImage = [...stages]
     .reverse()
@@ -582,17 +613,33 @@ export default function BatchDetailPage() {
                                 {stage.transaction.actorProducer.name}
                               </p>
                             )}
+                            {stage.transaction.blockNumber && (
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                Block #{stage.transaction.blockNumber}
+                              </p>
+                            )}
                             {stage.transaction.transactionHash && (
-                              <a
-                                href={stage.transaction.explorerUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 mt-1 text-[10px] font-mono text-primary hover:underline"
-                              >
-                                {stage.transaction.transactionHash.slice(0, 8)}...
-                                {stage.transaction.transactionHash.slice(-6)}
-                                <ExternalLink size={10} />
-                              </a>
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <span className="text-[10px] font-mono text-primary">
+                                  {shortHash(stage.transaction.transactionHash)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyTxHash(stage.transaction.transactionHash)}
+                                  className="text-[10px] font-bold text-slate-500 hover:text-primary focus-visible:ring-2 focus-visible:ring-emerald-600 rounded"
+                                >
+                                  Copy Tx Hash
+                                </button>
+                                <a
+                                  href={stage.transaction.explorerUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
+                                >
+                                  View on Polygonscan
+                                  <ExternalLink size={10} />
+                                </a>
+                              </div>
                             )}
                           </div>
                         )}
@@ -684,6 +731,75 @@ export default function BatchDetailPage() {
           </div>
         </div>
       </div>
+
+      <section className="mt-6 bg-surface-container-lowest rounded-2xl shadow-ambient overflow-hidden">
+        <div className="px-6 py-5 border-b border-emerald-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div>
+            <h3 className="font-headline font-bold text-emerald-900">
+              On-chain evidence
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Dùng phần này khi cần chứng minh batch được ghi bởi service wallet trên Polygon Amoy testnet.
+            </p>
+          </div>
+          {contract?.explorerUrl && (
+            <a
+              href={contract.explorerUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+            >
+              Smart contract
+              <ExternalLink size={14} />
+            </a>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
+          <EvidenceItem
+            label="Create transaction"
+            tx={createTransaction}
+            empty="Chưa có create tx trong metadata"
+            onCopy={handleCopyTxHash}
+            shortHash={shortHash}
+          />
+          <EvidenceItem
+            label="Latest transaction"
+            tx={latestTransaction}
+            empty="Chưa có latest tx trong metadata"
+            onCopy={handleCopyTxHash}
+            shortHash={shortHash}
+          />
+          <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+              Service wallet
+            </p>
+            {serviceWallet?.address ? (
+              <>
+                <p className="mt-2 font-mono text-xs text-emerald-950 break-all">
+                  {serviceWallet.address}
+                </p>
+                <a
+                  href={serviceWallet.explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 mt-3 text-xs font-bold text-primary hover:underline"
+                >
+                  View wallet
+                  <ExternalLink size={12} />
+                </a>
+              </>
+            ) : (
+              <p className="mt-2 text-xs text-slate-500">
+                Service wallet chưa khả dụng ở môi trường hiện tại.
+              </p>
+            )}
+            <p className="mt-3 text-[10px] text-emerald-700">
+              Testnet record, không phải chứng nhận pháp lý.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Add Stage Modal */}
       {showAddStage && (
@@ -812,5 +928,50 @@ export default function BatchDetailPage() {
         </div>
       )}
     </>
+  );
+}
+
+function EvidenceItem({ label, tx, empty, onCopy, shortHash }) {
+  return (
+    <div className="rounded-2xl bg-surface-container-low border border-emerald-50 p-4">
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </p>
+      {tx?.transactionHash ? (
+        <>
+          <p className="mt-2 font-mono text-sm font-bold text-emerald-900">
+            {shortHash(tx.transactionHash)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {tx.actionLabel || tx.action} {tx.blockNumber ? `- Block #${tx.blockNumber}` : ""}
+          </p>
+          {tx.actorProducer && (
+            <p className="mt-1 text-xs text-slate-500">
+              {tx.actorRoleLabel}: {tx.actorProducer.name}
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onCopy(tx.transactionHash)}
+              className="px-3 py-1.5 rounded-lg bg-white text-xs font-bold text-slate-600 hover:text-primary focus-visible:ring-2 focus-visible:ring-emerald-600 transition-colors"
+            >
+              Copy Tx Hash
+            </button>
+            <a
+              href={tx.explorerUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-900 text-white text-xs font-bold hover:bg-emerald-800 transition-colors"
+            >
+              View on Polygonscan
+              <ExternalLink size={12} />
+            </a>
+          </div>
+        </>
+      ) : (
+        <p className="mt-2 text-xs text-slate-500">{empty}</p>
+      )}
+    </div>
   );
 }

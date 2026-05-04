@@ -3,6 +3,7 @@ const {
   attachProducerLinksToBatches,
   getBatchLinksByBatchIds,
 } = require("../services/batch-metadata.service");
+const { readThroughCache } = require("../services/cache.service");
 
 const STAGE_NAMES = [
   "Seeding",
@@ -69,16 +70,20 @@ async function loadBatchEvidence(contract) {
   }
 
   const total = Number(await contract.getTotalBatches());
-  const items = [];
+  const ids = [];
 
   for (let id = total; id >= 1; id -= 1) {
-    try {
-      const batch = await contract.getBatch(id);
-      items.push(formatBatch(batch));
-    } catch {
-      // A single unreadable batch should not hide the rest of the evidence.
-    }
+    ids.push(id);
   }
+
+  const settledBatches = await Promise.allSettled(
+    ids.map((id) => contract.getBatch(id))
+  );
+  const items = settledBatches
+    .map((result) =>
+      result.status === "fulfilled" ? formatBatch(result.value) : null
+    )
+    .filter(Boolean);
 
   const active = items.filter((item) => item.isActive).length;
   const producerLinks = await getBatchLinksByBatchIds(
@@ -97,6 +102,25 @@ async function loadBatchEvidence(contract) {
 
 async function getComplianceEvidence(_req, res, next) {
   try {
+    const { value, cache } = await readThroughCache({
+      key: "compliance:evidence",
+      refresh: _req.query.refresh,
+      loader: loadComplianceEvidence,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        ...value,
+        cache,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function loadComplianceEvidence() {
     const config = getNetworkConfig();
     let contract = null;
     try {
@@ -135,69 +159,63 @@ async function getComplianceEvidence(_req, res, next) {
       },
     ].filter(Boolean);
 
-    res.json({
-      success: true,
-      data: {
-        generatedAt: new Date().toISOString(),
-        api: {
-          status: "online",
-          message: "AgriTrace API responded successfully.",
-        },
-        network: {
-          name: config.networkName,
-          chainId: providerNetwork ? Number(providerNetwork.chainId) : config.chainId,
-          latestBlock,
-          available: Boolean(providerNetwork),
-        },
-        contract: {
-          address: config.contractAddress,
-          explorerUrl: config.polygonscanUrl,
-          sourcifyUrl: config.sourcifyUrl,
-          available: Boolean(contract),
-        },
-        externalLinks,
-        batches,
-        checks: [
-          {
-            key: "api",
-            status: true,
-            title: "API health is online",
-            body: "The backend can serve compliance evidence from one endpoint.",
-          },
-          {
-            key: "network",
-            status: Boolean(providerNetwork),
-            title: "Blockchain network is reachable",
-            body: providerNetwork
-              ? `${config.networkName} responded at block ${latestBlock || "N/A"}.`
-              : "Network connection is not available in this environment.",
-          },
-          {
-            key: "contract",
-            status: Boolean(config.contractAddress),
-            title: "Contract address is configured",
-            body: config.contractAddress
-              ? `Contract ${config.contractAddress} is configured for testnet verification.`
-              : "CONTRACT_ADDRESS is not configured.",
-          },
-          {
-            key: "batches",
-            status: batches.items.length > 0,
-            title: "Traceability batches are readable",
-            body: `${batches.items.length} batches were loaded from the smart contract.`,
-          },
-          {
-            key: "qr",
-            status: true,
-            title: "QR verification route is available",
-            body: "Batch detail pages expose stable /batches/:id verification links.",
-          },
-        ],
+    return {
+      generatedAt: new Date().toISOString(),
+      api: {
+        status: "online",
+        message: "AgriTrace API responded successfully.",
       },
-    });
-  } catch (error) {
-    next(error);
-  }
+      network: {
+        name: config.networkName,
+        chainId: providerNetwork ? Number(providerNetwork.chainId) : config.chainId,
+        latestBlock,
+        available: Boolean(providerNetwork),
+      },
+      contract: {
+        address: config.contractAddress,
+        explorerUrl: config.polygonscanUrl,
+        sourcifyUrl: config.sourcifyUrl,
+        available: Boolean(contract),
+      },
+      externalLinks,
+      batches,
+      checks: [
+        {
+          key: "api",
+          status: true,
+          title: "API health is online",
+          body: "The backend can serve compliance evidence from one endpoint.",
+        },
+        {
+          key: "network",
+          status: Boolean(providerNetwork),
+          title: "Blockchain network is reachable",
+          body: providerNetwork
+            ? `${config.networkName} responded at block ${latestBlock || "N/A"}.`
+            : "Network connection is not available in this environment.",
+        },
+        {
+          key: "contract",
+          status: Boolean(config.contractAddress),
+          title: "Contract address is configured",
+          body: config.contractAddress
+            ? `Contract ${config.contractAddress} is configured for testnet verification.`
+            : "CONTRACT_ADDRESS is not configured.",
+        },
+        {
+          key: "batches",
+          status: batches.items.length > 0,
+          title: "Traceability batches are readable",
+          body: `${batches.items.length} batches were loaded from the smart contract.`,
+        },
+        {
+          key: "qr",
+          status: true,
+          title: "QR verification route is available",
+          body: "Batch detail pages expose stable /batches/:id verification links.",
+        },
+      ],
+    };
 }
 
 module.exports = {

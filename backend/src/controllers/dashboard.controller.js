@@ -8,6 +8,7 @@ const {
   getBatchLinksByBatchIds,
   getBatchTransactionsByBatchIds,
 } = require("../services/batch-metadata.service");
+const { readThroughCache } = require("../services/cache.service");
 
 const STAGE_NAMES = [
   "Seeding",
@@ -74,16 +75,20 @@ async function loadBatches(contract, limit = 5) {
   }
 
   const total = Number(await contract.getTotalBatches());
-  const items = [];
+  const ids = [];
 
   for (let id = total; id >= 1; id -= 1) {
-    try {
-      const batch = await contract.getBatch(id);
-      items.push(formatBatch(batch));
-    } catch {
-      // Keep the dashboard usable even if one historical batch cannot load.
-    }
+    ids.push(id);
   }
+
+  const settledBatches = await Promise.allSettled(
+    ids.map((id) => contract.getBatch(id))
+  );
+  const items = settledBatches
+    .map((result) =>
+      result.status === "fulfilled" ? formatBatch(result.value) : null
+    )
+    .filter(Boolean);
 
   const batchIds = items.map((item) => item.id);
   const [producerLinks, transactionRecords] = await Promise.all([
@@ -129,6 +134,25 @@ function getServiceWallet() {
 
 async function getDashboardSummary(_req, res, next) {
   try {
+    const { value, cache } = await readThroughCache({
+      key: "dashboard:summary",
+      refresh: _req.query.refresh,
+      loader: loadDashboardSummary,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        ...value,
+        cache,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function loadDashboardSummary() {
     const config = getNetworkConfig();
     let contract = null;
     try {
@@ -158,41 +182,35 @@ async function getDashboardSummary(_req, res, next) {
       getBatchLinkSummary().catch(() => ({ totalLinks: 0 })),
     ]);
 
-    res.json({
-      success: true,
-      data: {
-        generatedAt: new Date().toISOString(),
-        api: {
-          status: "online",
-          connected: true,
-          message: "Backend connected",
-        },
-        database: getDatabaseStatus(),
-        network: {
-          name: config.networkName,
-          chainId: providerNetwork ? Number(providerNetwork.chainId) : config.chainId,
-          latestBlock,
-          available: Boolean(providerNetwork),
-        },
-        contract: {
-          address: config.contractAddress,
-          explorerUrl: config.contractExplorerUrl,
-          sourcifyUrl: config.sourcifyUrl,
-          available: Boolean(contract),
-        },
-        serviceWallet: getServiceWallet(),
-        batches,
-        producers: {
-          total: producers.length,
-          verified: producers.filter((producer) => producer.status === "verified").length,
-          auditPending: producers.filter((producer) => producer.status === "audit_pending").length,
-          linkedBatchCount: linkSummary.totalLinks,
-        },
+    return {
+      generatedAt: new Date().toISOString(),
+      api: {
+        status: "online",
+        connected: true,
+        message: "Backend connected",
       },
-    });
-  } catch (error) {
-    next(error);
-  }
+      database: getDatabaseStatus(),
+      network: {
+        name: config.networkName,
+        chainId: providerNetwork ? Number(providerNetwork.chainId) : config.chainId,
+        latestBlock,
+        available: Boolean(providerNetwork),
+      },
+      contract: {
+        address: config.contractAddress,
+        explorerUrl: config.contractExplorerUrl,
+        sourcifyUrl: config.sourcifyUrl,
+        available: Boolean(contract),
+      },
+      serviceWallet: getServiceWallet(),
+      batches,
+      producers: {
+        total: producers.length,
+        verified: producers.filter((producer) => producer.status === "verified").length,
+        auditPending: producers.filter((producer) => producer.status === "audit_pending").length,
+        linkedBatchCount: linkSummary.totalLinks,
+      },
+    };
 }
 
 module.exports = {

@@ -484,7 +484,10 @@ async function getBatchTransactionsByBatchIds(batchIds) {
 function attachTransactionRecordsToBatch(batch, transactionRecords) {
   const records = transactionRecords.filter(
     (record) => record.batchId === Number(batch.id)
-  );
+  ).sort((a, b) => {
+    const blockDiff = Number(a.blockNumber || 0) - Number(b.blockNumber || 0);
+    return blockDiff || Number(a.id || 0) - Number(b.id || 0);
+  });
 
   return {
     ...batch,

@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Plus, Search, ChevronLeft, ChevronRight, Eye, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2 } from "lucide-react";
-import { getTotalBatches, getBatch } from "../services/api";
+import { getAllBatches } from "../services/api";
 import { LedgerTableSkeleton } from "../components/ui/Skeleton";
 import { NoResultsIllustration, EmptyBoxIllustration } from "../components/ui/EmptyStateIllustrations";
+import SyncStatus from "../components/ui/SyncStatus";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -44,6 +45,9 @@ export default function TraceabilityLedgerPage() {
   const urlSearch = searchParams.get("search") || "";
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [slowLoading, setSlowLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [cacheInfo, setCacheInfo] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState(urlSearch);
   const [filterStage, setFilterStage] = useState(null);
@@ -57,26 +61,24 @@ export default function TraceabilityLedgerPage() {
     setCurrentPage(1);
   }, [urlSearch]);
 
-  async function loadBatches() {
+  async function loadBatches(options = {}) {
+    const slowTimer = setTimeout(() => setSlowLoading(true), 1500);
     try {
       setLoading(true);
-      const totalRes = await getTotalBatches();
-      const total = totalRes.data.data.total;
-
-      const batchList = [];
-      for (let i = total; i > 0; i--) {
-        try {
-          const batchRes = await getBatch(i);
-          batchList.push(batchRes.data.data);
-        } catch {
-          // skip
-        }
-      }
-      setBatches(batchList);
+      setLoadError("");
+      const res = await getAllBatches(1, 50, options);
+      setBatches(res.data.data.batches || []);
+      setCacheInfo(res.data.data.cache || null);
     } catch (err) {
       console.error("Ledger load error:", err);
+      setLoadError(
+        err.response?.data?.message ||
+          "Không thể đồng bộ Ledger từ backend. Vui lòng thử lại."
+      );
     } finally {
+      clearTimeout(slowTimer);
       setLoading(false);
+      setSlowLoading(false);
     }
   }
 
@@ -209,10 +211,28 @@ export default function TraceabilityLedgerPage() {
         </div>
       </div>
 
+      <SyncStatus
+        slow={loading && slowLoading}
+        error={!loading ? loadError : ""}
+        cache={cacheInfo}
+        onRetry={() => loadBatches({ refresh: true })}
+      />
+
       {/* Table */}
       <section className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-ambient">
         {loading ? (
           <LedgerTableSkeleton />
+        ) : loadError && batches.length === 0 ? (
+          <div className="px-8 py-20 flex flex-col items-center justify-center text-amber-700">
+            <p className="text-sm font-bold">Không thể tải sổ cái truy xuất.</p>
+            <button
+              type="button"
+              onClick={() => loadBatches({ refresh: true })}
+              className="mt-4 px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 focus-visible:ring-2 focus-visible:ring-amber-600 text-xs font-bold transition-colors"
+            >
+              Thử lại
+            </button>
+          </div>
         ) : paged.length === 0 ? (
           <div className="px-8 py-20 flex flex-col items-center justify-center text-slate-400">
             {search || filterStage !== null ? (
