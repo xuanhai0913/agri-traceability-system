@@ -2,9 +2,11 @@ const {
   createProducer,
   getProducerById,
   listProducers,
+  updateProducerStatus,
 } = require("../services/producer.service");
 const { getReadOnlyContract } = require("../config/blockchain");
 const { getProducerBatchLinks } = require("../services/batch-metadata.service");
+const { invalidateCacheKeys } = require("../services/cache.service");
 
 const STAGE_NAMES = [
   "Seeding",
@@ -138,9 +140,25 @@ async function postProducer(req, res, next) {
   }
 }
 
+async function patchProducerStatus(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const producer = await updateProducerStatus(id, req.body);
+    invalidateCacheKeys(["dashboard:summary"]);
+
+    res.json({
+      success: true,
+      data: producer,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getProducer,
   getProducerBatches,
   getProducers,
+  patchProducerStatus,
   postProducer,
 };

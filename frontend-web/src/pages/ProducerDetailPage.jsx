@@ -5,9 +5,12 @@ import {
   MapPin, Package, ShieldCheck, Leaf, CheckCircle,
   Users, Globe, Droplets, Scale, ClipboardCheck, Sprout,
   Phone, Mail, ExternalLink, Contact, Satellite, ArrowRight,
+  Loader2, Clock3,
 } from "lucide-react";
-import { getProducer, getProducerBatches } from "../services/api";
+import { getProducer, getProducerBatches, updateProducerStatus } from "../services/api";
 import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
+import { useAuth } from "../components/auth/useAuth";
+import { toast } from "react-hot-toast";
 
 const AUDIT_ICONS = {
   "clipboard-check": ClipboardCheck,
@@ -18,9 +21,11 @@ const AUDIT_ICONS = {
 export default function ProducerDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
   const [producer, setProducer] = useState(null);
   const [linkedBatches, setLinkedBatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showContact, setShowContact] = useState(false);
 
   useEffect(() => {
@@ -93,6 +98,35 @@ export default function ProducerDetailPage() {
       month: "short",
       year: "numeric",
     });
+  }
+
+  async function handleStatusUpdate(nextStatus) {
+    const label =
+      nextStatus === "verified" ? "đánh dấu đã xác thực" : "chuyển về chờ kiểm định";
+    const confirmed = window.confirm(
+      `Xác nhận ${label} cho ${producer.name}? Đây là trạng thái nội bộ/testnet, không phải chứng nhận pháp lý.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setUpdatingStatus(true);
+      const res = await updateProducerStatus(producer.id, {
+        status: nextStatus,
+      });
+      setProducer(res.data.data);
+      toast.success(
+        nextStatus === "verified"
+          ? "Producer đã được đánh dấu xác thực."
+          : "Producer đã chuyển về trạng thái chờ kiểm định."
+      );
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message ||
+          "Không thể cập nhật trạng thái producer. Vui lòng thử lại."
+      );
+    } finally {
+      setUpdatingStatus(false);
+    }
   }
 
   return (
@@ -192,6 +226,46 @@ export default function ProducerDetailPage() {
               <span className="text-sm font-bold text-emerald-900 truncate">{producer.website}</span>
             </a>
           )}
+        </section>
+      )}
+
+      {isAuthenticated && (
+        <section className="mt-6 bg-surface-container-lowest p-5 rounded-2xl shadow-ambient flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-tertiary">
+              Admin Verification
+            </p>
+            <h2 className="text-lg font-black text-emerald-900 font-headline mt-1">
+              Quy trình duyệt trạng thái NSX
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+              Dùng để phân biệt hồ sơ đã xác thực trong AgriTrace với hồ sơ đang chờ kiểm định.
+              Đây là record testnet/nội bộ, không phải chứng nhận pháp lý.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {producer.status === "audit_pending" ? (
+              <button
+                type="button"
+                onClick={() => handleStatusUpdate("verified")}
+                disabled={updatingStatus}
+                className="px-5 py-3 rounded-xl bg-emerald-900 text-white font-bold text-sm inline-flex items-center justify-center gap-2 hover:bg-emerald-800 disabled:opacity-60 disabled:cursor-wait transition-colors"
+              >
+                {updatingStatus ? <Loader2 size={17} className="animate-spin" /> : <ShieldCheck size={17} />}
+                Đánh dấu đã xác thực
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleStatusUpdate("audit_pending")}
+                disabled={updatingStatus}
+                className="px-5 py-3 rounded-xl bg-amber-100 text-amber-800 font-bold text-sm inline-flex items-center justify-center gap-2 hover:bg-amber-200 disabled:opacity-60 disabled:cursor-wait transition-colors"
+              >
+                {updatingStatus ? <Loader2 size={17} className="animate-spin" /> : <Clock3 size={17} />}
+                Chuyển về chờ kiểm định
+              </button>
+            )}
+          </div>
         </section>
       )}
 

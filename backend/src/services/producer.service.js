@@ -2,6 +2,7 @@ const seedProducers = require("../data/producers.json");
 const { hasDatabase, query } = require("../config/database");
 
 const DEFAULT_IMAGE = "/images/farm-highland.png";
+const PRODUCER_STATUSES = new Set(["verified", "audit_pending"]);
 
 function toArray(value) {
   if (Array.isArray(value)) return value.filter(Boolean);
@@ -73,6 +74,16 @@ function normalizeProducerPayload(payload) {
     farmingMethods: toArray(payload.farmingMethods),
     socialImpact: toArray(payload.socialImpact),
   };
+}
+
+function normalizeProducerStatus(status) {
+  if (!PRODUCER_STATUSES.has(status)) {
+    const err = new Error("Trạng thái producer không hợp lệ");
+    err.status = 400;
+    throw err;
+  }
+
+  return status;
 }
 
 function toApiProducer(row) {
@@ -359,9 +370,69 @@ async function createProducer(payload) {
   return toApiProducer(res.rows[0]);
 }
 
+async function updateProducerStatus(id, payload = {}) {
+  const producerId = Number(id);
+  if (!Number.isInteger(producerId) || producerId <= 0) {
+    const err = new Error("producerId không hợp lệ");
+    err.status = 400;
+    throw err;
+  }
+
+  const status = normalizeProducerStatus(payload.status);
+
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required to update producer status");
+    err.status = 503;
+    throw err;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const statusText =
+    status === "verified"
+      ? `Admin verified testnet profile - ${today}`
+      : `Pending admin audit - ${today}`;
+  const auditRecord = {
+    icon: "clipboard-check",
+    title:
+      status === "verified"
+        ? "Admin status verification"
+        : "Moved back to audit pending",
+    date: today,
+    result:
+      payload.note ||
+      (status === "verified"
+        ? "Profile marked verified by AgriTrace admin on testnet."
+        : "Profile requires additional internal review before verified use."),
+    isDemo: true,
+  };
+
+  const res = await query(
+    `
+    UPDATE producers
+    SET
+      status = $2,
+      latest_verification = $3,
+      audits = audits || $4::jsonb,
+      updated_at = now()
+    WHERE id = $1
+    RETURNING id
+    `,
+    [producerId, status, statusText, JSON.stringify([auditRecord])]
+  );
+
+  if (res.rows.length === 0) {
+    const err = new Error(`Producer #${producerId} not found`);
+    err.status = 404;
+    throw err;
+  }
+
+  return getProducerById(producerId);
+}
+
 module.exports = {
   createProducer,
   getProducerById,
   initProducerStore,
   listProducers,
+  updateProducerStatus,
 };

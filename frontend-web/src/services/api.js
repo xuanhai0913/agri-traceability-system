@@ -146,6 +146,10 @@ export function createProducer(payload) {
   return api.post("/producers", payload);
 }
 
+export function updateProducerStatus(producerId, payload) {
+  return api.patch(`/producers/${producerId}/status`, payload);
+}
+
 // ── Compliance evidence endpoint ─────────────────────
 
 export function getComplianceEvidence(options = {}) {

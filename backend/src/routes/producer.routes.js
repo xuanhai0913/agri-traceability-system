@@ -3,6 +3,7 @@ const {
   getProducer,
   getProducerBatches,
   getProducers,
+  patchProducerStatus,
   postProducer,
 } = require("../controllers/producer.controller");
 const { requireAdminAuth } = require("../middleware/auth.middleware");
@@ -20,6 +21,12 @@ router.get("/", getProducers);
  * Create producer profile from admin UI
  */
 router.post("/", requireAdminAuth, postProducer);
+
+/**
+ * PATCH /api/producers/:id/status
+ * Update producer verification status from admin UI
+ */
+router.patch("/:id/status", requireAdminAuth, patchProducerStatus);
 
 /**
  * GET /api/producers/:id/batches
