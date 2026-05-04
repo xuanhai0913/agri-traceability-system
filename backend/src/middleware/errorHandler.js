@@ -41,13 +41,13 @@ const errorHandler = (err, req, res, _next) => {
   }
 
   // Mặc định: Internal Server Error
-  res.status(err.status || 500).json({
+  const status = err.status || 500;
+  res.status(status).json({
     success: false,
-    message:
-      process.env.NODE_ENV === "production"
-        ? "Đã xảy ra lỗi máy chủ"
-        : err.message,
-    type: "INTERNAL_ERROR",
+    message: status < 500 || process.env.NODE_ENV !== "production"
+      ? err.message
+      : "Đã xảy ra lỗi máy chủ",
+    type: status < 500 ? "REQUEST_ERROR" : "INTERNAL_ERROR",
   });
 };
 

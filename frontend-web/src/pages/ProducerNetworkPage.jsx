@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { MapPin, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Filter, Shield, Clock, ChevronRight, UserPlus } from "lucide-react";
 import { getProducers } from "../services/api";
 import AddProducerModal from "../components/producers/AddProducerModal";
+import { useAuth } from "../components/auth/useAuth";
 
 const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 
@@ -13,6 +14,7 @@ const SORTS = ["Default", "Region", "Status"];
 export default function ProducerNetworkPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const isVi = i18n.language === "vi";
   const [producers, setProducers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,11 +77,19 @@ export default function ProducerNetworkPage() {
         </div>
         <button
           type="button"
-          onClick={() => setShowAddProducer(true)}
+          onClick={() =>
+            isAuthenticated ? setShowAddProducer(true) : navigate("/login")
+          }
           className="btn-primary-gradient px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <UserPlus size={18} />
-          {isVi ? "Thêm nhà sản xuất" : "Add Producer"}
+          {isAuthenticated
+            ? isVi
+              ? "Thêm nhà sản xuất"
+              : "Add Producer"
+            : isVi
+            ? "Đăng nhập để thêm producer"
+            : "Login to add producer"}
         </button>
       </section>
 
@@ -263,7 +273,7 @@ export default function ProducerNetworkPage() {
         })}
       </div>
 
-      {showAddProducer && (
+      {showAddProducer && isAuthenticated && (
         <AddProducerModal
           onClose={() => setShowAddProducer(false)}
           onCreated={handleProducerCreated}

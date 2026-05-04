@@ -7,8 +7,10 @@ import {
   Users,
   ShieldCheck,
   Plus,
+  LogIn,
   X,
 } from "lucide-react";
+import { useAuth } from "../auth/useAuth";
 
 const NAV_ICONS = {
   "/": LayoutDashboard,
@@ -21,6 +23,7 @@ const NAV_ICONS = {
 export default function Sidebar({ open, onClose }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const navItems = [
     { to: "/", label: t("nav.dashboard") },
@@ -84,23 +87,27 @@ export default function Sidebar({ open, onClose }) {
         })}
       </nav>
 
-      {/* New Batch CTA */}
+      {/* Admin CTA */}
       <div className="px-4 mb-6">
         <button
           onClick={() => {
-            navigate("/batches/new");
+            navigate(isAuthenticated ? "/batches/new" : "/login");
             onClose();
           }}
           className="w-full py-3.5 btn-primary-gradient rounded-xl font-bold text-sm flex items-center justify-center gap-2"
         >
-          <Plus size={18} strokeWidth={2.5} />
-          {t("nav.newBatch")}
+          {isAuthenticated ? (
+            <Plus size={18} strokeWidth={2.5} />
+          ) : (
+            <LogIn size={18} strokeWidth={2.5} />
+          )}
+          {isAuthenticated ? t("nav.newBatch") : "Đăng nhập admin"}
         </button>
       </div>
 
       <div className="px-6 py-5 border-t border-emerald-100/30">
         <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700/70">
-          MVP Demo Build
+          Product Testnet
         </p>
       </div>
     </aside>

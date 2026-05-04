@@ -177,7 +177,7 @@ async function getComplianceEvidence(_req, res, next) {
             status: Boolean(config.contractAddress),
             title: "Contract address is configured",
             body: config.contractAddress
-              ? `Contract ${config.contractAddress} is configured for demo verification.`
+              ? `Contract ${config.contractAddress} is configured for testnet verification.`
               : "CONTRACT_ADDRESS is not configured.",
           },
           {

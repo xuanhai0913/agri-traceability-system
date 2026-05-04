@@ -7,6 +7,7 @@ const {
   getTotalBatches,
   getAllBatches,
 } = require("../controllers/batch.controller");
+const { requireAdminAuth } = require("../middleware/auth.middleware");
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.get("/", getAllBatches);
  * Tạo lô hàng mới
  * Body: { name, origin, imageUrl, producerId, producerRole }
  */
-router.post("/", createBatch);
+router.post("/", requireAdminAuth, createBatch);
 
 /**
  * GET /api/batches/:id
@@ -48,6 +49,6 @@ router.get("/:id/history", getStageHistory);
  * Thêm giai đoạn mới cho lô hàng
  * Body: { stage, description, imageUrl }
  */
-router.post("/:id/stages", addStage);
+router.post("/:id/stages", requireAdminAuth, addStage);
 
 module.exports = router;

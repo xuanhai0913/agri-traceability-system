@@ -4,8 +4,8 @@ const {
   getProducerBatches,
   getProducers,
   postProducer,
-  requireAdminToken,
 } = require("../controllers/producer.controller");
+const { requireAdminAuth } = require("../middleware/auth.middleware");
 
 const router = express.Router();
 
@@ -19,7 +19,7 @@ router.get("/", getProducers);
  * POST /api/producers
  * Create producer profile from admin UI
  */
-router.post("/", requireAdminToken, postProducer);
+router.post("/", requireAdminAuth, postProducer);
 
 /**
  * GET /api/producers/:id/batches

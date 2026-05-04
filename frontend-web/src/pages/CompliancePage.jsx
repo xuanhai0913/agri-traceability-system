@@ -65,7 +65,7 @@ export default function CompliancePage() {
       icon: Server,
       title: isVi ? "API đang hoạt động" : "API health is online",
       body: isVi
-        ? "Endpoint /api/compliance/evidence phản hồi thành công và gom dữ liệu demo từ backend."
+        ? "Endpoint /api/compliance/evidence phản hồi thành công và gom dữ liệu từ backend."
         : evidence?.api?.message || "The backend returned compliance evidence successfully.",
       status: apiOnline,
     },
@@ -171,7 +171,7 @@ export default function CompliancePage() {
               ? `Block ${network.latestBlock}`
               : isVi
               ? "Testnet dùng cho đồ án"
-              : "Testnet for thesis demo"
+              : "Testnet for thesis defense"
           }
         />
       </section>
@@ -183,7 +183,7 @@ export default function CompliancePage() {
               {isVi ? "Checklist bằng chứng" : "Evidence Checklist"}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              {isVi ? "Các mục này là phần nên trình bày trong demo cố định." : "These items are suitable for the fixed demo flow."}
+              {isVi ? "Các mục này là phần nên trình bày trong luồng bảo vệ cố định." : "These items are suitable for the fixed defense flow."}
             </p>
           </div>
           <div className="divide-y divide-emerald-50">
@@ -263,7 +263,7 @@ export default function CompliancePage() {
         <div className="px-6 py-5 border-b border-emerald-50 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-emerald-900 font-headline">
-              {isVi ? "Lô hàng có thể demo" : "Demo-ready Batches"}
+              {isVi ? "Lô hàng sẵn sàng trình bày" : "Presentation-ready Batches"}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
               {isVi ? "Chọn một lô để đi từ Ledger sang QR và timeline." : "Pick a batch to move from Ledger to QR and timeline."}

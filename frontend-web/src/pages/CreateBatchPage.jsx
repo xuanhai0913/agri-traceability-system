@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { createBatch, getProducers, uploadImage } from "../services/api";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../components/auth/useAuth";
+import AdminRequired from "../components/auth/AdminRequired";
 
 const DRAFT_KEY = "agritrace:create-batch-draft";
 
@@ -15,6 +17,7 @@ export default function CreateBatchPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { isAuthenticated, loading: authLoading } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
@@ -213,6 +216,23 @@ export default function CreateBatchPage() {
     });
   }
 
+  if (authLoading) {
+    return (
+      <div className="max-w-2xl mx-auto bg-surface-container-lowest rounded-2xl shadow-ambient p-8 text-center text-slate-500">
+        Đang kiểm tra phiên đăng nhập...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <AdminRequired
+        title="Đăng nhập để tạo lô hàng"
+        body="Tạo lô hàng sẽ ghi giao dịch lên smart contract bằng service wallet, nên chỉ tài khoản admin vận hành mới được thao tác."
+      />
+    );
+  }
+
   // ── Form State ──────────────────────────────────
   return (
     <div className="max-w-5xl mx-auto">
@@ -388,8 +408,8 @@ export default function CreateBatchPage() {
                   Bảo mật On-chain
                 </h4>
                 <p className="text-xs text-emerald-700">
-                  Tất cả dữ liệu sau khi khởi tạo sẽ được mã hóa và lưu trữ
-                  vĩnh viễn trên mạng lưới Blockchain.
+                  Khi tạo lô, backend service wallet sẽ ghi transaction lên
+                  smart contract Polygon Amoy và lưu metadata liên kết trong database.
                 </p>
               </div>
             </div>
@@ -470,9 +490,9 @@ export default function CreateBatchPage() {
             <div className="bg-surface-container-low p-8 rounded-2xl space-y-4">
               <div className="flex justify-between items-center text-sm font-medium mb-2">
                 <span className="text-slate-500">
-                  Phí giao dịch ước tính
+                  Ghi dữ liệu
                 </span>
-                <span className="text-emerald-700 font-bold">~0.0024 ETH</span>
+                <span className="text-emerald-700 font-bold">Polygon Amoy testnet</span>
               </div>
 
               <button

@@ -24,6 +24,32 @@ function normalizeAudit(audit) {
   };
 }
 
+function sanitizeTestnetText(value, fallback = "") {
+  if (!value) return fallback;
+
+  const normalized = String(value)
+    .replace(/Demo\/Test/g, "Testnet")
+    .replace(/\bDemo\b/g, "Testnet")
+    .replace(/demo\/test/g, "testnet")
+    .replace(/\bdemo\b/g, "testnet");
+
+  if (normalized === "Testnet profile") return "Chưa cập nhật";
+  return normalized;
+}
+
+function sanitizeTextArray(value) {
+  return toArray(value).map((item) => sanitizeTestnetText(item)).filter(Boolean);
+}
+
+function sanitizeAudit(audit) {
+  return {
+    ...audit,
+    title: sanitizeTestnetText(audit.title),
+    date: sanitizeTestnetText(audit.date),
+    result: sanitizeTestnetText(audit.result),
+  };
+}
+
 function normalizeProducerPayload(payload) {
   return {
     name: String(payload.name || "").trim(),
@@ -63,22 +89,25 @@ function toApiProducer(row) {
     email: row.email || "",
     location: row.location,
     status: row.status,
-    certifications: row.certifications || [],
+    certifications: sanitizeTextArray(row.certifications || []),
     activeBatches:
       linkedBatchCount === null ? Number(row.active_batches || 0) : linkedBatchCount,
     linkedBatchCount:
       linkedBatchCount === null ? Number(row.active_batches || 0) : linkedBatchCount,
     profileActiveBatches: Number(row.active_batches || 0),
     image: row.image_url || DEFAULT_IMAGE,
-    description: row.description || "",
-    farmingMethods: row.farming_methods || [],
-    socialImpact: row.social_impact || [],
+    description: sanitizeTestnetText(row.description || ""),
+    farmingMethods: sanitizeTextArray(row.farming_methods || []),
+    socialImpact: sanitizeTextArray(row.social_impact || []),
     coordinates: row.coordinates || "",
-    totalArea: row.total_area || "",
-    elevation: row.elevation || "",
-    latestVerification: row.latest_verification || "Demo profile",
+    totalArea: sanitizeTestnetText(row.total_area || ""),
+    elevation: sanitizeTestnetText(row.elevation || ""),
+    latestVerification: sanitizeTestnetText(
+      row.latest_verification || "Testnet profile",
+      "Chưa cập nhật"
+    ),
     smartContract: row.smart_contract || "Traceability_v1",
-    audits: row.audits || [],
+    audits: Array.isArray(row.audits) ? row.audits.map(sanitizeAudit) : [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -92,6 +121,26 @@ function seedToRow(producer) {
     farmingMethods: producer.farmingMethods,
     socialImpact: producer.socialImpact,
   });
+}
+
+function toFallbackProducer(producer) {
+  return {
+    ...producer,
+    certifications: sanitizeTextArray(producer.certifications || []),
+    description: sanitizeTestnetText(producer.description || ""),
+    farmingMethods: sanitizeTextArray(producer.farmingMethods || []),
+    socialImpact: sanitizeTextArray(producer.socialImpact || []),
+    totalArea: sanitizeTestnetText(producer.totalArea || ""),
+    elevation: sanitizeTestnetText(producer.elevation || ""),
+    latestVerification: sanitizeTestnetText(
+      producer.latestVerification || "Testnet profile",
+      "Chưa cập nhật"
+    ),
+    audits: Array.isArray(producer.audits) ? producer.audits.map(sanitizeAudit) : [],
+    activeBatches: 0,
+    linkedBatchCount: 0,
+    profileActiveBatches: producer.activeBatches || 0,
+  };
 }
 
 async function initProducerStore() {
@@ -117,7 +166,7 @@ async function initProducerStore() {
       audits JSONB NOT NULL DEFAULT '[]'::jsonb,
       farming_methods JSONB NOT NULL DEFAULT '[]'::jsonb,
       social_impact JSONB NOT NULL DEFAULT '[]'::jsonb,
-      latest_verification TEXT NOT NULL DEFAULT 'Demo profile',
+      latest_verification TEXT NOT NULL DEFAULT 'Testnet profile',
       smart_contract TEXT NOT NULL DEFAULT 'Traceability_v1',
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -192,7 +241,7 @@ async function insertSeedProducer(producer) {
       JSON.stringify(data.audits),
       JSON.stringify(data.farmingMethods),
       JSON.stringify(data.socialImpact),
-      producer.latestVerification || "Demo profile",
+      producer.latestVerification || "Testnet profile",
       producer.smartContract || "Traceability_v1",
     ]
   );
@@ -210,12 +259,7 @@ async function syncProducerIdentitySequence() {
 
 async function listProducers() {
   if (!hasDatabase()) {
-    return seedProducers.map((producer) => ({
-      ...producer,
-      activeBatches: 0,
-      linkedBatchCount: 0,
-      profileActiveBatches: producer.activeBatches || 0,
-    }));
+    return seedProducers.map(toFallbackProducer);
   }
 
   const res = await query(`
@@ -237,12 +281,7 @@ async function getProducerById(id) {
   if (!hasDatabase()) {
     const producer = seedProducers.find((item) => item.id === Number(id));
     if (!producer) return null;
-    return {
-      ...producer,
-      activeBatches: 0,
-      linkedBatchCount: 0,
-      profileActiveBatches: producer.activeBatches || 0,
-    };
+    return toFallbackProducer(producer);
   }
 
   const res = await query(

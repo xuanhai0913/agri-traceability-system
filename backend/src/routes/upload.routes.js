@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const { uploadImage } = require("../controllers/upload.controller");
+const { requireAdminAuth } = require("../middleware/auth.middleware");
 
 const router = express.Router();
 
@@ -26,6 +27,6 @@ const upload = multer({
  * Body: form-data với field "image"
  * Response: { success, data: { imageUrl, publicId } }
  */
-router.post("/", upload.single("image"), uploadImage);
+router.post("/", requireAdminAuth, upload.single("image"), uploadImage);
 
 module.exports = router;

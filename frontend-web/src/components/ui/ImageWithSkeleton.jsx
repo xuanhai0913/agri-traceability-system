@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { useImagePreloader } from "../../hooks/useImagePreloader";
 import { ImageOff } from "lucide-react";
 
@@ -9,11 +8,7 @@ export function ImageWithSkeleton({ src, alt, className, wrapperClassName = "" }
     <div className={`relative overflow-hidden bg-surface-container-high ${wrapperClassName}`}>
       {/* Skeleton (Hiển thị khi đang load) */}
       {!isLoaded && !hasError && (
-        <motion.div
-          className="absolute inset-0 bg-surface-container-highest/50"
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-        />
+        <div className="absolute inset-0 bg-surface-container-highest/50 animate-pulse" />
       )}
 
       {/* Lỗi (nếu fallback) */}
@@ -25,13 +20,12 @@ export function ImageWithSkeleton({ src, alt, className, wrapperClassName = "" }
       )}
 
       {/* Ảnh gốc (Chỉ hiện khi load xong) */}
-      <motion.img
+      <img
         src={src}
         alt={alt}
-        className={`${className} object-cover w-full h-full`}
-        initial={{ opacity: 0, scale: 1.05 }}
-        animate={{ opacity: isLoaded && !hasError ? 1 : 0, scale: isLoaded && !hasError ? 1 : 1.05 }}
-        transition={{ duration: 0.5 }}
+        className={`${className} object-cover w-full h-full transition-all duration-500 ${
+          isLoaded && !hasError ? "opacity-100 scale-100" : "opacity-0 scale-105"
+        }`}
       />
     </div>
   );

@@ -15,13 +15,18 @@ const ROLE_LABELS = {
   inspector: "Đơn vị kiểm định",
 };
 
+const TRANSACTION_ACTION_LABELS = {
+  create_batch: "Tạo lô hàng",
+  add_stage: "Cập nhật giai đoạn",
+};
+
 const FALLBACK_BATCH_LINKS = [
   {
     id: 1,
     batchId: 2,
     producerId: 1,
     producerRole: "primary_producer",
-    notes: "Fallback demo relationship for the existing on-chain coffee batch.",
+    notes: "Fallback testnet relationship for the existing on-chain coffee batch.",
   },
   {
     id: 2,
@@ -100,6 +105,50 @@ function toApiLink(row) {
   };
 }
 
+function explorerTxUrl(txHash) {
+  if (!txHash) return "";
+  const explorerBaseUrl =
+    process.env.EXPLORER_BASE_URL || "https://amoy.polygonscan.com";
+  return `${explorerBaseUrl}/tx/${txHash}`;
+}
+
+function toApiTransaction(row) {
+  const actorRole = normalizeProducerRole(row.actor_role);
+
+  return {
+    id: Number(row.id),
+    batchId: Number(row.batch_id),
+    action: row.action,
+    actionLabel: TRANSACTION_ACTION_LABELS[row.action] || row.action,
+    stageIndex:
+      row.stage_index === undefined || row.stage_index === null
+        ? null
+        : Number(row.stage_index),
+    transactionHash: row.tx_hash,
+    explorerUrl: explorerTxUrl(row.tx_hash),
+    blockNumber:
+      row.block_number === undefined || row.block_number === null
+        ? null
+        : Number(row.block_number),
+    actorAddress: row.actor_address || "",
+    actorProducerId:
+      row.actor_producer_id === undefined || row.actor_producer_id === null
+        ? null
+        : Number(row.actor_producer_id),
+    actorRole,
+    actorRoleLabel: ROLE_LABELS[actorRole],
+    notes: row.notes || "",
+    createdAt: row.created_at,
+    actorProducer: toProducer({
+      producer_id: row.producer_id,
+      producer_name: row.producer_name,
+      producer_location: row.producer_location,
+      producer_status: row.producer_status,
+      producer_image_url: row.producer_image_url,
+    }),
+  };
+}
+
 async function initBatchMetadataStore() {
   if (!hasDatabase()) return;
 
@@ -127,6 +176,35 @@ async function initBatchMetadataStore() {
     ON batch_producer_links (producer_id);
   `);
 
+  await query(`
+    CREATE TABLE IF NOT EXISTS batch_transaction_records (
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      batch_id BIGINT NOT NULL,
+      action TEXT NOT NULL
+        CHECK (action IN ('create_batch', 'add_stage')),
+      stage_index INTEGER,
+      tx_hash TEXT NOT NULL,
+      block_number BIGINT,
+      actor_address TEXT,
+      actor_producer_id BIGINT REFERENCES producers(id) ON DELETE SET NULL,
+      actor_role TEXT NOT NULL DEFAULT 'primary_producer'
+        CHECK (actor_role IN ('primary_producer', 'distributor', 'processor', 'inspector')),
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS batch_transaction_records_batch_idx
+    ON batch_transaction_records (batch_id);
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS batch_transaction_records_tx_idx
+    ON batch_transaction_records (tx_hash);
+  `);
+
   await seedDefaultBatchLinks();
 }
 
@@ -137,7 +215,7 @@ async function seedDefaultBatchLinks() {
       2,
       p.id,
       'primary_producer',
-      'Seeded demo relationship for the existing on-chain coffee batch.'
+      'Seeded testnet relationship for the existing on-chain coffee batch.'
     FROM producers p
     WHERE p.name = 'Nông trại Xanh Lâm Đồng'
     ON CONFLICT DO NOTHING;
@@ -149,7 +227,7 @@ async function seedDefaultBatchLinks() {
       1,
       p.id,
       'distributor',
-      'Demo distributor relationship for the existing on-chain batch.'
+      'Testnet distributor relationship for the existing on-chain batch.'
     FROM producers p
     WHERE p.name = 'Nhà Phân Phối Hải Làm Dev'
     ON CONFLICT DO NOTHING;
@@ -291,6 +369,127 @@ async function getProducerBatchLinks(producerId) {
   return res.rows.map(toApiLink);
 }
 
+async function getBatchLinkSummary() {
+  if (!hasDatabase()) {
+    return {
+      totalLinks: getFallbackLinks().length,
+    };
+  }
+
+  const res = await query(`
+    SELECT COUNT(*)::int AS total_links
+    FROM batch_producer_links
+  `);
+
+  return {
+    totalLinks: Number(res.rows[0]?.total_links || 0),
+  };
+}
+
+async function recordBatchTransaction({
+  batchId,
+  action,
+  stageIndex,
+  transactionHash,
+  blockNumber,
+  actorAddress,
+  actorProducerId,
+  actorRole,
+  notes,
+}) {
+  if (!hasDatabase() || !transactionHash) return null;
+
+  const normalizedRole = normalizeProducerRole(actorRole);
+  const res = await query(
+    `
+    INSERT INTO batch_transaction_records (
+      batch_id, action, stage_index, tx_hash, block_number,
+      actor_address, actor_producer_id, actor_role, notes
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    RETURNING *
+    `,
+    [
+      Number(batchId),
+      action,
+      stageIndex === undefined || stageIndex === null ? null : Number(stageIndex),
+      transactionHash,
+      blockNumber === undefined || blockNumber === null ? null : Number(blockNumber),
+      actorAddress || "",
+      actorProducerId ? Number(actorProducerId) : null,
+      normalizedRole,
+      notes || "",
+    ]
+  );
+
+  const records = await getBatchTransactionRecords(Number(batchId));
+  return records.find((record) => record.id === Number(res.rows[0].id)) || null;
+}
+
+async function getBatchTransactionRecords(batchId) {
+  if (!hasDatabase()) return [];
+
+  const res = await query(
+    `
+    SELECT
+      t.*,
+      p.id AS producer_id,
+      p.name AS producer_name,
+      p.location AS producer_location,
+      p.status AS producer_status,
+      p.image_url AS producer_image_url
+    FROM batch_transaction_records t
+    LEFT JOIN producers p ON p.id = t.actor_producer_id
+    WHERE t.batch_id = $1
+    ORDER BY COALESCE(t.block_number, 0) ASC, t.id ASC
+    `,
+    [batchId]
+  );
+
+  return res.rows.map(toApiTransaction);
+}
+
+async function getBatchTransactionsByBatchIds(batchIds) {
+  if (batchIds.length === 0 || !hasDatabase()) return [];
+
+  const res = await query(
+    `
+    SELECT
+      t.*,
+      p.id AS producer_id,
+      p.name AS producer_name,
+      p.location AS producer_location,
+      p.status AS producer_status,
+      p.image_url AS producer_image_url
+    FROM batch_transaction_records t
+    LEFT JOIN producers p ON p.id = t.actor_producer_id
+    WHERE t.batch_id = ANY($1::bigint[])
+    ORDER BY t.batch_id DESC, COALESCE(t.block_number, 0) DESC, t.id DESC
+    `,
+    [batchIds]
+  );
+
+  return res.rows.map(toApiTransaction);
+}
+
+function attachTransactionRecordsToBatch(batch, transactionRecords) {
+  const records = transactionRecords.filter(
+    (record) => record.batchId === Number(batch.id)
+  );
+
+  return {
+    ...batch,
+    transactionRecords: records,
+    latestTransaction: records[records.length - 1] || null,
+  };
+}
+
+function attachTransactionRecordsToBatches(batches, transactionRecords) {
+  return batches.map((batch) =>
+    attachTransactionRecordsToBatch(batch, transactionRecords)
+  );
+}
+
 function getPrimaryProducerLink(links) {
   return (
     links.find((link) => link.producerRole === "primary_producer") ||
@@ -319,12 +518,18 @@ function attachProducerLinksToBatches(batches, links) {
 module.exports = {
   attachProducerLinksToBatch,
   attachProducerLinksToBatches,
+  attachTransactionRecordsToBatch,
+  attachTransactionRecordsToBatches,
+  getBatchLinkSummary,
   getBatchLinksByBatchIds,
   getBatchProducerLinks,
+  getBatchTransactionRecords,
+  getBatchTransactionsByBatchIds,
   getPrimaryProducerLink,
   getProducerBatchLinks,
   getProducerReference,
   initBatchMetadataStore,
   linkBatchToProducer,
   normalizeProducerRole,
+  recordBatchTransaction,
 };

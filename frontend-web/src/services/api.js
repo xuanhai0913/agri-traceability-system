@@ -13,6 +13,44 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+export const ADMIN_SESSION_KEY = "agritrace:admin-session";
+
+export function getStoredAdminSession() {
+  try {
+    const value = sessionStorage.getItem(ADMIN_SESSION_KEY);
+    return value ? JSON.parse(value) : null;
+  } catch {
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    return null;
+  }
+}
+
+export function storeAdminSession(session) {
+  sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
+}
+
+export function clearAdminSession() {
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+}
+
+api.interceptors.request.use((config) => {
+  const session = getStoredAdminSession();
+  if (session?.token) {
+    config.headers.Authorization = `Bearer ${session.token}`;
+  }
+  return config;
+});
+
+// ── Auth endpoints ──────────────────────────────────
+
+export function loginAdmin({ email, password }) {
+  return api.post("/auth/login", { email, password });
+}
+
+export function getCurrentAdmin() {
+  return api.get("/auth/me");
+}
+
 // ── Batch endpoints ──────────────────────────────────
 
 export function getTotalBatches() {
@@ -49,11 +87,21 @@ export function createBatch({
   });
 }
 
-export function addStage(batchId, { stage, description, imageUrl }) {
+export function addStage(batchId, {
+  stage,
+  description,
+  imageUrl,
+  actorProducerId,
+  actorRole,
+  actorNotes,
+}) {
   return api.post(`/batches/${batchId}/stages`, {
     stage,
     description,
     imageUrl,
+    actorProducerId,
+    actorRole,
+    actorNotes,
   });
 }
 
@@ -82,16 +130,18 @@ export function getProducerBatches(producerId) {
   return api.get(`/producers/${producerId}/batches`);
 }
 
-export function createProducer(payload, adminToken) {
-  return api.post("/producers", payload, {
-    headers: { "x-admin-token": adminToken },
-  });
+export function createProducer(payload) {
+  return api.post("/producers", payload);
 }
 
 // ── Compliance evidence endpoint ─────────────────────
 
 export function getComplianceEvidence() {
   return api.get("/compliance/evidence");
+}
+
+export function getDashboardSummary() {
+  return api.get("/dashboard/summary");
 }
 
 // ── Health check ─────────────────────────────────────

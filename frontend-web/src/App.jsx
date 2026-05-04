@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
 import Skeleton from "./components/ui/Skeleton";
 import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "./components/auth/AuthProvider";
 
 /* ── Lazy-loaded pages ─── */
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
@@ -13,6 +14,7 @@ const BatchDetailPage = lazy(() => import("./pages/BatchDetailPage"));
 const ProducerNetworkPage = lazy(() => import("./pages/ProducerNetworkPage"));
 const ProducerDetailPage = lazy(() => import("./pages/ProducerDetailPage"));
 const CompliancePage = lazy(() => import("./pages/CompliancePage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 
 /** Route-level loading fallback */
 function RouteFallback() {
@@ -32,10 +34,19 @@ function RouteFallback() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Toaster position="top-right" toastOptions={{ duration: 4000, style: { background: '#1c1f1d', color: '#fff' } }} />
-      <Routes>
-        <Route element={<AppLayout />}>
+    <AuthProvider>
+      <BrowserRouter>
+        <Toaster position="top-right" toastOptions={{ duration: 4000, style: { background: '#1c1f1d', color: '#fff' } }} />
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <LoginPage />
+              </Suspense>
+            }
+          />
+          <Route element={<AppLayout />}>
           <Route
             index
             element={
@@ -100,8 +111,9 @@ export default function App() {
               </Suspense>
             }
           />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

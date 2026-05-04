@@ -36,34 +36,6 @@ function formatLinkedBatch(batch, link) {
   };
 }
 
-function requireAdminToken(req, res, next) {
-  const expectedToken = process.env.ADMIN_PRODUCER_TOKEN;
-  const token = req.header("x-admin-token");
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: "Admin token is required",
-    });
-  }
-
-  if (!expectedToken) {
-    return res.status(503).json({
-      success: false,
-      message: "ADMIN_PRODUCER_TOKEN is not configured",
-    });
-  }
-
-  if (token !== expectedToken) {
-    return res.status(401).json({
-      success: false,
-      message: "Admin token is invalid",
-    });
-  }
-
-  next();
-}
-
 async function getProducers(_req, res, next) {
   try {
     const producers = await listProducers();
@@ -171,5 +143,4 @@ module.exports = {
   getProducerBatches,
   getProducers,
   postProducer,
-  requireAdminToken,
 };

@@ -6,6 +6,8 @@ const batchRoutes = require("./routes/batch.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const producerRoutes = require("./routes/producer.routes");
 const complianceRoutes = require("./routes/compliance.routes");
+const authRoutes = require("./routes/auth.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
 const { getDatabaseStatus } = require("./config/database");
 
 const app = express();
@@ -28,7 +30,7 @@ app.use(
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-admin-token"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -51,6 +53,8 @@ app.use("/api/batches", batchRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/producers", producerRoutes);
 app.use("/api/compliance", complianceRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // 404
 app.use((_req, res) => {

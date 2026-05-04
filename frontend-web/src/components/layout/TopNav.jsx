@@ -1,12 +1,34 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Search, Languages, Menu, Wallet } from "lucide-react";
+import { Search, Languages, Menu, Wallet, LogOut, LogIn, Server } from "lucide-react";
+import { useAuth } from "../auth/useAuth";
+import { getDashboardSummary } from "../../services/api";
 
 export default function TopNav({ onMenuToggle }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
   const [query, setQuery] = useState("");
+  const [summary, setSummary] = useState(null);
+  const [apiConnected, setApiConnected] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    getDashboardSummary()
+      .then((res) => {
+        if (!mounted) return;
+        setSummary(res.data.data);
+        setApiConnected(true);
+      })
+      .catch(() => {
+        if (mounted) setApiConnected(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const toggleLang = () => {
     const newLang = i18n.language === "vi" ? "en" : "vi";
@@ -19,6 +41,18 @@ export default function TopNav({ onMenuToggle }) {
     const trimmed = query.trim();
     navigate(trimmed ? `/batches?search=${encodeURIComponent(trimmed)}` : "/batches");
   }
+
+  function shortAddress(value) {
+    if (!value) return "Not configured";
+    return `${value.slice(0, 6)}...${value.slice(-4)}`;
+  }
+
+  function handleLogout() {
+    logout();
+    navigate("/");
+  }
+
+  const serviceWallet = summary?.serviceWallet;
 
   return (
     <header className="md:ml-64 flex justify-between items-center px-4 md:px-8 py-4 h-16 glass-overlay sticky top-0 z-30 shadow-sm shadow-emerald-900/5">
@@ -72,11 +106,50 @@ export default function TopNav({ onMenuToggle }) {
           <span className="uppercase">{i18n.language === "vi" ? "EN" : "VI"}</span>
         </button>
 
-        {/* Wallet badge — hide text on very small screens */}
-        <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-emerald-50 text-primary font-medium text-xs">
-          <Wallet size={14} />
-          <span className="hidden sm:inline">{t("topnav.connected")}: 0x12...4f5</span>
+        <div
+          className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${
+            apiConnected === false
+              ? "bg-amber-50 text-amber-700"
+              : "bg-emerald-50 text-primary"
+          }`}
+          title={apiConnected === false ? "Backend unavailable" : "Backend connected"}
+        >
+          <Server size={14} />
+          {apiConnected === false ? "Backend unavailable" : "Backend connected"}
         </div>
+
+        <a
+          href={serviceWallet?.explorerUrl || undefined}
+          target={serviceWallet?.explorerUrl ? "_blank" : undefined}
+          rel={serviceWallet?.explorerUrl ? "noreferrer" : undefined}
+          className="hidden lg:flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-emerald-50 text-primary font-medium text-xs"
+          title="Backend service wallet on Polygon Amoy"
+        >
+          <Wallet size={14} />
+          <span>
+            Service wallet: {shortAddress(serviceWallet?.address)}
+          </span>
+        </a>
+
+        {isAuthenticated ? (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-600 transition-colors"
+            title={user?.email}
+          >
+            <LogOut size={14} />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
+        ) : (
+          <Link
+            to="/login"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-900 hover:bg-emerald-800 text-xs font-bold text-white transition-colors"
+          >
+            <LogIn size={14} />
+            <span className="hidden sm:inline">Admin login</span>
+          </Link>
+        )}
 
       </div>
     </header>

@@ -1,25 +1,24 @@
 import { useState, useEffect } from "react";
 
 export function useImagePreloader(src) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [status, setStatus] = useState({
+    src: "",
+    isLoaded: false,
+    hasError: false,
+  });
 
   useEffect(() => {
     if (!src) return;
-
-    setIsLoaded(false);
-    setHasError(false);
 
     const img = new Image();
     img.src = src;
 
     img.onload = () => {
-      setIsLoaded(true);
+      setStatus({ src, isLoaded: true, hasError: false });
     };
 
     img.onerror = () => {
-      setHasError(true);
-      setIsLoaded(true); // Don't hang the UI if it fails
+      setStatus({ src, isLoaded: true, hasError: true });
     };
 
     return () => {
@@ -28,5 +27,16 @@ export function useImagePreloader(src) {
     };
   }, [src]);
 
-  return { isLoaded, hasError };
+  if (!src) {
+    return { isLoaded: true, hasError: false };
+  }
+
+  if (status.src !== src) {
+    return { isLoaded: false, hasError: false };
+  }
+
+  return {
+    isLoaded: status.isLoaded,
+    hasError: status.hasError,
+  };
 }

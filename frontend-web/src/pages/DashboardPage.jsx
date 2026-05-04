@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Package, Sprout, Truck, ChevronRight, Eye, History, ShieldCheck, Leaf, Coffee, TreePine, TreeDeciduous, Flower2 } from "lucide-react";
-import { getTotalBatches, getBatch, getStageHistory, getAllBatches } from "../services/api";
+import { Package, Sprout, Truck, ChevronRight, Eye, ShieldCheck, Leaf, Coffee, TreePine, TreeDeciduous, Flower2, Server, Database, Wallet, ExternalLink } from "lucide-react";
+import { getDashboardSummary } from "../services/api";
 import { DashboardSkeleton } from "../components/ui/Skeleton";
 import { SeedlingIllustration } from "../components/ui/EmptyStateIllustrations";
-import { motion } from "framer-motion";
 import { Counter } from "../components/ui/Counter";
 
 const STAGE_NAMES = [
@@ -34,6 +33,7 @@ export default function DashboardPage() {
   const { t, i18n } = useTranslation();
   const [totalBatches, setTotalBatches] = useState(0);
   const [batches, setBatches] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,14 +42,11 @@ export default function DashboardPage() {
   async function loadDashboard() {
     try {
       setLoading(true);
-      // Fetch total for stats and top 3 recent for the table simultaneously
-      const [totalRes, recentRes] = await Promise.all([
-        getTotalBatches(),
-        getAllBatches(1, 3),
-      ]);
-      const total = totalRes.data.data.total;
-      setTotalBatches(total);
-      setBatches(recentRes.data.data.batches);
+      const summaryRes = await getDashboardSummary();
+      const data = summaryRes.data.data;
+      setSummary(data);
+      setTotalBatches(data.batches.total);
+      setBatches(data.batches.recent || []);
     } catch (err) {
       console.error("Dashboard load error:", err);
     } finally {
@@ -57,8 +54,8 @@ export default function DashboardPage() {
     }
   }
 
-  const activeBatches = batches.filter((b) => b.isActive).length;
-  const completedBatches = totalBatches - activeBatches;
+  const activeBatches = summary?.batches?.active || 0;
+  const completedBatches = summary?.batches?.completed || 0;
 
   function formatDate(timestamp) {
     if (!timestamp) return "—";
@@ -86,10 +83,7 @@ export default function DashboardPage() {
       {/* Stats Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {/* Total */}
-        <motion.div 
-          whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(52,211,153,0.15)" }}
-          className="bg-surface-container-lowest p-6 rounded-2xl border-l-4 border-primary transition-all shadow-ambient relative overflow-hidden group"
-        >
+        <div className="bg-surface-container-lowest p-6 rounded-2xl border-l-4 border-primary transition-all shadow-ambient relative overflow-hidden group hover:scale-[1.02] hover:shadow-emerald-900/10">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
           <div className="flex justify-between items-start mb-4 relative z-10">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
@@ -110,13 +104,10 @@ export default function DashboardPage() {
           <p className="text-slate-400 text-xs mt-2 relative z-10">
             {t("dashboard.onChain")}
           </p>
-        </motion.div>
+        </div>
 
         {/* Active */}
-        <motion.div 
-          whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(34,211,238,0.15)" }}
-          className="bg-surface-container-lowest p-6 rounded-2xl border-l-4 border-tertiary transition-all shadow-ambient relative overflow-hidden group"
-        >
+        <div className="bg-surface-container-lowest p-6 rounded-2xl border-l-4 border-tertiary transition-all shadow-ambient relative overflow-hidden group hover:scale-[1.02] hover:shadow-cyan-900/10">
           <div className="absolute inset-0 bg-gradient-to-br from-tertiary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
           <div className="flex justify-between items-start mb-4 relative z-10">
             <span className="text-xs font-bold uppercase tracking-widest text-tertiary">
@@ -135,13 +126,10 @@ export default function DashboardPage() {
           <p className="text-slate-400 text-xs mt-2 relative z-10">
             {t("dashboard.harvestEstimate")}
           </p>
-        </motion.div>
+        </div>
 
         {/* Completed */}
-        <motion.div 
-          whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(251,191,36,0.15)" }}
-          className="bg-surface-container-lowest p-6 rounded-2xl border-l-4 border-secondary transition-all shadow-ambient relative overflow-hidden group"
-        >
+        <div className="bg-surface-container-lowest p-6 rounded-2xl border-l-4 border-secondary transition-all shadow-ambient relative overflow-hidden group hover:scale-[1.02] hover:shadow-amber-900/10">
           <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
           <div className="flex justify-between items-start mb-4 relative z-10">
             <span className="text-xs font-bold uppercase tracking-widest text-secondary">
@@ -160,7 +148,7 @@ export default function DashboardPage() {
           <p className="text-slate-400 text-xs mt-2 relative z-10">
             {t("dashboard.distributed")}
           </p>
-        </motion.div>
+        </div>
       </div>
 
       {/* Recent Batches Ledger */}
@@ -267,81 +255,111 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Bottom Asymmetric Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-12">
-        {/* Hero Image */}
-        <div className="lg:col-span-3">
-          <div className="relative rounded-2xl h-[300px] overflow-hidden shadow-xl shadow-emerald-900/10">
-            <img src="/images/hero-rice-field.png" alt="Rice terraces" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
-              <span className="text-primary-fixed font-bold text-xs uppercase tracking-widest mb-2">
-                {t("dashboard.soilReport")}
-              </span>
-              <h4 className="text-white text-2xl font-extrabold font-headline">
-                {t("dashboard.soilTitle")}
-              </h4>
-              <p className="text-white/80 text-sm mt-2 max-w-md">
-                {t("dashboard.soilDesc")}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Wallet Activity */}
-          <div className="bg-surface-container-low p-6 rounded-2xl">
-            <h5 className="text-on-surface font-bold mb-4 flex items-center text-sm">
-              <History size={18} className="text-primary mr-2" />
-              {t("dashboard.walletActivity")}
-            </h5>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-                <div>
-                  <p className="text-xs font-bold text-on-surface">
-                    Verify Batch
-                  </p>
-                  <p className="text-[10px] text-slate-400">
-                    Hôm nay, 10:45 AM
-                  </p>
-                </div>
-                <span className="text-xs font-mono text-primary font-bold">
-                  -0.002 ETH
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-                <div>
-                  <p className="text-xs font-bold text-on-surface">
-                    Mint NFT Traceability
-                  </p>
-                  <p className="text-[10px] text-slate-400">
-                    Hôm qua, 04:20 PM
-                  </p>
-                </div>
-                <span className="text-xs font-mono text-primary font-bold">
-                  -0.005 ETH
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Compliance Pro CTA */}
-          <div className="bg-primary p-6 rounded-2xl text-white relative overflow-hidden group">
-            <div className="relative z-10">
-              <h5 className="font-bold mb-2 font-headline">
-                {t("dashboard.upgradePro")}
-              </h5>
-              <p className="text-xs text-primary-fixed/80 mb-4">
-                {t("dashboard.upgradeDesc")}
-              </p>
-              <button className="bg-white text-primary px-4 py-2 rounded-xl text-xs font-bold hover:scale-105 transition-transform">
-                {t("dashboard.upgradeBtn")}
-              </button>
-            </div>
-            <ShieldCheck size={100} className="absolute -right-4 -bottom-4 text-white/10 group-hover:rotate-12 transition-transform" />
-          </div>
-        </div>
-      </div>
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-10">
+        <EvidenceCard
+          icon={Server}
+          label="Backend API"
+          value={summary?.api?.connected ? "Connected" : "Unavailable"}
+          detail={summary?.api?.message || "Waiting for backend"}
+          ok={summary?.api?.connected}
+        />
+        <EvidenceCard
+          icon={Database}
+          label="PostgreSQL"
+          value={summary?.database?.available ? "Available" : "Fallback"}
+          detail={
+            summary?.database?.available
+              ? `${summary?.producers?.total || 0} producer profiles`
+              : summary?.database?.disabledReason || "Database fallback mode"
+          }
+          ok={summary?.database?.available}
+        />
+        <EvidenceCard
+          icon={Wallet}
+          label="Service wallet"
+          value={shortAddress(summary?.serviceWallet?.address)}
+          detail={summary?.network?.name || "Polygon Amoy testnet"}
+          href={summary?.serviceWallet?.explorerUrl}
+          ok={summary?.serviceWallet?.available}
+        />
+        <EvidenceCard
+          icon={ShieldCheck}
+          label="Smart contract"
+          value={shortAddress(summary?.contract?.address)}
+          detail={
+            summary?.network?.latestBlock
+              ? `Latest block ${summary.network.latestBlock}`
+              : "Waiting for network"
+          }
+          href={summary?.contract?.explorerUrl}
+          ok={summary?.contract?.available}
+        />
+        <EvidenceCard
+          icon={Leaf}
+          label="Producer links"
+          value={String(summary?.producers?.linkedBatchCount || 0)}
+          detail="Batch-producer metadata links in database"
+          ok={(summary?.producers?.linkedBatchCount || 0) > 0}
+        />
+        <EvidenceCard
+          icon={ExternalLink}
+          label="Compliance"
+          value="Evidence center"
+          detail="API, DB, blockchain and QR proof"
+          href="/compliance"
+          ok
+          internal
+        />
+      </section>
     </>
+  );
+}
+
+function shortAddress(value) {
+  if (!value) return "Not configured";
+  return `${value.slice(0, 8)}...${value.slice(-6)}`;
+}
+
+function EvidenceCard({ icon, label, value, detail, href, ok, internal }) {
+  const Icon = icon;
+  const content = (
+    <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient flex items-start gap-4 h-full">
+      <div
+        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+          ok ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+        }`}
+      >
+        <Icon size={22} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+          {label}
+        </p>
+        <p className="text-lg font-black text-emerald-900 font-headline mt-1 truncate">
+          {value}
+        </p>
+        <p className="text-xs text-slate-500 mt-2 leading-relaxed">{detail}</p>
+      </div>
+    </div>
+  );
+
+  if (!href) return content;
+  if (internal) {
+    return (
+      <Link to={href} className="block hover:scale-[1.01] transition-transform">
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="block hover:scale-[1.01] transition-transform"
+    >
+      {content}
+    </a>
   );
 }

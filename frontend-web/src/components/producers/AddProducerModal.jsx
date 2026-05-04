@@ -3,8 +3,6 @@ import { X, Loader2, Shield, UserPlus, ClipboardCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { createProducer } from "../../services/api";
 
-const ADMIN_TOKEN_KEY = "agritrace:producer-admin-token";
-
 const INITIAL_FORM = {
   name: "",
   website: "",
@@ -40,8 +38,8 @@ function parseAudits(value) {
       return {
         icon: "clipboard-check",
         title,
-        date: date || "Demo/Test",
-        result: result || "Demo verification record",
+        date: date || "Testnet record",
+        result: result || "Not a legal certificate",
         isDemo: true,
       };
     })
@@ -49,9 +47,6 @@ function parseAudits(value) {
 }
 
 export default function AddProducerModal({ onClose, onCreated }) {
-  const [adminToken, setAdminToken] = useState(
-    () => sessionStorage.getItem(ADMIN_TOKEN_KEY) || ""
-  );
   const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -64,11 +59,6 @@ export default function AddProducerModal({ onClose, onCreated }) {
     e.preventDefault();
     setError("");
 
-    if (!adminToken.trim()) {
-      setError("Cần nhập passcode admin để thêm producer.");
-      return;
-    }
-
     if (!form.name.trim() || !form.location.trim()) {
       setError("Tên và vị trí là bắt buộc.");
       return;
@@ -76,7 +66,6 @@ export default function AddProducerModal({ onClose, onCreated }) {
 
     try {
       setSaving(true);
-      sessionStorage.setItem(ADMIN_TOKEN_KEY, adminToken.trim());
 
       const payload = {
         ...form,
@@ -88,13 +77,13 @@ export default function AddProducerModal({ onClose, onCreated }) {
         socialImpact: toList(form.socialImpact),
       };
 
-      const res = await createProducer(payload, adminToken.trim());
+      const res = await createProducer(payload);
       toast.success("Đã thêm nhà sản xuất vào database.");
       onCreated(res.data.data);
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Không thể thêm producer. Kiểm tra lại passcode hoặc backend env."
+          "Không thể thêm producer. Kiểm tra lại phiên đăng nhập hoặc backend env."
       );
     } finally {
       setSaving(false);
@@ -142,19 +131,12 @@ export default function AddProducerModal({ onClose, onCreated }) {
                 </p>
                 <p className="text-xs text-emerald-700 mt-1">
                   Số lô hàng không nhập tay nữa; hệ thống tự tính từ các batch on-chain đã liên kết.
-                  Chứng nhận và kiểm định demo nên ghi rõ Demo/Test.
+                  Chứng nhận và kiểm định testnet phải ghi rõ không phải chứng nhận pháp lý.
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <Field
-                label="Passcode admin"
-                value={adminToken}
-                onChange={(value) => setAdminToken(value)}
-                type="password"
-                required
-              />
               <Field
                 label="Tên nhà sản xuất"
                 value={form.name}
@@ -202,13 +184,13 @@ export default function AddProducerModal({ onClose, onCreated }) {
                 label="Diện tích"
                 value={form.totalArea}
                 onChange={(value) => updateField("totalArea", value)}
-                placeholder="Demo/Test profile"
+                placeholder="Chưa cập nhật"
               />
               <Field
                 label="Độ cao"
                 value={form.elevation}
                 onChange={(value) => updateField("elevation", value)}
-                placeholder="Demo/Test profile"
+                placeholder="Chưa cập nhật"
               />
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
@@ -235,11 +217,11 @@ export default function AddProducerModal({ onClose, onCreated }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <TextArea
-                label="Chứng nhận demo/test"
+                label="Chứng nhận / ghi chú kiểm chứng"
                 value={form.certifications}
                 onChange={(value) => updateField("certifications", value)}
                 rows={3}
-                placeholder="Demo Supply Chain Partner, Demo Distributor Verification"
+                placeholder="Testnet Supply Chain Partner, Testnet Distributor Verification"
               />
               <TextArea
                 label="Phương pháp / năng lực"
@@ -253,14 +235,14 @@ export default function AddProducerModal({ onClose, onCreated }) {
                 value={form.socialImpact}
                 onChange={(value) => updateField("socialImpact", value)}
                 rows={3}
-                placeholder="Demo/Test partner, Public contact profile"
+                placeholder="Testnet partner, Public contact profile"
               />
               <TextArea
                 label="Lịch sử kiểm định"
                 value={form.audits}
                 onChange={(value) => updateField("audits", value)}
                 rows={3}
-                placeholder="Demo distributor verification | May 2026 | Test record only"
+                placeholder="Testnet distributor verification | May 2026 | Not a legal certificate"
               />
             </div>
 

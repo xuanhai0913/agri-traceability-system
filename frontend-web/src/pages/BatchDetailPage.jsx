@@ -13,6 +13,7 @@ import { getBatch, getStageHistory, addStage } from "../services/api";
 import { BatchDetailSkeleton } from "../components/ui/Skeleton";
 import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../components/auth/useAuth";
 
 const STAGE_NAMES = [
   "Gieo hạt",
@@ -37,6 +38,7 @@ const STAGE_NAMES_EN = [
 export default function BatchDetailPage() {
   const { t, i18n } = useTranslation();
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
   const [batch, setBatch] = useState(null);
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,13 @@ export default function BatchDetailPage() {
 
   // Add Stage modal
   const [showAddStage, setShowAddStage] = useState(false);
-  const [newStage, setNewStage] = useState({ stage: "", description: "" });
+  const [newStage, setNewStage] = useState({
+    stage: "",
+    description: "",
+    imageUrl: "",
+    actorProducerId: "",
+    actorRole: "primary_producer",
+  });
   const [addingStage, setAddingStage] = useState(false);
   
   // PDF Printing
@@ -53,6 +61,7 @@ export default function BatchDetailPage() {
 
   useEffect(() => {
     loadBatchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   async function loadBatchData() {
@@ -82,10 +91,20 @@ export default function BatchDetailPage() {
       await addStage(id, {
         stage: Number(newStage.stage),
         description: newStage.description,
-        imageUrl: "",
+        imageUrl: newStage.imageUrl,
+        actorProducerId: newStage.actorProducerId
+          ? Number(newStage.actorProducerId)
+          : undefined,
+        actorRole: newStage.actorRole,
       });
       setShowAddStage(false);
-      setNewStage({ stage: "", description: "" });
+      setNewStage({
+        stage: "",
+        description: "",
+        imageUrl: "",
+        actorProducerId: "",
+        actorRole: "primary_producer",
+      });
       await loadBatchData();
     } catch (err) {
       setError(
@@ -196,6 +215,21 @@ export default function BatchDetailPage() {
   const currentStageIdx = batch.currentStageIndex ?? 0;
   const producerLinks = batch.producerLinks || [];
   const primaryProducer = batch.primaryProducer;
+  const latestEvidenceImage = [...stages]
+    .reverse()
+    .find((stage) => stage.imageUrl)?.imageUrl;
+
+  function openAddStageModal() {
+    const defaultLink = producerLinks[0];
+    setNewStage({
+      stage: "",
+      description: "",
+      imageUrl: "",
+      actorProducerId: defaultLink?.producerId ? String(defaultLink.producerId) : "",
+      actorRole: defaultLink?.producerRole || "primary_producer",
+    });
+    setShowAddStage(true);
+  }
 
   return (
     <>
@@ -338,19 +372,32 @@ export default function BatchDetailPage() {
             </div>
           </div>
 
-          {/* Image placeholder */}
-          <div className="relative overflow-hidden rounded-2xl group">
-            <ImageWithSkeleton
-              src="/images/hero-coffee-farm.png"
-              alt={batch.name}
-              className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-              <span className="text-white text-xs font-bold px-3 py-1 bg-primary/80 backdrop-blur-sm rounded-full flex items-center gap-1">
-                <BadgeCheck size={12} />
-                {t("batchDetail.verifiedOnChain")}
-              </span>
-            </div>
+          <div className="relative overflow-hidden rounded-2xl group bg-surface-container-low min-h-44">
+            {latestEvidenceImage ? (
+              <>
+                <ImageWithSkeleton
+                  src={latestEvidenceImage}
+                  alt={batch.name}
+                  className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                  <span className="text-white text-xs font-bold px-3 py-1 bg-primary/80 backdrop-blur-sm rounded-full flex items-center gap-1">
+                    <BadgeCheck size={12} />
+                    Ảnh minh chứng từ timeline
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="h-44 flex flex-col items-center justify-center text-center p-5">
+                <Leaf size={34} className="text-emerald-600 mb-3" />
+                <p className="text-sm font-bold text-emerald-900">
+                  Chưa có ảnh minh chứng
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Ảnh sẽ xuất hiện khi batch hoặc stage có URL ảnh thật.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -425,15 +472,26 @@ export default function BatchDetailPage() {
           </div>
 
           {/* Add Stage button */}
-          {batch.isActive && (
+          {batch.isActive && isAuthenticated && (
             <div className="mt-6 text-center">
               <button
-                onClick={() => setShowAddStage(true)}
+                onClick={openAddStageModal}
                 className="px-6 py-3 bg-tertiary-container text-on-tertiary-container rounded-xl font-bold text-sm flex items-center gap-2 mx-auto hover:scale-[1.02] transition-transform"
               >
                 <PlusCircle size={18} />
                 {t("batchDetail.updateStage")}
               </button>
+            </div>
+          )}
+          {batch.isActive && !isAuthenticated && (
+            <div className="mt-6 text-center">
+              <Link
+                to="/login"
+                className="px-6 py-3 bg-surface-container-low text-emerald-900 rounded-xl font-bold text-sm inline-flex items-center gap-2 hover:bg-emerald-50 transition-colors"
+              >
+                <PlusCircle size={18} />
+                Đăng nhập để thêm stage
+              </Link>
             </div>
           )}
         </div>
@@ -512,6 +570,32 @@ export default function BatchDetailPage() {
                         <p className="text-[10px] text-outline mt-1 italic">
                           {formatTime(stage.timestamp)}
                         </p>
+
+                        {stage.transaction && (
+                          <div className="mt-2 rounded-lg bg-white/80 border border-emerald-50 p-2">
+                            <p className="text-[9px] font-black uppercase tracking-wide text-emerald-700">
+                              {stage.transaction.actionLabel}
+                            </p>
+                            {stage.transaction.actorProducer && (
+                              <p className="text-[10px] text-slate-600 mt-0.5">
+                                {stage.transaction.actorRoleLabel}:{" "}
+                                {stage.transaction.actorProducer.name}
+                              </p>
+                            )}
+                            {stage.transaction.transactionHash && (
+                              <a
+                                href={stage.transaction.explorerUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 mt-1 text-[10px] font-mono text-primary hover:underline"
+                              >
+                                {stage.transaction.transactionHash.slice(0, 8)}...
+                                {stage.transaction.transactionHash.slice(-6)}
+                                <ExternalLink size={10} />
+                              </a>
+                            )}
+                          </div>
+                        )}
 
                         {/* Image */}
                         {stage.imageUrl && (
@@ -651,6 +735,49 @@ export default function BatchDetailPage() {
                   className="input-ledger resize-none"
                   placeholder={t("batchDetail.descPlaceholder")}
                   rows={3}
+                />
+              </div>
+
+              {producerLinks.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                    Actor / partner ghi nhận
+                  </label>
+                  <select
+                    value={newStage.actorProducerId}
+                    onChange={(e) => {
+                      const selectedLink = producerLinks.find(
+                        (link) => String(link.producerId) === e.target.value
+                      );
+                      setNewStage({
+                        ...newStage,
+                        actorProducerId: e.target.value,
+                        actorRole: selectedLink?.producerRole || newStage.actorRole,
+                      });
+                    }}
+                    className="input-ledger"
+                  >
+                    <option value="">Service wallet only</option>
+                    {producerLinks.map((link) => (
+                      <option key={link.id} value={link.producerId}>
+                        {link.producer?.name} — {link.producerRoleLabel}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  URL ảnh minh chứng
+                </label>
+                <input
+                  value={newStage.imageUrl}
+                  onChange={(e) =>
+                    setNewStage({ ...newStage, imageUrl: e.target.value })
+                  }
+                  className="input-ledger"
+                  placeholder="https://res.cloudinary.com/.../stage.jpg"
                 />
               </div>
 

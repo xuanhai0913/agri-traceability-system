@@ -25,6 +25,7 @@ export default function ProducerDetailPage() {
 
   useEffect(() => {
     loadProducer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   async function loadProducer() {
@@ -99,7 +100,7 @@ export default function ProducerDetailPage() {
       {/* Hero Banner */}
       <div className="relative h-52 md:h-72 w-[calc(100%+2rem)] md:w-[calc(100%+4rem)] overflow-hidden rounded-2xl -mt-4 md:-mt-8 -mx-4 md:-mx-8 mb-0">
         <ImageWithSkeleton 
-          src="/images/hero-coffee-farm.png" 
+          src={producer.image || "/images/farm-highland.png"}
           alt={producer.name} 
           className="w-full h-full object-cover" 
           wrapperClassName="absolute inset-0 w-full h-full"
@@ -259,7 +260,7 @@ export default function ProducerDetailPage() {
                 </h3>
                 <ul className="space-y-2">
                   {farmingMethods.length === 0 && (
-                    <li className="text-sm text-slate-500">Demo/Test profile chưa có phương pháp cụ thể.</li>
+                    <li className="text-sm text-slate-500">Chưa cập nhật phương pháp cụ thể.</li>
                   )}
                   {farmingMethods.map((m) => (
                     <li
@@ -317,7 +318,7 @@ export default function ProducerDetailPage() {
                       {cert}
                     </span>
                     <span className="mt-2 text-[9px] font-black uppercase tracking-wide text-amber-600">
-                      Demo/Test
+                      Testnet record
                     </span>
                   </div>
               ))}
@@ -402,19 +403,19 @@ export default function ProducerDetailPage() {
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-500 font-medium">Coordinates</span>
                 <span className="font-mono text-emerald-900">
-                  {producer.coordinates || "Location only"}
+                  {producer.coordinates || "Chưa cập nhật"}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-500 font-medium">Total Area</span>
                 <span className="font-mono text-emerald-900">
-                  {producer.totalArea || "Demo/Test"}
+                  {producer.totalArea || "Chưa cập nhật"}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-500 font-medium">Elevation</span>
                 <span className="font-mono text-emerald-900">
-                  {producer.elevation || "Demo/Test"}
+                  {producer.elevation || "Chưa cập nhật"}
                 </span>
               </div>
             </div>
@@ -437,7 +438,7 @@ export default function ProducerDetailPage() {
             </h2>
             <p className="text-emerald-100 text-xs leading-relaxed mb-6 relative z-10">
               Hồ sơ nhà sản xuất được dùng để đối chiếu với các lô hàng đã ghi
-              trên AgriTrace ledger và demo trên Polygon Amoy.
+              trên AgriTrace ledger và Polygon Amoy testnet.
             </p>
             <div className="space-y-4 relative z-10">
               <div className="flex items-start gap-3">
@@ -494,7 +495,7 @@ export default function ProducerDetailPage() {
                       </p>
                       {audit.isDemo && (
                         <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[9px] font-black uppercase tracking-wide">
-                          Demo/Test record
+                      Testnet record / không phải chứng nhận pháp lý
                         </span>
                       )}
                     </div>

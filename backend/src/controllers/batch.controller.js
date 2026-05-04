@@ -2,10 +2,15 @@ const { getContract, getReadOnlyContract } = require("../config/blockchain");
 const {
   attachProducerLinksToBatch,
   attachProducerLinksToBatches,
+  attachTransactionRecordsToBatch,
+  attachTransactionRecordsToBatches,
   getBatchLinksByBatchIds,
   getBatchProducerLinks,
+  getBatchTransactionRecords,
+  getBatchTransactionsByBatchIds,
   getProducerReference,
   linkBatchToProducer,
+  recordBatchTransaction,
 } = require("../services/batch-metadata.service");
 
 /**
@@ -115,6 +120,21 @@ const createBatch = async (req, res, next) => {
       }
     }
 
+    let transactionRecord = null;
+    if (batchId) {
+      transactionRecord = await recordBatchTransaction({
+        batchId,
+        action: "create_batch",
+        stageIndex: 0,
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        actorAddress: contract.runner?.address || "",
+        actorProducerId: producerId,
+        actorRole: producerRole || "primary_producer",
+        notes: "Batch created by AgriTrace admin service wallet",
+      });
+    }
+
     res.status(201).json({
       success: true,
       data: {
@@ -123,6 +143,7 @@ const createBatch = async (req, res, next) => {
         blockNumber: receipt.blockNumber,
         producerLink,
         metadataLinked: Boolean(producerLink),
+        transactionRecord,
         metadataWarning,
       },
     });
@@ -138,13 +159,24 @@ const createBatch = async (req, res, next) => {
 const addStage = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { stage, description, imageUrl } = req.body;
+    const { stage, description, imageUrl, actorRole, actorNotes } = req.body;
+    const actorProducerId = parseProducerId(req.body.actorProducerId);
 
     if (stage === undefined || stage === null) {
       return res.status(400).json({
         success: false,
         message: "Giai đoạn (stage) là bắt buộc (0-6)",
       });
+    }
+
+    if (actorProducerId) {
+      const producer = await getProducerReference(actorProducerId);
+      if (!producer) {
+        return res.status(400).json({
+          success: false,
+          message: "Actor/partner được chọn không tồn tại trong database",
+        });
+      }
     }
 
     const contract = getContract();
@@ -156,6 +188,17 @@ const addStage = async (req, res, next) => {
     );
 
     const receipt = await tx.wait();
+    const transactionRecord = await recordBatchTransaction({
+      batchId: Number(id),
+      action: "add_stage",
+      stageIndex: Number(stage),
+      transactionHash: receipt.hash,
+      blockNumber: receipt.blockNumber,
+      actorAddress: contract.runner?.address || "",
+      actorProducerId,
+      actorRole: actorRole || "primary_producer",
+      notes: actorNotes || description || "Stage updated by AgriTrace admin service wallet",
+    });
 
     res.status(200).json({
       success: true,
@@ -164,6 +207,7 @@ const addStage = async (req, res, next) => {
         stage: STAGE_NAMES[stage] || `Unknown(${stage})`,
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
+        transactionRecord,
       },
     });
   } catch (error) {
@@ -190,10 +234,15 @@ const getBatch = async (req, res, next) => {
     const batch = await contract.getBatch(Number(id));
     const formattedBatch = formatBatch(batch);
     const producerLinks = await getBatchProducerLinks(Number(id));
+    const transactionRecords = await getBatchTransactionRecords(Number(id));
+    const enrichedBatch = attachTransactionRecordsToBatch(
+      attachProducerLinksToBatch(formattedBatch, producerLinks),
+      transactionRecords
+    );
 
     res.status(200).json({
       success: true,
-      data: attachProducerLinksToBatch(formattedBatch, producerLinks),
+      data: enrichedBatch,
     });
   } catch (error) {
     next(error);
@@ -217,6 +266,7 @@ const getStageHistory = async (req, res, next) => {
     }
 
     const history = await contract.getStageHistory(Number(id));
+    const transactionRecords = await getBatchTransactionRecords(Number(id));
 
     const formattedHistory = history.map((record) => ({
       stage: STAGE_NAMES[Number(record.stage)],
@@ -225,6 +275,10 @@ const getStageHistory = async (req, res, next) => {
       imageUrl: record.imageUrl,
       timestamp: Number(record.timestamp),
       updatedBy: record.updatedBy,
+      transaction:
+        transactionRecords.find(
+          (tx) => tx.stageIndex === Number(record.stage)
+        ) || null,
     }));
 
     res.status(200).json({
@@ -300,7 +354,13 @@ const getAllBatches = async (req, res, next) => {
     const producerLinks = await getBatchLinksByBatchIds(
       batches.map((batch) => batch.id)
     );
-    const enrichedBatches = attachProducerLinksToBatches(batches, producerLinks);
+    const transactionRecords = await getBatchTransactionsByBatchIds(
+      batches.map((batch) => batch.id)
+    );
+    const enrichedBatches = attachTransactionRecordsToBatches(
+      attachProducerLinksToBatches(batches, producerLinks),
+      transactionRecords
+    );
 
     res.status(200).json({
       success: true,
