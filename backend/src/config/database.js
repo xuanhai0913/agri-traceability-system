@@ -1,9 +1,35 @@
 const { Pool } = require("pg");
 
 let pool = null;
+let disabledReason = "";
 
 function hasDatabase() {
-  return Boolean(process.env.DATABASE_URL);
+  return Boolean(process.env.DATABASE_URL) && !disabledReason;
+}
+
+function getSafeDatabaseError(error) {
+  if (!error) return "unknown database error";
+  if (error.code) return `${error.code}: ${error.message}`;
+  return error.message || "unknown database error";
+}
+
+async function disableDatabase(error) {
+  disabledReason = getSafeDatabaseError(error);
+
+  if (pool) {
+    const currentPool = pool;
+    pool = null;
+    await currentPool.end().catch(() => {});
+  }
+}
+
+function getDatabaseStatus() {
+  return {
+    configured: Boolean(process.env.DATABASE_URL),
+    available: hasDatabase(),
+    fallback: !hasDatabase(),
+    disabledReason,
+  };
 }
 
 function getPool() {
@@ -33,6 +59,8 @@ async function query(text, params) {
 }
 
 module.exports = {
+  disableDatabase,
+  getDatabaseStatus,
   getPool,
   hasDatabase,
   query,

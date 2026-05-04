@@ -6,6 +6,7 @@ const batchRoutes = require("./routes/batch.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const producerRoutes = require("./routes/producer.routes");
 const complianceRoutes = require("./routes/compliance.routes");
+const { getDatabaseStatus } = require("./config/database");
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.get("/api/health", (_req, res) => {
     success: true,
     message: "AgriTrace API is running",
     timestamp: new Date().toISOString(),
+    database: getDatabaseStatus(),
   });
 });
 

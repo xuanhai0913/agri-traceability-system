@@ -120,5 +120,34 @@
     "audits": [
       { "icon": "clipboard-check", "title": "GMP Compliance", "date": "Mar 10, 2026", "result": "Passed" }
     ]
+  },
+  {
+    "id": 7,
+    "name": "Nhà Phân Phối Hải Làm Dev",
+    "website": "hailamdev.space",
+    "phone": "0929501116",
+    "email": "2251120085@ut.edu.vn",
+    "location": "70 Tô Ký, Quận 12, HCM",
+    "status": "verified",
+    "certifications": ["Demo Supply Chain Partner", "Demo Distributor Verification"],
+    "activeBatches": 0,
+    "image": "/images/farm-highland.png",
+    "description": "Đối tác phân phối demo/test của AgriTrace, dùng để trình bày luồng truy xuất QR, handoff lô hàng và thông tin liên hệ công khai trong báo cáo.",
+    "farmingMethods": ["QR fulfillment", "Batch handoff", "Cold chain logging"],
+    "socialImpact": ["Demo/Test partner", "Public contact profile"],
+    "coordinates": "10.8490, 106.6278",
+    "totalArea": "Demo/Test profile",
+    "elevation": "Demo/Test profile",
+    "latestVerification": "Demo profile",
+    "smartContract": "Traceability_v1",
+    "audits": [
+      {
+        "icon": "clipboard-check",
+        "title": "Demo distributor verification",
+        "date": "May 2026",
+        "result": "Test record only",
+        "isDemo": true
+      }
+    ]
   }
 ]

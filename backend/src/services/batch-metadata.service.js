@@ -1,4 +1,5 @@
 const { hasDatabase, query } = require("../config/database");
+const seedProducers = require("../data/producers.json");
 
 const PRODUCER_ROLES = new Set([
   "primary_producer",
@@ -14,6 +15,23 @@ const ROLE_LABELS = {
   inspector: "Đơn vị kiểm định",
 };
 
+const FALLBACK_BATCH_LINKS = [
+  {
+    id: 1,
+    batchId: 2,
+    producerId: 1,
+    producerRole: "primary_producer",
+    notes: "Fallback demo relationship for the existing on-chain coffee batch.",
+  },
+  {
+    id: 2,
+    batchId: 1,
+    producerId: 7,
+    producerRole: "distributor",
+    notes: "Fallback distributor relationship for the existing on-chain batch.",
+  },
+];
+
 function normalizeProducerRole(role) {
   return PRODUCER_ROLES.has(role) ? role : "primary_producer";
 }
@@ -28,6 +46,43 @@ function toProducer(row) {
     status: row.producer_status || "verified",
     image: row.producer_image_url || "/images/farm-highland.png",
   };
+}
+
+function toSeedProducer(producer) {
+  if (!producer) return null;
+
+  return {
+    id: Number(producer.id),
+    name: producer.name,
+    location: producer.location || "",
+    status: producer.status || "verified",
+    image: producer.image || "/images/farm-highland.png",
+  };
+}
+
+function toFallbackLink(link) {
+  const producer = toSeedProducer(
+    seedProducers.find((item) => item.id === Number(link.producerId))
+  );
+
+  if (!producer) return null;
+
+  const producerRole = normalizeProducerRole(link.producerRole);
+
+  return {
+    id: link.id,
+    batchId: Number(link.batchId),
+    producerId: Number(link.producerId),
+    producerRole,
+    producerRoleLabel: ROLE_LABELS[producerRole],
+    notes: link.notes || "",
+    linkedAt: null,
+    producer,
+  };
+}
+
+function getFallbackLinks() {
+  return FALLBACK_BATCH_LINKS.map(toFallbackLink).filter(Boolean);
 }
 
 function toApiLink(row) {
@@ -105,7 +160,13 @@ async function seedDefaultBatchLinks() {
 }
 
 async function getProducerReference(producerId) {
-  if (!hasDatabase() || !producerId) return null;
+  if (!producerId) return null;
+
+  if (!hasDatabase()) {
+    return toSeedProducer(
+      seedProducers.find((producer) => producer.id === Number(producerId))
+    );
+  }
 
   const res = await query(
     `
@@ -150,7 +211,9 @@ async function linkBatchToProducer({ batchId, producerId, producerRole, notes })
 }
 
 async function getBatchProducerLinks(batchId) {
-  if (!hasDatabase()) return [];
+  if (!hasDatabase()) {
+    return getFallbackLinks().filter((link) => link.batchId === Number(batchId));
+  }
 
   const res = await query(
     `
@@ -179,7 +242,12 @@ async function getBatchProducerLinks(batchId) {
 }
 
 async function getBatchLinksByBatchIds(batchIds) {
-  if (!hasDatabase() || batchIds.length === 0) return [];
+  if (batchIds.length === 0) return [];
+
+  if (!hasDatabase()) {
+    const allowedIds = new Set(batchIds.map(Number));
+    return getFallbackLinks().filter((link) => allowedIds.has(link.batchId));
+  }
 
   const res = await query(
     `
@@ -201,7 +269,11 @@ async function getBatchLinksByBatchIds(batchIds) {
 }
 
 async function getProducerBatchLinks(producerId) {
-  if (!hasDatabase()) return [];
+  if (!hasDatabase()) {
+    return getFallbackLinks().filter(
+      (link) => link.producerId === Number(producerId)
+    );
+  }
 
   const res = await query(
     `
