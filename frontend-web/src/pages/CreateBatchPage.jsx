@@ -103,7 +103,8 @@ export default function CreateBatchPage() {
 
   function clearImageFile() {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
-    clearImageFile();
+    setImageFile(null);
+    setImagePreview(null);
   }
 
   async function handleSubmit(e) {
@@ -189,8 +190,7 @@ export default function CreateBatchPage() {
       producerRole: "primary_producer",
       imageUrl: "",
     });
-    setImageFile(null);
-    setImagePreview(null);
+    clearImageFile();
     setError(null);
     setDraftMeta(null);
     toast.success("Đã xóa bản nháp.", { duration: 2500 });
