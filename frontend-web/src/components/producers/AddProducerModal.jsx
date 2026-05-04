@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { X, Loader2, Shield, UserPlus, ClipboardCheck, Save } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { createProducer, updateProducer } from "../../services/api";
+import { createProducer, updateProducer, uploadImage } from "../../services/api";
+import ImageSourcePicker from "../ui/ImageSourcePicker";
 
 const INITIAL_FORM = {
   name: "",
@@ -82,14 +83,39 @@ export default function AddProducerModal({ producer, onClose, onCreated, onSaved
   const isEditing = Boolean(producer?.id);
   const [form, setForm] = useState(() => producerToForm(producer));
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     setForm(producerToForm(producer));
+    clearImageFile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [producer]);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function handleImageFileSelect(file) {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    updateField("imageUrl", "");
+    setError("");
+  }
+
+  function clearImageFile() {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview(null);
   }
 
   async function handleSubmit(e) {
@@ -103,11 +129,19 @@ export default function AddProducerModal({ producer, onClose, onCreated, onSaved
 
     try {
       setSaving(true);
+      let imageUrl = form.imageUrl.trim();
+
+      if (imageFile) {
+        setUploadingImage(true);
+        const uploadRes = await uploadImage(imageFile);
+        imageUrl = uploadRes.data.data.imageUrl;
+      }
 
       const payload = {
         ...form,
         name: form.name.trim(),
         location: form.location.trim(),
+        imageUrl,
         certifications: toList(form.certifications),
         audits: parseAudits(form.audits),
         farmingMethods: toList(form.farmingMethods),
@@ -135,6 +169,7 @@ export default function AddProducerModal({ producer, onClose, onCreated, onSaved
       );
     } finally {
       setSaving(false);
+      setUploadingImage(false);
     }
   }
 
@@ -223,12 +258,6 @@ export default function AddProducerModal({ producer, onClose, onCreated, onSaved
                 placeholder="10.8490, 106.6278"
               />
               <Field
-                label="Ảnh đại diện URL"
-                value={form.imageUrl}
-                onChange={(value) => updateField("imageUrl", value)}
-                placeholder="/images/farm-highland.png"
-              />
-              <Field
                 label="Diện tích"
                 value={form.totalArea}
                 onChange={(value) => updateField("totalArea", value)}
@@ -260,6 +289,21 @@ export default function AddProducerModal({ producer, onClose, onCreated, onSaved
                 )}
               </div>
             </div>
+
+            <ImageSourcePicker
+              label="Ảnh đại diện producer"
+              urlValue={form.imageUrl}
+              file={imageFile}
+              preview={imagePreview}
+              onUrlChange={(value) => updateField("imageUrl", value)}
+              onFileSelect={handleImageFileSelect}
+              onFileClear={clearImageFile}
+              onUnsplashSelect={(value) => updateField("imageUrl", value)}
+              onError={setError}
+              maxSizeMb={5}
+              urlPlaceholder="/images/farm-highland.png"
+              helperText="Ảnh Cloudinary sẽ upload khi lưu hồ sơ; ảnh Unsplash/URL được lưu trực tiếp vào producer profile."
+            />
 
             <TextArea
               label="Mô tả"
@@ -326,7 +370,9 @@ export default function AddProducerModal({ producer, onClose, onCreated, onSaved
                     <UserPlus size={18} />
                   )}
                   {saving
-                    ? "Đang lưu..."
+                    ? uploadingImage
+                      ? "Đang tải ảnh..."
+                      : "Đang lưu..."
                     : isEditing
                     ? "Lưu hồ sơ"
                     : "Thêm producer"}

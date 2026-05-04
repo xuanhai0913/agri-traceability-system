@@ -1,22 +1,22 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   ChevronRight, AlertCircle, X, FileText,
-  MapPin, Lock, CloudUpload, Loader2, Wallet,
+  MapPin, Lock, Loader2, Wallet,
   Save, Trash2, UserCheck,
 } from "lucide-react";
 import { createBatch, getProducers, uploadImage } from "../services/api";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../components/auth/useAuth";
 import AdminRequired from "../components/auth/AdminRequired";
+import ImageSourcePicker from "../components/ui/ImageSourcePicker";
 
 const DRAFT_KEY = "agritrace:create-batch-draft";
 
 export default function CreateBatchPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
   const { isAuthenticated, loading: authLoading } = useAuth();
 
   const [form, setForm] = useState({
@@ -25,6 +25,7 @@ export default function CreateBatchPage() {
     description: "",
     producerId: "",
     producerRole: "primary_producer",
+    imageUrl: "",
   });
   const [producers, setProducers] = useState([]);
   const [producersLoading, setProducersLoading] = useState(true);
@@ -47,12 +48,19 @@ export default function CreateBatchPage() {
         description: parsed.description || "",
         producerId: parsed.producerId || "",
         producerRole: parsed.producerRole || "primary_producer",
+        imageUrl: parsed.imageUrl || "",
       });
       if (parsed.savedAt) setDraftMeta({ savedAt: parsed.savedAt, restored: true });
     } catch {
       localStorage.removeItem(DRAFT_KEY);
     }
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   useEffect(() => {
     async function loadProducers() {
@@ -85,38 +93,17 @@ export default function CreateBatchPage() {
     }));
   }
 
-  function handleFileSelect(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError("File quá lớn. Tối đa 10MB.");
-      return;
-    }
-
+  function handleImageFileSelect(file) {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+    setForm((current) => ({ ...current, imageUrl: "" }));
     setError(null);
   }
 
-  function handleDrop(e) {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
-
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setError("Chỉ chấp nhận JPG, PNG, WEBP.");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError("File quá lớn. Tối đa 10MB.");
-      return;
-    }
-
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    setError(null);
+  function clearImageFile() {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    clearImageFile();
   }
 
   async function handleSubmit(e) {
@@ -142,7 +129,7 @@ export default function CreateBatchPage() {
 
     try {
       setSubmitting(true);
-      let imageUrl = "";
+      let imageUrl = form.imageUrl.trim();
 
       // Step 1: Upload image if exists
       if (imageFile) {
@@ -200,6 +187,7 @@ export default function CreateBatchPage() {
       description: "",
       producerId: "",
       producerRole: "primary_producer",
+      imageUrl: "",
     });
     setImageFile(null);
     setImagePreview(null);
@@ -479,83 +467,24 @@ export default function CreateBatchPage() {
 
           {/* Right Column: Media & Submit */}
           <div className="lg:col-span-5 space-y-6">
-            {/* Upload Zone */}
-            <div
-              role="button"
-              tabIndex={0}
-              aria-label="Tải ảnh minh chứng cho lô hàng"
-              onClick={() => fileInputRef.current?.click()}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  fileInputRef.current?.click();
+            <div className="bg-surface-container-lowest p-6 rounded-2xl ghost-border">
+              <ImageSourcePicker
+                label="Hình ảnh thực tế"
+                urlValue={form.imageUrl}
+                file={imageFile}
+                preview={imagePreview}
+                onUrlChange={(value) =>
+                  setForm((current) => ({ ...current, imageUrl: value }))
                 }
-              }}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-              className={`bg-surface-container-lowest p-8 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center min-h-[340px] cursor-pointer transition-colors group ${
-                imagePreview
-                  ? "border-emerald-300 bg-emerald-50/30"
-                  : "border-emerald-200 hover:bg-emerald-50/50"
-              }`}
-            >
-              <input
-                id="batch-image-upload"
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={handleFileSelect}
+                onFileSelect={handleImageFileSelect}
+                onFileClear={clearImageFile}
+                onUnsplashSelect={(value) =>
+                  setForm((current) => ({ ...current, imageUrl: value }))
+                }
+                onError={setError}
+                maxSizeMb={10}
+                helperText="Ảnh URL/Unsplash được ghi trực tiếp; ảnh Cloudinary sẽ upload trước khi tạo lô."
               />
-
-              {imagePreview ? (
-                <>
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full max-h-48 object-contain rounded-xl mb-4"
-                  />
-                  <p className="text-xs text-slate-500">
-                    {imageFile?.name} •{" "}
-                    {(imageFile?.size / 1024 / 1024).toFixed(1)}MB
-                  </p>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setImageFile(null);
-                      setImagePreview(null);
-                    }}
-                    className="mt-3 text-xs text-error font-bold hover:underline"
-                  >
-                    Xóa ảnh
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">
-                    <CloudUpload size={36} />
-                  </div>
-                  <h3 className="text-xl font-bold text-on-surface mb-2 font-headline">
-                    Hình ảnh thực tế
-                  </h3>
-                  <p className="text-slate-500 text-sm mb-5 max-w-[240px]">
-                    Kéo thả ảnh hoặc click để tải lên chứng chỉ và hình ảnh lô
-                    hàng.
-                  </p>
-                  <div className="flex gap-2">
-                    <span className="px-3 py-1 bg-surface-container-high rounded-full text-[10px] font-bold text-slate-500 uppercase">
-                      JPG
-                    </span>
-                    <span className="px-3 py-1 bg-surface-container-high rounded-full text-[10px] font-bold text-slate-500 uppercase">
-                      PNG
-                    </span>
-                    <span className="px-3 py-1 bg-surface-container-high rounded-full text-[10px] font-bold text-slate-500 uppercase">
-                      Max 10MB
-                    </span>
-                  </div>
-                </>
-              )}
             </div>
 
             {/* Submit Actions */}
