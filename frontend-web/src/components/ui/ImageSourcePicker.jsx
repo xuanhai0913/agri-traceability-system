@@ -1,43 +1,23 @@
 import { useRef, useState } from "react";
-import { CloudUpload, Image, Link as LinkIcon, Sparkles, Trash2 } from "lucide-react";
+import {
+  CloudUpload,
+  ExternalLink,
+  Image,
+  Link as LinkIcon,
+  Loader2,
+  Search,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
+import { searchUnsplashPhotos, trackUnsplashDownload } from "../../services/api";
 
-const UNSPLASH_LIBRARY = [
-  {
-    id: "tea-field",
-    title: "Đồi chè",
-    subtitle: "Tea estate",
-    url: "https://images.unsplash.com/photo-1598514983318-2f64f8f4796c?auto=format&fit=crop&w=1400&q=80",
-  },
-  {
-    id: "coffee-beans",
-    title: "Hạt cà phê",
-    subtitle: "Coffee beans",
-    url: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1400&q=80",
-  },
-  {
-    id: "rice-field",
-    title: "Ruộng lúa",
-    subtitle: "Rice field",
-    url: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1400&q=80",
-  },
-  {
-    id: "vegetable-harvest",
-    title: "Thu hoạch rau",
-    subtitle: "Vegetable harvest",
-    url: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1400&q=80",
-  },
-  {
-    id: "greenhouse",
-    title: "Nhà kính",
-    subtitle: "Greenhouse",
-    url: "https://images.unsplash.com/photo-1523741543316-beb7fc7023d8?auto=format&fit=crop&w=1400&q=80",
-  },
-  {
-    id: "orchard",
-    title: "Vườn cây",
-    subtitle: "Farm orchard",
-    url: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1400&q=80",
-  },
+const UNSPLASH_CATEGORIES = [
+  { key: "agriculture farm", label: "Nông trại" },
+  { key: "coffee farm vietnam", label: "Cà phê" },
+  { key: "tea plantation", label: "Đồi chè" },
+  { key: "rice field", label: "Ruộng lúa" },
+  { key: "vegetable harvest", label: "Thu hoạch" },
+  { key: "greenhouse agriculture", label: "Nhà kính" },
 ];
 
 const MODES = [
@@ -62,6 +42,12 @@ export default function ImageSourcePicker({
 }) {
   const inputRef = useRef(null);
   const [mode, setMode] = useState(file ? "cloudinary" : urlValue ? "url" : "cloudinary");
+  const [unsplashQuery, setUnsplashQuery] = useState(UNSPLASH_CATEGORIES[0].key);
+  const [unsplashPhotos, setUnsplashPhotos] = useState([]);
+  const [unsplashMeta, setUnsplashMeta] = useState(null);
+  const [unsplashLoading, setUnsplashLoading] = useState(false);
+  const [unsplashError, setUnsplashError] = useState("");
+  const [selectedUnsplashId, setSelectedUnsplashId] = useState("");
 
   function validateFile(selectedFile) {
     if (!selectedFile) return false;
@@ -82,6 +68,7 @@ export default function ImageSourcePicker({
   function handleFile(selectedFile) {
     if (!validateFile(selectedFile)) return;
     onFileSelect?.(selectedFile);
+    setMode("cloudinary");
   }
 
   function handleDrop(e) {
@@ -94,9 +81,56 @@ export default function ImageSourcePicker({
     onUrlChange?.(value);
   }
 
-  function handleUnsplashSelect(imageUrl) {
+  async function loadUnsplash(query = unsplashQuery, page = 1) {
+    const cleanQuery = query.trim() || UNSPLASH_CATEGORIES[0].key;
+    try {
+      setUnsplashLoading(true);
+      setUnsplashError("");
+      const res = await searchUnsplashPhotos({
+        query: cleanQuery,
+        page,
+        perPage: 12,
+        orientation: "landscape",
+      });
+      const data = res.data.data;
+      setUnsplashQuery(data.query || cleanQuery);
+      setUnsplashPhotos(data.photos || []);
+      setUnsplashMeta({
+        page: data.page,
+        total: data.total,
+        totalPages: data.totalPages,
+      });
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Không thể tải ảnh Unsplash. Kiểm tra UNSPLASH_ACCESS_KEY trên backend.";
+      setUnsplashError(message);
+      onError?.(message);
+    } finally {
+      setUnsplashLoading(false);
+    }
+  }
+
+  function openUnsplashTab() {
+    setMode("unsplash");
+    if (unsplashPhotos.length === 0 && !unsplashLoading) {
+      loadUnsplash(unsplashQuery);
+    }
+  }
+
+  async function handleUnsplashSelect(photo) {
+    try {
+      await trackUnsplashDownload({
+        photoId: photo.id,
+        downloadLocation: photo.downloadLocation,
+      });
+    } catch {
+      // The image can still be used; tracking failure is surfaced by backend logs.
+    }
+
     onFileClear?.();
-    onUnsplashSelect?.(imageUrl);
+    onUnsplashSelect?.(photo.url, photo);
+    setSelectedUnsplashId(photo.id);
     setMode("unsplash");
   }
 
@@ -115,7 +149,9 @@ export default function ImageSourcePicker({
               <button
                 key={item.key}
                 type="button"
-                onClick={() => setMode(item.key)}
+                onClick={() =>
+                  item.key === "unsplash" ? openUnsplashTab() : setMode(item.key)
+                }
                 className={`min-h-10 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-colors ${
                   active
                     ? "bg-white text-emerald-900 shadow-sm"
@@ -138,9 +174,7 @@ export default function ImageSourcePicker({
             className="input-ledger"
             placeholder={urlPlaceholder}
           />
-          {urlValue && (
-            <RemotePreview src={urlValue} title="Preview URL" />
-          )}
+          {urlValue && <RemotePreview src={urlValue} title="Preview URL" />}
         </div>
       )}
 
@@ -212,44 +246,119 @@ export default function ImageSourcePicker({
       )}
 
       {mode === "unsplash" && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {UNSPLASH_LIBRARY.map((item) => {
-              const selected = urlValue === item.url;
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleUnsplashSelect(item.url)}
-                  className={`text-left rounded-2xl overflow-hidden border bg-white hover:border-emerald-400 transition-colors ${
-                    selected ? "border-emerald-600 ring-2 ring-emerald-200" : "border-slate-100"
-                  }`}
-                >
-                  <div className="aspect-[4/3] bg-surface-container-high overflow-hidden">
-                    <img
-                      src={item.url}
-                      alt={item.title}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <p className="text-xs font-black text-emerald-900">
-                      {item.title}
-                    </p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      {item.subtitle}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {UNSPLASH_CATEGORIES.map((category) => (
+              <button
+                key={category.key}
+                type="button"
+                onClick={() => loadUnsplash(category.key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                  unsplashQuery === category.key
+                    ? "bg-emerald-900 text-white"
+                    : "bg-surface-container-low text-slate-600 hover:bg-emerald-50"
+                }`}
+              >
+                {category.label}
+              </button>
+            ))}
           </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              loadUnsplash(unsplashQuery);
+            }}
+            className="flex gap-2"
+          >
+            <input
+              value={unsplashQuery}
+              onChange={(e) => setUnsplashQuery(e.target.value)}
+              className="input-ledger"
+              placeholder="Search Unsplash: coffee farm, mango, pepper..."
+            />
+            <button
+              type="submit"
+              disabled={unsplashLoading}
+              className="px-4 rounded-xl bg-emerald-900 text-white font-bold flex items-center justify-center disabled:opacity-60"
+              aria-label="Tìm ảnh Unsplash"
+            >
+              {unsplashLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+            </button>
+          </form>
+
+          {unsplashError && (
+            <div className="rounded-xl bg-amber-50 text-amber-800 px-4 py-3 text-xs font-semibold">
+              {unsplashError}
+            </div>
+          )}
+
+          {unsplashLoading && unsplashPhotos.length === 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {Array.from({ length: 6 }, (_, index) => (
+                <div
+                  key={index}
+                  className="aspect-[4/3] rounded-2xl bg-surface-container-high animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {unsplashPhotos.map((photo) => {
+                const selected = selectedUnsplashId === photo.id || urlValue === photo.url;
+
+                return (
+                  <button
+                    key={photo.id}
+                    type="button"
+                    onClick={() => handleUnsplashSelect(photo)}
+                    className={`text-left rounded-2xl overflow-hidden border bg-white hover:border-emerald-400 transition-colors ${
+                      selected ? "border-emerald-600 ring-2 ring-emerald-200" : "border-slate-100"
+                    }`}
+                  >
+                    <div className="aspect-[4/3] bg-surface-container-high overflow-hidden">
+                      <img
+                        src={photo.thumb || photo.url}
+                        alt={photo.alt}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <p className="text-xs font-black text-emerald-900 line-clamp-1">
+                        {photo.alt}
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">
+                        Photo by {photo.photographer}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {unsplashPhotos.length > 0 && (
+            <div className="flex items-center justify-between gap-3 text-[10px] text-slate-500">
+              <span>
+                {unsplashMeta?.total || 0} kết quả từ Unsplash
+              </span>
+              <a
+                href="https://unsplash.com/?utm_source=agritrace&utm_medium=referral"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 font-bold hover:text-emerald-800"
+              >
+                Unsplash
+                <ExternalLink size={11} />
+              </a>
+            </div>
+          )}
+
           <p className="text-[10px] text-slate-500 flex items-center gap-1">
             <Image size={12} />
-            Unsplash dùng cho ảnh minh họa demo; dữ liệu chứng nhận vẫn là testnet record.
+            Khi chọn ảnh, backend sẽ trigger Unsplash download tracking trước khi dùng URL.
           </p>
         </div>
       )}

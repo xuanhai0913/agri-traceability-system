@@ -128,6 +128,31 @@ export function uploadImage(file) {
   });
 }
 
+// ── Media picker endpoints ──────────────────────────
+
+export function searchUnsplashPhotos({
+  query,
+  page = 1,
+  perPage = 12,
+  orientation = "landscape",
+}) {
+  return api.get("/media/unsplash/search", {
+    params: {
+      query,
+      page,
+      perPage,
+      orientation,
+    },
+  });
+}
+
+export function trackUnsplashDownload({ photoId, downloadLocation }) {
+  return api.post("/media/unsplash/download", {
+    photoId,
+    downloadLocation,
+  });
+}
+
 // ── Producer endpoints ───────────────────────────────
 
 export function getProducers() {

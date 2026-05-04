@@ -8,6 +8,7 @@ const producerRoutes = require("./routes/producer.routes");
 const complianceRoutes = require("./routes/compliance.routes");
 const authRoutes = require("./routes/auth.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
+const mediaRoutes = require("./routes/media.routes");
 const { getDatabaseStatus } = require("./config/database");
 
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/producers", producerRoutes);
 app.use("/api/compliance", complianceRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/media", mediaRoutes);
 
 // 404
 app.use((_req, res) => {
