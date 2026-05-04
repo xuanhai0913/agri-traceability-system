@@ -8,8 +8,15 @@ import {
   Check, ChevronRight, AlertCircle, X, Leaf, BadgeCheck,
   Printer, PlusCircle, RefreshCw, Shield,
   Loader2, Copy, Share2, Users, ExternalLink,
+  CloudUpload, Trash2,
 } from "lucide-react";
-import { getBatch, getStageHistory, addStage, getDashboardSummary } from "../services/api";
+import {
+  getBatch,
+  getStageHistory,
+  addStage,
+  getDashboardSummary,
+  uploadImage,
+} from "../services/api";
 import { BatchDetailSkeleton } from "../components/ui/Skeleton";
 import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
 import { toast } from "react-hot-toast";
@@ -55,10 +62,20 @@ export default function BatchDetailPage() {
     actorRole: "primary_producer",
   });
   const [addingStage, setAddingStage] = useState(false);
+  const [uploadingStageImage, setUploadingStageImage] = useState(false);
+  const [stageImageFile, setStageImageFile] = useState(null);
+  const [stageImagePreview, setStageImagePreview] = useState(null);
   
   // PDF Printing
   const printRef = useRef(null);
+  const stageFileInputRef = useRef(null);
   const [isPrinting, setIsPrinting] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (stageImagePreview) URL.revokeObjectURL(stageImagePreview);
+    };
+  }, [stageImagePreview]);
 
   useEffect(() => {
     loadBatchData();
@@ -91,23 +108,25 @@ export default function BatchDetailPage() {
 
     try {
       setAddingStage(true);
+      let stageImageUrl = newStage.imageUrl.trim();
+
+      if (stageImageFile) {
+        setUploadingStageImage(true);
+        const uploadRes = await uploadImage(stageImageFile);
+        stageImageUrl = uploadRes.data.data.imageUrl;
+      }
+
       await addStage(id, {
         stage: Number(newStage.stage),
         description: newStage.description,
-        imageUrl: newStage.imageUrl,
+        imageUrl: stageImageUrl,
         actorProducerId: newStage.actorProducerId
           ? Number(newStage.actorProducerId)
           : undefined,
         actorRole: newStage.actorRole,
       });
-      setShowAddStage(false);
-      setNewStage({
-        stage: "",
-        description: "",
-        imageUrl: "",
-        actorProducerId: "",
-        actorRole: "primary_producer",
-      });
+      closeAddStageModal();
+      toast.success("Đã thêm stage và ảnh minh chứng.");
       await loadBatchData();
     } catch (err) {
       setError(
@@ -115,7 +134,49 @@ export default function BatchDetailPage() {
       );
     } finally {
       setAddingStage(false);
+      setUploadingStageImage(false);
     }
+  }
+
+  function validateStageImage(file) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP.");
+      return false;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Ảnh stage quá lớn. Tối đa 5MB.");
+      return false;
+    }
+
+    return true;
+  }
+
+  function setStageEvidenceFile(file) {
+    if (!file || !validateStageImage(file)) return;
+    if (stageImagePreview) URL.revokeObjectURL(stageImagePreview);
+    setStageImageFile(file);
+    setStageImagePreview(URL.createObjectURL(file));
+    setNewStage((current) => ({ ...current, imageUrl: "" }));
+    setError(null);
+  }
+
+  function handleStageFileSelect(e) {
+    const file = e.target.files?.[0];
+    if (file) setStageEvidenceFile(file);
+  }
+
+  function handleStageDrop(e) {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) setStageEvidenceFile(file);
+  }
+
+  function clearStageImageFile() {
+    if (stageImagePreview) URL.revokeObjectURL(stageImagePreview);
+    setStageImageFile(null);
+    setStageImagePreview(null);
+    if (stageFileInputRef.current) stageFileInputRef.current.value = "";
   }
 
   function formatDate(timestamp) {
@@ -259,7 +320,20 @@ export default function BatchDetailPage() {
       actorProducerId: defaultLink?.producerId ? String(defaultLink.producerId) : "",
       actorRole: defaultLink?.producerRole || "primary_producer",
     });
+    clearStageImageFile();
     setShowAddStage(true);
+  }
+
+  function closeAddStageModal() {
+    setShowAddStage(false);
+    setNewStage({
+      stage: "",
+      description: "",
+      imageUrl: "",
+      actorProducerId: "",
+      actorRole: "primary_producer",
+    });
+    clearStageImageFile();
   }
 
   return (
@@ -806,9 +880,9 @@ export default function BatchDetailPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-            onClick={() => setShowAddStage(false)}
+            onClick={closeAddStageModal}
           ></div>
-          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4">
             <h3 className="text-xl font-bold font-headline mb-6 flex items-center gap-2">
               <RefreshCw size={20} className="text-primary" />
               {t("batchDetail.updateStageTitle")}
@@ -900,16 +974,86 @@ export default function BatchDetailPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                  URL ảnh minh chứng
+                  Ảnh minh chứng giai đoạn
                 </label>
-                <input
-                  value={newStage.imageUrl}
-                  onChange={(e) =>
-                    setNewStage({ ...newStage, imageUrl: e.target.value })
-                  }
-                  className="input-ledger"
-                  placeholder="https://res.cloudinary.com/.../stage.jpg"
-                />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Tải ảnh minh chứng cho stage"
+                  onClick={() => stageFileInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      stageFileInputRef.current?.click();
+                    }
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleStageDrop}
+                  className={`rounded-2xl border-2 border-dashed p-4 min-h-44 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
+                    stageImagePreview
+                      ? "border-emerald-300 bg-emerald-50/40"
+                      : "border-emerald-200 bg-surface-container-low hover:bg-emerald-50"
+                  }`}
+                >
+                  <input
+                    ref={stageFileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleStageFileSelect}
+                  />
+
+                  {stageImagePreview ? (
+                    <>
+                      <img
+                        src={stageImagePreview}
+                        alt="Preview ảnh stage"
+                        className="w-full max-h-40 object-contain rounded-xl mb-3"
+                      />
+                      <p className="text-xs text-slate-500">
+                        {stageImageFile?.name} •{" "}
+                        {(stageImageFile?.size / 1024 / 1024).toFixed(1)}MB
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearStageImageFile();
+                        }}
+                        className="mt-3 inline-flex items-center gap-1 text-xs text-error font-bold hover:underline"
+                      >
+                        <Trash2 size={13} />
+                        Xóa ảnh
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
+                        <CloudUpload size={24} />
+                      </div>
+                      <p className="text-sm font-bold text-emerald-900">
+                        Tải ảnh minh chứng thật
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Kéo thả hoặc click để upload JPG, PNG, WEBP. Tối đa 5MB.
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="mt-3">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                    Hoặc dán URL ảnh đã có
+                  </label>
+                  <input
+                    value={newStage.imageUrl}
+                    onChange={(e) => {
+                      clearStageImageFile();
+                      setNewStage({ ...newStage, imageUrl: e.target.value });
+                    }}
+                    className="input-ledger"
+                    placeholder="https://res.cloudinary.com/.../stage.jpg"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -921,7 +1065,7 @@ export default function BatchDetailPage() {
                   {addingStage ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      {t("common.saving")}
+                      {uploadingStageImage ? "Đang tải ảnh..." : t("common.saving")}
                     </>
                   ) : (
                     <>
@@ -932,7 +1076,7 @@ export default function BatchDetailPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowAddStage(false)}
+                  onClick={closeAddStageModal}
                   className="px-6 py-3 bg-surface-container-high rounded-xl font-bold text-sm text-slate-600 hover:text-on-surface transition-colors"
                 >
                   {t("common.cancel")}
