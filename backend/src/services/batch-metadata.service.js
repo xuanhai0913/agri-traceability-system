@@ -131,9 +131,6 @@ async function initBatchMetadataStore() {
 }
 
 async function seedDefaultBatchLinks() {
-  const countRes = await query("SELECT COUNT(*)::int AS count FROM batch_producer_links");
-  if (countRes.rows[0].count > 0) return;
-
   await query(`
     INSERT INTO batch_producer_links (batch_id, producer_id, producer_role, notes)
     SELECT

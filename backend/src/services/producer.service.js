@@ -130,53 +130,72 @@ async function initProducerStore() {
 
   const countRes = await query("SELECT COUNT(*)::int AS count FROM producers");
   if (countRes.rows[0].count > 0) {
+    await seedMissingProducers();
     await syncProducerIdentitySequence();
     return;
   }
 
   for (const producer of seedProducers) {
-    const data = seedToRow(producer);
-    await query(
-      `
-      INSERT INTO producers (
-        id, name, website, phone, email, location, status, description,
-        image_url, coordinates, total_area, elevation, active_batches,
-        certifications, audits, farming_methods, social_impact,
-        latest_verification, smart_contract
-      )
-      OVERRIDING SYSTEM VALUE
-      VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8,
-        $9, $10, $11, $12, $13,
-        $14::jsonb, $15::jsonb, $16::jsonb, $17::jsonb,
-        $18, $19
-      )
-      `,
-      [
-        producer.id,
-        data.name,
-        data.website,
-        data.phone,
-        data.email,
-        data.location,
-        data.status,
-        data.description,
-        data.imageUrl,
-        data.coordinates,
-        data.totalArea,
-        data.elevation,
-        data.activeBatches,
-        JSON.stringify(data.certifications),
-        JSON.stringify(data.audits),
-        JSON.stringify(data.farmingMethods),
-        JSON.stringify(data.socialImpact),
-        producer.latestVerification || "Demo profile",
-        producer.smartContract || "Traceability_v1",
-      ]
-    );
+    await insertSeedProducer(producer);
   }
 
   await syncProducerIdentitySequence();
+}
+
+async function seedMissingProducers() {
+  for (const producer of seedProducers) {
+    const existsRes = await query(
+      "SELECT 1 FROM producers WHERE id = $1 OR name = $2 LIMIT 1",
+      [producer.id, producer.name]
+    );
+
+    if (existsRes.rows.length === 0) {
+      await insertSeedProducer(producer);
+    }
+  }
+}
+
+async function insertSeedProducer(producer) {
+  const data = seedToRow(producer);
+  await query(
+    `
+    INSERT INTO producers (
+      id, name, website, phone, email, location, status, description,
+      image_url, coordinates, total_area, elevation, active_batches,
+      certifications, audits, farming_methods, social_impact,
+      latest_verification, smart_contract
+    )
+    OVERRIDING SYSTEM VALUE
+    VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8,
+      $9, $10, $11, $12, $13,
+      $14::jsonb, $15::jsonb, $16::jsonb, $17::jsonb,
+      $18, $19
+    )
+    ON CONFLICT (id) DO NOTHING
+    `,
+    [
+      producer.id,
+      data.name,
+      data.website,
+      data.phone,
+      data.email,
+      data.location,
+      data.status,
+      data.description,
+      data.imageUrl,
+      data.coordinates,
+      data.totalArea,
+      data.elevation,
+      data.activeBatches,
+      JSON.stringify(data.certifications),
+      JSON.stringify(data.audits),
+      JSON.stringify(data.farmingMethods),
+      JSON.stringify(data.socialImpact),
+      producer.latestVerification || "Demo profile",
+      producer.smartContract || "Traceability_v1",
+    ]
+  );
 }
 
 async function syncProducerIdentitySequence() {
