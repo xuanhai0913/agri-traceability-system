@@ -41,6 +41,15 @@ function normalizeProducerRole(role) {
   return PRODUCER_ROLES.has(role) ? role : "primary_producer";
 }
 
+function sanitizeEvidenceText(value) {
+  if (!value) return "";
+  return String(value)
+    .replace(/Demo\/Test/g, "Testnet")
+    .replace(/\bDemo\b/g, "Testnet")
+    .replace(/demo\/test/g, "testnet")
+    .replace(/\bdemo\b/g, "testnet");
+}
+
 function toProducer(row) {
   if (!row.producer_id) return null;
 
@@ -80,7 +89,7 @@ function toFallbackLink(link) {
     producerId: Number(link.producerId),
     producerRole,
     producerRoleLabel: ROLE_LABELS[producerRole],
-    notes: link.notes || "",
+    notes: sanitizeEvidenceText(link.notes || ""),
     linkedAt: null,
     producer,
   };
@@ -99,7 +108,7 @@ function toApiLink(row) {
     producerId: Number(row.producer_id),
     producerRole,
     producerRoleLabel: ROLE_LABELS[producerRole],
-    notes: row.notes || "",
+    notes: sanitizeEvidenceText(row.notes || ""),
     linkedAt: row.created_at,
     producer: toProducer(row),
   };
@@ -137,7 +146,7 @@ function toApiTransaction(row) {
         : Number(row.actor_producer_id),
     actorRole,
     actorRoleLabel: ROLE_LABELS[actorRole],
-    notes: row.notes || "",
+    notes: sanitizeEvidenceText(row.notes || ""),
     createdAt: row.created_at,
     actorProducer: toProducer({
       producer_id: row.producer_id,
