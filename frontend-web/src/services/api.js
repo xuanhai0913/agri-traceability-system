@@ -7,8 +7,14 @@ import axios from "axios";
  * Prod mode: VITE_API_URL = https://your-backend.onrender.com/api
  */
 
+const productionApiFallback =
+  typeof window !== "undefined" &&
+  window.location.hostname === "agri.hailamdev.space"
+    ? "https://agritrace-api.onrender.com/api"
+    : "/api";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  baseURL: import.meta.env.VITE_API_URL || productionApiFallback,
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
