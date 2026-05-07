@@ -1,13 +1,8 @@
 import axios from "axios";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BASE URL
-// Dev  : đổi IP thành IP máy đang chạy backend local
-// Prod : URL backend deploy trên Render 
-// ─────────────────────────────────────────────────────────────────────────────
 const API_BASE_URL = __DEV__
-  ? "http://192.168.1.YOUR_LOCAL_IP:3000" 
-  : "https://agritrace-api.onrender.com"; 
+  ? "https://agritrace-api.onrender.com"  
+  : "https://agritrace-api.onrender.com";
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -40,19 +35,15 @@ api.interceptors.response.use(
   }
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
 // BLOCKCHAIN EXPLORER — Polygon Amoy testnet (từ backend/.env.example)
-// ─────────────────────────────────────────────────────────────────────────────
 export const EXPLORER_BASE_URL = "https://amoy.polygonscan.com";
 
 export function getTxExplorerUrl(txHash) {
   return txHash ? `${EXPLORER_BASE_URL}/tx/${txHash}` : null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // STAGE MAPPING — đồng bộ với batch.controller.js:
 // STAGE_NAMES = ["Seeding","Growing","Fertilizing","Harvesting","Packaging","Shipping","Completed"]
-// ─────────────────────────────────────────────────────────────────────────────
 export const STAGE_INFO = {
   Seeding:     { label: "Gieo trồng",            icon: "leaf-outline",             color: "#22c55e" },
   Growing:     { label: "Phát triển",             icon: "sunny-outline",            color: "#84cc16" },
@@ -83,23 +74,26 @@ export function formatTimestamp(unixSeconds) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // [MOBILE ENDPOINT 1] GET /api/batches/:batchId
 // Response: { success, data: { id, name, origin, owner, currentStage,
 //   currentStageIndex, createdAt, isActive, totalStages,
 //   producerLinks[], transactionRecords[] } }
-// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/batches/total — Tổng số lô hàng trên Blockchain
+// Response: { success, data: { total: 5 } }
+export function getTotalBatches() {
+  return api.get("/batches/total");
+}
+
 export function getBatch(batchId) {
   return api.get(`/batches/${batchId}`);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // [MOBILE ENDPOINT 2] GET /api/batches/:batchId/history
 // Response: { success, data: { batchId, stages: [{
 //   stage, stageIndex, description, imageUrl, timestamp, updatedBy,
 //   transaction: { action, transactionHash, blockNumber, actorAddress, ... }
 // }] } }
-// ─────────────────────────────────────────────────────────────────────────────
 export function getStageHistory(batchId) {
   return api.get(`/batches/${batchId}/history`);
 }
