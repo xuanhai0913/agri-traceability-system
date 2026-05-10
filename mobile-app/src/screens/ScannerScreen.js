@@ -1,11 +1,12 @@
 /**
- * Luồng:
+ * Luồng tối ưu:
  *  1. CameraView quét QR → extractBatchId()
- *  2. Gọi GET /api/batches/:id để lấy batchName (xác thực batchId hợp lệ)
+ *  2. Gọi GET /api/batches/:id (kết quả được cache trong api.js)
  *  3. Lưu vào scanHistoryService (AsyncStorage)
- *  4. navigate("BatchDetail", { batchId })
+ *  4. navigate("BatchDetail", { batchId, prefetchedBatch: batchData })
+ *     → BatchDetailScreen nhận sẵn batch info, chỉ cần tải history
  *
- * Nếu API trả về 404 → status = "failed", vẫn lưu vào history để người dùng biết họ đã từng quét mã QR không hợp lệ đó.
+ * Nếu API trả về 404 → status = "failed", vẫn lưu vào history.
  */
 
 import { useState, useRef } from "react";
@@ -29,8 +30,8 @@ export default function ScannerScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [flashMode, setFlashMode] = useState(false);
-  const [verifying, setVerifying] = useState(false); // Trạng thái đang gọi API
-  const scanLockRef = useRef(false); // Ref để tránh double-fire của onBarcodeScanned
+  const [verifying, setVerifying] = useState(false);
+  const scanLockRef = useRef(false);
 
   // ── Permission gates ──
   if (!permission) return <View style={styles.container} />;
@@ -54,7 +55,6 @@ export default function ScannerScreen({ navigation }) {
 
   // ── QR scan handler ──
   const handleBarCodeScanned = async ({ data }) => {
-    // Chặn double-fire — CameraView có thể gọi callback nhiều lần trong 1 frame
     if (scanLockRef.current) return;
     scanLockRef.current = true;
     setScanned(true);
@@ -74,13 +74,11 @@ export default function ScannerScreen({ navigation }) {
       return;
     }
 
-    // ── Gọi REST API để xác thực batchId thật trên Blockchain ──
     setVerifying(true);
     try {
       const response = await getBatch(batchId);
       const batchData = response.data?.data;
 
-      // Lưu vào lịch sử với status "verified"
       await addScanRecord({
         batchId,
         batchName: batchData?.name || `Lô hàng #${batchId}`,
@@ -88,12 +86,15 @@ export default function ScannerScreen({ navigation }) {
         status: "verified",
       });
 
-      // Chuyển sang màn hình chi tiết
-      navigation.replace("BatchDetail", { batchId });
+      // ✅ Truyền batchData đã fetch sang BatchDetailScreen
+      // → BatchDetail không cần gọi getBatch lại, chỉ fetch history
+      navigation.replace("BatchDetail", {
+        batchId,
+        prefetchedBatch: batchData,
+      });
     } catch (err) {
       setVerifying(false);
 
-      // Lưu scan failed vào history
       await addScanRecord({
         batchId,
         batchName: `Lô hàng #${batchId}`,
@@ -120,7 +121,7 @@ export default function ScannerScreen({ navigation }) {
   // ── Gallery picker ──
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"], // ✅ API mới expo-image-picker ~17.x
+      mediaTypes: ["images"],
       allowsEditing: false,
       quality: 1,
     });
@@ -133,10 +134,8 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
-  // ── UI ──
   return (
     <SafeAreaView style={styles.container}>
-      {/* Camera fullscreen */}
       <CameraView
         style={StyleSheet.absoluteFillObject}
         barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
@@ -144,10 +143,7 @@ export default function ScannerScreen({ navigation }) {
         enableTorch={flashMode}
       />
 
-      {/* Overlay */}
       <View style={styles.overlay}>
-
-        {/* Top: verifying indicator */}
         {verifying && (
           <View style={styles.verifyingBanner}>
             <ActivityIndicator size="small" color="#10b981" />
@@ -155,7 +151,6 @@ export default function ScannerScreen({ navigation }) {
           </View>
         )}
 
-        {/* Center: scan frame */}
         <View style={styles.centerBox}>
           <View style={[styles.scanFrame, scanned && styles.scanFrameScanned]}>
             <View style={[styles.corner, styles.topLeft]} />
@@ -178,9 +173,7 @@ export default function ScannerScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* Bottom toolbar */}
         <View style={styles.bottomToolbar}>
-          {/* Gallery */}
           <TouchableOpacity style={styles.actionBtn} onPress={pickImage} disabled={verifying}>
             <View style={styles.iconCircle}>
               <Ionicons name="image-outline" size={24} color="#fff" />
@@ -188,7 +181,6 @@ export default function ScannerScreen({ navigation }) {
             <Text style={styles.actionText}>Thư viện</Text>
           </TouchableOpacity>
 
-          {/* Flash */}
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={() => setFlashMode(!flashMode)}
@@ -203,7 +195,6 @@ export default function ScannerScreen({ navigation }) {
             </View>
           </TouchableOpacity>
 
-          {/* History */}
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={() => navigation.navigate("ScanningHistory")}
@@ -215,7 +206,6 @@ export default function ScannerScreen({ navigation }) {
             <Text style={styles.actionText}>Lịch sử</Text>
           </TouchableOpacity>
         </View>
-
       </View>
     </SafeAreaView>
   );
@@ -223,7 +213,7 @@ export default function ScannerScreen({ navigation }) {
 
 // ── extractBatchId — xử lý 3 định dạng QR ──
 // Format 1: JSON   → {"batchId": 3}
-// Format 2: URL    → https://api.../batches/3
+// Format 2: URL    → https://agri.hailamdev.space/batch/3 hoặc /batches/3
 // Format 3: Plain  → "3"
 function extractBatchId(data) {
   if (!data) return null;
@@ -242,13 +232,10 @@ function extractBatchId(data) {
   }
 }
 
-// ── Styles ──
 const CORNER_COLOR = "#10b981";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
-
-  // Permission screen
   centered: {
     flex: 1,
     justifyContent: "center",
@@ -265,12 +252,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  permissionTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 10,
-  },
+  permissionTitle: { color: "#fff", fontSize: 20, fontWeight: "700", marginBottom: 10 },
   permissionMsg: {
     color: "#94a3b8",
     fontSize: 14,
@@ -285,11 +267,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   permissionBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-
-  // Overlay
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: "space-between" },
-
-  // Verifying banner (top)
   verifyingBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -305,8 +283,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(16,185,129,0.4)",
   },
   verifyingText: { color: "#10b981", fontSize: 13, fontWeight: "600" },
-
-  // Scan frame
   centerBox: { flex: 1, justifyContent: "center", alignItems: "center" },
   scanFrame: {
     width: 250,
@@ -323,34 +299,10 @@ const styles = StyleSheet.create({
     borderColor: CORNER_COLOR,
     borderWidth: 4,
   },
-  topLeft: {
-    top: 0,
-    left: 0,
-    borderBottomWidth: 0,
-    borderRightWidth: 0,
-    borderTopLeftRadius: 16,
-  },
-  topRight: {
-    top: 0,
-    right: 0,
-    borderBottomWidth: 0,
-    borderLeftWidth: 0,
-    borderTopRightRadius: 16,
-  },
-  bottomLeft: {
-    bottom: 0,
-    left: 0,
-    borderTopWidth: 0,
-    borderRightWidth: 0,
-    borderBottomLeftRadius: 16,
-  },
-  bottomRight: {
-    bottom: 0,
-    right: 0,
-    borderTopWidth: 0,
-    borderLeftWidth: 0,
-    borderBottomRightRadius: 16,
-  },
+  topLeft:    { top: 0, left: 0,   borderBottomWidth: 0, borderRightWidth: 0, borderTopLeftRadius: 16 },
+  topRight:   { top: 0, right: 0,  borderBottomWidth: 0, borderLeftWidth: 0,  borderTopRightRadius: 16 },
+  bottomLeft: { bottom: 0, left: 0,  borderTopWidth: 0, borderRightWidth: 0, borderBottomLeftRadius: 16 },
+  bottomRight:{ bottom: 0, right: 0, borderTopWidth: 0, borderLeftWidth: 0,  borderBottomRightRadius: 16 },
   scanLine: {
     width: "100%",
     height: 2,
@@ -369,8 +321,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     lineHeight: 20,
   },
-
-  // Bottom toolbar
   bottomToolbar: {
     flexDirection: "row",
     justifyContent: "space-around",

@@ -1,3 +1,14 @@
+/**
+ * Tối ưu render:
+ *  • Nhận `prefetchedBatch` từ ScannerScreen qua route.params
+ *    → Hiện ngay header (tên, xuất xứ, stage) KHÔNG cần đợi API
+ *  • Chỉ fetch getStageHistory (timeline) sau khi mount
+ *    → Skeleton chỉ xuất hiện ở phần timeline, không che header
+ *  • Nếu vào trực tiếp từ HomeScreen (không có prefetchedBatch)
+ *    → Fetch song song cả 2 API như cũ
+ *  • Nút Retry gọi invalidateBatchCache để xóa cache cũ
+ */
+
 import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
@@ -18,9 +29,10 @@ import {
   getStageInfo,
   formatTimestamp,
   getTxExplorerUrl,
+  invalidateBatchCache,
 } from "../services/api";
 
-// ─── STAGE ICON COMPONENT ───
+// ─── STAGE ICON ───
 function StageIcon({ stageInfo, size = 36 }) {
   return (
     <View
@@ -34,7 +46,7 @@ function StageIcon({ stageInfo, size = 36 }) {
   );
 }
 
-// ─── LOADING SKELETON ────
+// ─── SKELETON (chỉ dùng cho timeline) ───
 function Skeleton({ width, height, borderRadius = 8, style }) {
   const opacity = React.useRef(new Animated.Value(0.4)).current;
 
@@ -51,31 +63,15 @@ function Skeleton({ width, height, borderRadius = 8, style }) {
 
   return (
     <Animated.View
-      style={[
-        { width, height, borderRadius, backgroundColor: "#e2e8f0", opacity },
-        style,
-      ]}
+      style={[{ width, height, borderRadius, backgroundColor: "#e2e8f0", opacity }, style]}
     />
   );
 }
 
-function LoadingSkeleton() {
+// Skeleton chỉ cho phần timeline (header đã hiện rồi)
+function TimelineSkeleton() {
   return (
-    <View style={styles.skeletonContainer}>
-      {/* Header skeleton */}
-      <View style={styles.skeletonHeader}>
-        <Skeleton width={180} height={28} borderRadius={6} />
-        <Skeleton width={100} height={20} borderRadius={6} style={{ marginTop: 8 }} />
-        <Skeleton width={140} height={16} borderRadius={6} style={{ marginTop: 6 }} />
-      </View>
-
-      {/* Badge row skeleton */}
-      <View style={styles.skeletonBadgeRow}>
-        <Skeleton width={120} height={30} borderRadius={20} />
-        <Skeleton width={140} height={30} borderRadius={20} />
-      </View>
-
-      {/* Timeline items skeleton */}
+    <View style={{ gap: 0 }}>
       {[1, 2, 3].map((i) => (
         <View key={i} style={styles.timelineItem}>
           <View style={styles.leftCol}>
@@ -90,6 +86,24 @@ function LoadingSkeleton() {
           </View>
         </View>
       ))}
+    </View>
+  );
+}
+
+// Skeleton toàn màn hình (dùng khi không có prefetchedBatch)
+function FullSkeleton() {
+  return (
+    <View style={{ gap: 0 }}>
+      <View style={{ marginBottom: 20 }}>
+        <Skeleton width={180} height={28} borderRadius={6} />
+        <Skeleton width={100} height={20} borderRadius={6} style={{ marginTop: 8 }} />
+        <Skeleton width={140} height={16} borderRadius={6} style={{ marginTop: 6 }} />
+      </View>
+      <View style={{ flexDirection: "row", gap: 10, marginBottom: 28 }}>
+        <Skeleton width={120} height={30} borderRadius={20} />
+        <Skeleton width={140} height={30} borderRadius={20} />
+      </View>
+      <TimelineSkeleton />
     </View>
   );
 }
@@ -116,7 +130,6 @@ function BlockchainBadge({ txHash }) {
   if (!txHash) return null;
   const explorerUrl = getTxExplorerUrl(txHash);
   const shortHash = `${txHash.slice(0, 6)}...${txHash.slice(-4)}`;
-
   return (
     <TouchableOpacity
       style={styles.txBadge}
@@ -132,30 +145,21 @@ function BlockchainBadge({ txHash }) {
   );
 }
 
-// ─── TIMELINE STAGE ITEM ────
+// ─── TIMELINE ITEM ───
 function TimelineItem({ item, isLast }) {
   const info = getStageInfo(item.stage);
-
   return (
     <View style={styles.timelineItem}>
-      {/* Left: Icon + vertical line */}
       <View style={styles.leftCol}>
         <StageIcon stageInfo={info} />
         {!isLast && <View style={styles.timelineLine} />}
       </View>
-
-      {/* Right: Content card */}
       <View style={[styles.rightCol, isLast && styles.rightColLast]}>
-        {/* Stage title + time */}
         <Text style={styles.stageTitle}>{info.label}</Text>
         <Text style={styles.timeText}>{formatTimestamp(item.timestamp)}</Text>
-
-        {/* Description */}
         {!!item.description && (
           <Text style={styles.descText}>{item.description}</Text>
         )}
-
-        {/* Cloudinary image — React Native native HTTP, KHÔNG bị CORS */}
         {!!item.imageUrl && (
           <Image
             source={{ uri: item.imageUrl }}
@@ -163,10 +167,7 @@ function TimelineItem({ item, isLast }) {
             resizeMode="cover"
           />
         )}
-
-        {/* Metadata box: wallet address + blockchain tx */}
         <View style={styles.metaBox}>
-          {/* Người cập nhật (wallet address) */}
           {!!item.updatedBy && (
             <View style={styles.metaRow}>
               <Ionicons name="wallet-outline" size={13} color="#64748b" />
@@ -175,8 +176,6 @@ function TimelineItem({ item, isLast }) {
               </Text>
             </View>
           )}
-
-          {/* Block number */}
           {!!item.transaction?.blockNumber && (
             <View style={styles.metaRow}>
               <Ionicons name="cube-outline" size={13} color="#64748b" />
@@ -185,8 +184,6 @@ function TimelineItem({ item, isLast }) {
               </Text>
             </View>
           )}
-
-          {/* Blockchain verified badge */}
           <BlockchainBadge txHash={item.transaction?.transactionHash} />
         </View>
       </View>
@@ -194,162 +191,221 @@ function TimelineItem({ item, isLast }) {
   );
 }
 
-// ─── MAIN SCREEN ────
+// ─── BATCH HEADER (hiện ngay khi có data) ───
+function BatchHeader({ batch }) {
+  const currentStageInfo = batch?.currentStage ? getStageInfo(batch.currentStage) : null;
+  return (
+    <View style={styles.batchHeader}>
+      <Text style={styles.batchName}>{batch?.name || `Lô hàng #${batch?.id}`}</Text>
+      {!!batch?.origin && (
+        <View style={styles.originRow}>
+          <Ionicons name="location-outline" size={14} color="#64748b" />
+          <Text style={styles.originText}>{batch.origin}</Text>
+        </View>
+      )}
+      <View style={styles.badgeRow}>
+        <View style={styles.badgeId}>
+          <Text style={styles.badgeIdText}>#{batch?.id}</Text>
+        </View>
+        {currentStageInfo && (
+          <View style={[styles.badgeStage, { backgroundColor: currentStageInfo.color + "18" }]}>
+            <View style={[styles.stageDot, { backgroundColor: currentStageInfo.color }]} />
+            <Text style={[styles.badgeStageText, { color: currentStageInfo.color }]}>
+              {currentStageInfo.label}
+            </Text>
+          </View>
+        )}
+        {batch?.currentStageIndex !== undefined &&
+          batch?.totalStages !== undefined &&
+          batch.currentStageIndex + 1 >= batch.totalStages && (
+            <View style={styles.completedBadge}>
+              <Ionicons name="checkmark-circle" size={13} color="#10b981" />
+              <Text style={styles.completedText}>Hoàn thành</Text>
+            </View>
+          )}
+      </View>
+      {!!batch?.owner && (
+        <View style={styles.ownerStrip}>
+          <Ionicons name="wallet-outline" size={13} color="#166534" />
+          <Text style={styles.ownerText} numberOfLines={1}>
+            {batch.owner}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── MAIN SCREEN ───
 export default function BatchDetailScreen({ route, navigation }) {
-  const { batchId } = route.params || {};
+  const { batchId, prefetchedBatch } = route.params || {};
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [batch, setBatch] = useState(null);   // GET /api/batches/:id
-  const [stages, setStages] = useState([]);   // GET /api/batches/:id/history → .stages[]
+  // batch: hiện ngay nếu có prefetchedBatch
+  const [batch, setBatch] = useState(prefetchedBatch || null);
+  const [stages, setStages] = useState([]);
 
-  // ── Fetch cả 2 API song song bằng Promise.all ──
-  const fetchData = useCallback(async () => {
-    if (!batchId) {
-      setError("Không có mã lô hàng để tra cứu.");
-      setLoading(false);
-      return;
-    }
+  // Trạng thái loading tách biệt
+  const [batchLoading, setBatchLoading] = useState(!prefetchedBatch);
+  const [stagesLoading, setStagesLoading] = useState(true);
 
-    setLoading(true);
-    setError(null);
+  // Lỗi: nếu batch fail → hiện full error; nếu chỉ stages fail → vẫn hiện header
+  const [batchError, setBatchError] = useState(null);
+  const [stagesError, setStagesError] = useState(null);
 
-    try {
-      const [batchRes, historyRes] = await Promise.all([
-        getBatch(batchId),
-        getStageHistory(batchId),
-      ]);
+  const fetchAll = useCallback(
+    async (forceRefresh = false) => {
+      if (!batchId) {
+        setBatchError("Không có mã lô hàng để tra cứu.");
+        setBatchLoading(false);
+        setStagesLoading(false);
+        return;
+      }
 
-      // Endpoint 1: thông tin batch
-      const batchData = batchRes.data?.data;
-      setBatch(batchData);
+      if (forceRefresh) {
+        invalidateBatchCache(batchId);
+        setBatch(null);
+        setStages([]);
+        setBatchLoading(true);
+        setStagesLoading(true);
+        setBatchError(null);
+        setStagesError(null);
+      }
 
-      // Endpoint 2: mảng stages cho timeline
-      // stages[] đã theo thứ tự từ Seeding → Completed (chronological)
-      const stagesData = historyRes.data?.data?.stages ?? [];
-      setStages(stagesData);
-    } catch (err) {
-      setError(err.friendlyMessage || "Đã xảy ra lỗi không xác định.");
-    } finally {
-      setLoading(false);
-    }
-  }, [batchId]);
+      // Nếu đã có prefetchedBatch (và không forceRefresh), chỉ fetch history
+      if (!forceRefresh && prefetchedBatch) {
+        try {
+          const historyRes = await getStageHistory(batchId);
+          setStages(historyRes.data?.data?.stages ?? []);
+        } catch (err) {
+          setStagesError(err.friendlyMessage || "Không thể tải hành trình lô hàng.");
+        } finally {
+          setStagesLoading(false);
+        }
+        return;
+      }
+
+      // Fetch batch + history song song
+      const batchPromise = getBatch(batchId)
+        .then((res) => {
+          setBatch(res.data?.data);
+          setBatchLoading(false);
+        })
+        .catch((err) => {
+          setBatchError(err.friendlyMessage || "Không thể tải thông tin lô hàng.");
+          setBatchLoading(false);
+        });
+
+      const historyPromise = getStageHistory(batchId)
+        .then((res) => {
+          setStages(res.data?.data?.stages ?? []);
+          setStagesLoading(false);
+        })
+        .catch((err) => {
+          setStagesError(err.friendlyMessage || "Không thể tải hành trình lô hàng.");
+          setStagesLoading(false);
+        });
+
+      await Promise.all([batchPromise, historyPromise]);
+    },
+    [batchId, prefetchedBatch]
+  );
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchAll();
+  }, [fetchAll]);
 
-  // ── RENDER: Loading ──
-  if (loading) {
+  // ── Lỗi nghiêm trọng: không có batch data ──
+  if (batchError && !batch) {
     return (
       <SafeAreaView style={styles.container}>
-        {/* Custom back button */}
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={22} color="#1e293b" />
-        </TouchableOpacity>
+        <View style={styles.customHeader}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={22} color="#1e293b" />
+          </TouchableOpacity>
+          <Text style={styles.customHeaderTitle}>Chi tiết lô hàng</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <ErrorState message={batchError} onRetry={() => fetchAll(true)} />
+      </SafeAreaView>
+    );
+  }
+
+  // ── Đang tải batch (chưa có prefetched data) ──
+  if (batchLoading && !batch) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.customHeader}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={22} color="#1e293b" />
+          </TouchableOpacity>
+          <Text style={styles.customHeaderTitle}>Đang tải...</Text>
+          <View style={{ width: 40 }} />
+        </View>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.loadingInfo}>
             <ActivityIndicator size="small" color="#10b981" />
             <Text style={styles.loadingText}>Đang đọc dữ liệu Blockchain...</Text>
           </View>
-          <LoadingSkeleton />
+          <FullSkeleton />
         </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // ── RENDER: Error ──
-  if (error) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={22} color="#1e293b" />
-        </TouchableOpacity>
-        <ErrorState message={error} onRetry={fetchData} />
-      </SafeAreaView>
-    );
-  }
-
-  // ── RENDER: Data ──
-  const currentStageInfo = batch?.currentStage ? getStageInfo(batch.currentStage) : null;
-  const isCompleted = batch?.currentStage === "Completed";
-
+  // ── Render chính: header luôn hiện, timeline có thể đang tải ──
   return (
     <SafeAreaView style={styles.container}>
       {/* Custom Header */}
       <View style={styles.customHeader}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={22} color="#1e293b" />
         </TouchableOpacity>
-        <Text style={styles.customHeaderTitle}>Hành trình lô hàng</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.customHeaderTitle} numberOfLines={1}>
+          {batch?.name || `Lô hàng #${batchId}`}
+        </Text>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => fetchAll(true)}>
+          <Ionicons name="refresh-outline" size={20} color="#64748b" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── BATCH INFO HEADER ── */}
-        <View style={styles.batchHeader}>
-          {/* Batch name */}
-          <Text style={styles.batchName}>{batch?.name || "—"}</Text>
+        {/* ── BATCH HEADER — hiện ngay ── */}
+        <BatchHeader batch={batch} />
 
-          {/* Origin */}
-          {!!batch?.origin && (
-            <View style={styles.originRow}>
-              <Ionicons name="location-outline" size={15} color="#64748b" />
-              <Text style={styles.originText}>{batch.origin}</Text>
-            </View>
-          )}
-
-          {/* Badge row: Batch ID + Current Stage + isActive */}
-          <View style={styles.badgeRow}>
-            <View style={styles.badgeId}>
-              <Text style={styles.badgeIdText}>#{batchId}</Text>
-            </View>
-
-            {currentStageInfo && (
-              <View style={[styles.badgeStage, { backgroundColor: currentStageInfo.color + "20" }]}>
-                <View style={[styles.stageDot, { backgroundColor: currentStageInfo.color }]} />
-                <Text style={[styles.badgeStageText, { color: currentStageInfo.color }]}>
-                  {currentStageInfo.label}
-                </Text>
-              </View>
-            )}
-
-            {isCompleted && (
-              <View style={styles.completedBadge}>
-                <Ionicons name="checkmark-circle" size={12} color="#10b981" />
-                <Text style={styles.completedText}>Hoàn thành</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Blockchain info strip */}
-          {batch?.owner && (
-            <View style={styles.ownerStrip}>
-              <Ionicons name="shield-checkmark-outline" size={14} color="#10b981" />
-              <Text style={styles.ownerText} numberOfLines={1}>
-                {`Xác thực bởi: ${batch.owner.slice(0, 8)}...${batch.owner.slice(-6)}`}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* ── DIVIDER ── */}
         <View style={styles.divider} />
 
         {/* ── TIMELINE HEADER ── */}
         <View style={styles.timelineHeader}>
-          <Text style={styles.timelineTitle}>Hành trình {stages.length} giai đoạn</Text>
+          <Text style={styles.timelineTitle}>
+            {stagesLoading ? "Hành trình lô hàng" : `Hành trình ${stages.length} giai đoạn`}
+          </Text>
           <View style={styles.verifiedChip}>
             <Ionicons name="cube-outline" size={11} color="#7c3aed" />
             <Text style={styles.verifiedChipText}>Polygon Amoy</Text>
           </View>
         </View>
 
-        {/* ── TIMELINE LIST ─── */}
-        {stages.length === 0 ? (
+        {/* ── TIMELINE: skeleton khi đang tải, lỗi nhẹ, hoặc list ── */}
+        {stagesLoading ? (
+          <View>
+            <View style={styles.loadingInfo}>
+              <ActivityIndicator size="small" color="#10b981" />
+              <Text style={styles.loadingText}>Đang tải hành trình...</Text>
+            </View>
+            <TimelineSkeleton />
+          </View>
+        ) : stagesError ? (
+          <View style={styles.stagesErrorBox}>
+            <Ionicons name="warning-outline" size={20} color="#f59e0b" />
+            <Text style={styles.stagesErrorText}>{stagesError}</Text>
+            <TouchableOpacity onPress={() => fetchAll(true)}>
+              <Text style={styles.stagesRetryText}>Thử lại</Text>
+            </TouchableOpacity>
+          </View>
+        ) : stages.length === 0 ? (
           <View style={styles.emptyStage}>
             <Ionicons name="hourglass-outline" size={32} color="#cbd5e1" />
             <Text style={styles.emptyText}>Chưa có giai đoạn nào được ghi nhận</Text>
@@ -367,12 +423,14 @@ export default function BatchDetailScreen({ route, navigation }) {
         )}
 
         {/* ── FOOTER ── */}
-        <View style={styles.footer}>
-          <Ionicons name="information-circle-outline" size={14} color="#94a3b8" />
-          <Text style={styles.footerText}>
-            Dữ liệu được lưu bất biến trên Blockchain. Không thể giả mạo hoặc chỉnh sửa.
-          </Text>
-        </View>
+        {!stagesLoading && !stagesError && (
+          <View style={styles.footer}>
+            <Ionicons name="information-circle-outline" size={14} color="#94a3b8" />
+            <Text style={styles.footerText}>
+              Dữ liệu được lưu bất biến trên Blockchain. Không thể giả mạo hoặc chỉnh sửa.
+            </Text>
+          </View>
+        )}
 
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -394,10 +452,15 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     backgroundColor: "#f8fafc",
   },
-  customHeaderTitle: { fontSize: 16, fontWeight: "700", color: "#1e293b" },
-
-  // ── Back Button ──
-  backBtn: {
+  customHeaderTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1e293b",
+    flex: 1,
+    textAlign: "center",
+    marginHorizontal: 8,
+  },
+  iconBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -411,7 +474,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  // ── Loading ──
+  // ── Loading banner ──
   loadingInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -420,22 +483,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   loadingText: { fontSize: 13, color: "#064e3b", fontWeight: "500" },
 
-  // ── Skeleton ──
-  skeletonContainer: { gap: 0 },
-  skeletonHeader: { marginBottom: 20 },
-  skeletonBadgeRow: { flexDirection: "row", gap: 10, marginBottom: 28 },
-
-  // ── Error ──
+  // ── Error (full) ──
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 32,
-    marginTop: 60,
+    marginTop: 40,
   },
   errorIconBox: {
     width: 80,
@@ -458,6 +516,20 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   retryText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+
+  // ── Stages error (inline, non-blocking) ──
+  stagesErrorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fefce8",
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#fde68a",
+  },
+  stagesErrorText: { flex: 1, fontSize: 13, color: "#92400e" },
+  stagesRetryText: { fontSize: 13, color: "#10b981", fontWeight: "700" },
 
   // ── Batch Header ──
   batchHeader: { marginBottom: 20 },
@@ -541,7 +613,7 @@ const styles = StyleSheet.create({
   rightCol: { flex: 1, paddingBottom: 28 },
   rightColLast: { paddingBottom: 0 },
 
-  // ── Stage Card Content ──
+  // ── Stage Card ──
   stageTitle: { fontSize: 16, fontWeight: "700", color: "#1e293b", marginBottom: 3, marginTop: 4 },
   timeText: { fontSize: 12, color: "#94a3b8", marginBottom: 8, fontWeight: "500" },
   descText: { fontSize: 13, color: "#475569", lineHeight: 20, marginBottom: 12 },
@@ -580,7 +652,7 @@ const styles = StyleSheet.create({
   txLabel: { fontSize: 11, fontWeight: "700", color: "#7c3aed" },
   txHash: { fontSize: 11, color: "#7c3aed", fontFamily: "monospace" },
 
-  // ── Empty State ──
+  // ── Empty Stage ──
   emptyStage: { alignItems: "center", paddingVertical: 40, gap: 10 },
   emptyText: { fontSize: 14, color: "#94a3b8", textAlign: "center" },
 

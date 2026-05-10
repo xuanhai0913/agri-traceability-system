@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL = __DEV__
-  ? "https://agritrace-api.onrender.com"  
+  ? "https://agritrace-api.onrender.com"
   : "https://agritrace-api.onrender.com";
 
 const api = axios.create({
@@ -35,15 +35,40 @@ api.interceptors.response.use(
   }
 );
 
-// BLOCKCHAIN EXPLORER — Polygon Amoy testnet (từ backend/.env.example)
+// ─── In-memory cache ───────────────────────────────────────────────────────
+// Tránh gọi API trùng lặp khi ScannerScreen đã fetch rồi BatchDetailScreen
+// fetch lại cùng batchId. TTL = 5 phút.
+const _cache = new Map(); // key → { response, expiry }
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function getCached(key) {
+  const entry = _cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiry) {
+    _cache.delete(key);
+    return null;
+  }
+  return entry.response;
+}
+
+function setCached(key, response) {
+  _cache.set(key, { response, expiry: Date.now() + CACHE_TTL_MS });
+}
+
+/** Xóa cache của một batch (dùng sau khi retry hoặc pull-to-refresh) */
+export function invalidateBatchCache(batchId) {
+  _cache.delete(`batch:${batchId}`);
+  _cache.delete(`history:${batchId}`);
+}
+
+// ─── Blockchain explorer ───────────────────────────────────────────────────
 export const EXPLORER_BASE_URL = "https://amoy.polygonscan.com";
 
 export function getTxExplorerUrl(txHash) {
   return txHash ? `${EXPLORER_BASE_URL}/tx/${txHash}` : null;
 }
 
-// STAGE MAPPING — đồng bộ với batch.controller.js:
-// STAGE_NAMES = ["Seeding","Growing","Fertilizing","Harvesting","Packaging","Shipping","Completed"]
+// ─── Stage mapping ─────────────────────────────────────────────────────────
 export const STAGE_INFO = {
   Seeding:     { label: "Gieo trồng",            icon: "leaf-outline",             color: "#22c55e" },
   Growing:     { label: "Phát triển",             icon: "sunny-outline",            color: "#84cc16" },
@@ -74,28 +99,37 @@ export function formatTimestamp(unixSeconds) {
   });
 }
 
-// [MOBILE ENDPOINT 1] GET /api/batches/:batchId
-// Response: { success, data: { id, name, origin, owner, currentStage,
-//   currentStageIndex, createdAt, isActive, totalStages,
-//   producerLinks[], transactionRecords[] } }
-
-// GET /api/batches/total — Tổng số lô hàng trên Blockchain
-// Response: { success, data: { total: 5 } }
+// GET /api/batches/total
 export function getTotalBatches() {
   return api.get("/batches/total");
 }
 
+// GET /api/batches/:batchId — có cache
 export function getBatch(batchId) {
-  return api.get(`/batches/${batchId}`);
+  const key = `batch:${batchId}`;
+  const cached = getCached(key);
+  if (cached) {
+    if (__DEV__) console.log(`[API CACHE HIT] ${key}`);
+    return Promise.resolve(cached);
+  }
+  return api.get(`/batches/${batchId}`).then((res) => {
+    setCached(key, res);
+    return res;
+  });
 }
 
-// [MOBILE ENDPOINT 2] GET /api/batches/:batchId/history
-// Response: { success, data: { batchId, stages: [{
-//   stage, stageIndex, description, imageUrl, timestamp, updatedBy,
-//   transaction: { action, transactionHash, blockNumber, actorAddress, ... }
-// }] } }
+// GET /api/batches/:batchId/history — có cache
 export function getStageHistory(batchId) {
-  return api.get(`/batches/${batchId}/history`);
+  const key = `history:${batchId}`;
+  const cached = getCached(key);
+  if (cached) {
+    if (__DEV__) console.log(`[API CACHE HIT] ${key}`);
+    return Promise.resolve(cached);
+  }
+  return api.get(`/batches/${batchId}/history`).then((res) => {
+    setCached(key, res);
+    return res;
+  });
 }
 
 export function healthCheck() {
