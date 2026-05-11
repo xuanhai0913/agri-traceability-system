@@ -1,15 +1,18 @@
 /**
- * Luồng tối ưu:
- *  1. CameraView quét QR → extractBatchId()
- *  2. Gọi GET /api/batches/:id (kết quả được cache trong api.js)
- *  3. Lưu vào scanHistoryService (AsyncStorage)
- *  4. navigate("BatchDetail", { batchId, prefetchedBatch: batchData })
- *     → BatchDetailScreen nhận sẵn batch info, chỉ cần tải history
- *
- * Nếu API trả về 404 → status = "failed", vẫn lưu vào history.
+ * ScannerScreen.js — Màn hình quét QR
+ *  • extractBatchId() hỗ trợ đầy đủ các định dạng URL web:
+ *      - https://agri.hailamdev.space/batch/3
+ *      - https://agri.hailamdev.space/batches/3
+ *      - https://agritrace-api.onrender.com/api/batches/3
+ *      - JSON: { "batchId": 3 }  /  { "id": 3 }
+ *      - Plain text: "3"
+ *  • Auto-reset sau 15 giây nếu scan thất bại để không bị kẹt màn hình
+ *  • Flashlight toggle có label ON/OFF rõ ràng
+ *  • Hiện batchId đang xác thực trong banner để người dùng biết đang kiểm tra lô nào
+ *  • Tách biệt lỗi "QR không hợp lệ" vs "Lô hàng không tìm thấy trên blockchain"
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -26,12 +29,25 @@ import * as ImagePicker from "expo-image-picker";
 import { getBatch } from "../services/api";
 import { addScanRecord } from "../services/scanHistoryService";
 
+// ── Thời gian chờ tối đa sau khi scan trước khi auto-reset (ms) ──
+const SCAN_TIMEOUT_MS = 15_000;
+
 export default function ScannerScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
-  const [flashMode, setFlashMode] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const scanLockRef = useRef(false);
+  const [scanned, setScanned]         = useState(false);
+  const [flashMode, setFlashMode]     = useState(false);
+  const [verifying, setVerifying]     = useState(false);
+  const [verifyingId, setVerifyingId] = useState(null); // batchId đang xác thực
+
+  const scanLockRef     = useRef(false);
+  const autoResetTimerRef = useRef(null);
+
+  // Dọn timer khi unmount
+  useEffect(() => {
+    return () => {
+      if (autoResetTimerRef.current) clearTimeout(autoResetTimerRef.current);
+    };
+  }, []);
 
   // ── Permission gates ──
   if (!permission) return <View style={styles.container} />;
@@ -53,8 +69,18 @@ export default function ScannerScreen({ navigation }) {
     );
   }
 
+  // ── Đặt lại về trạng thái sẵn sàng quét ──
+  const resetScan = () => {
+    if (autoResetTimerRef.current) clearTimeout(autoResetTimerRef.current);
+    scanLockRef.current = false;
+    setScanned(false);
+    setVerifying(false);
+    setVerifyingId(null);
+  };
+
   // ── QR scan handler ──
   const handleBarCodeScanned = async ({ data }) => {
+    // scanLockRef đảm bảo chỉ xử lý một QR tại một thời điểm
     if (scanLockRef.current) return;
     scanLockRef.current = true;
     setScanned(true);
@@ -62,43 +88,65 @@ export default function ScannerScreen({ navigation }) {
     console.log(`[QR] Raw data: ${data}`);
     const batchId = extractBatchId(data);
 
+    // ── Case 1: QR không chứa batch ID hợp lệ ──
     if (!batchId) {
       await addScanRecord({
         batchId: data.slice(0, 20),
         batchName: "Mã QR không hợp lệ",
         status: "failed",
       });
-      Alert.alert("Mã QR không hợp lệ", "Không thể đọc được ID lô hàng từ mã QR này.", [
-        { text: "Quét lại", onPress: resetScan },
-      ]);
+      Alert.alert(
+        "Mã QR không hợp lệ",
+        "Mã QR này không phải của AgriTrace. Vui lòng quét mã trên bao bì nông sản.",
+        [{ text: "Quét lại", onPress: resetScan }]
+      );
       return;
     }
 
+    // ── Case 2: Xác thực với blockchain ──
     setVerifying(true);
+    setVerifyingId(batchId);
+
+    // Auto-reset nếu quá lâu không có phản hồi
+    autoResetTimerRef.current = setTimeout(() => {
+      if (scanLockRef.current) {
+        setVerifying(false);
+        Alert.alert(
+          "Hết thời gian",
+          "Server mất quá nhiều thời gian để phản hồi. Vui lòng kiểm tra kết nối mạng và thử lại.",
+          [{ text: "Quét lại", onPress: resetScan }]
+        );
+      }
+    }, SCAN_TIMEOUT_MS);
+
     try {
-      const response = await getBatch(batchId);
+      // force = false: dùng cache nếu có (ScannerScreen vừa scan → ít khi cache hit)
+      const response = await getBatch(batchId, false);
       const batchData = response.data?.data;
+
+      if (autoResetTimerRef.current) clearTimeout(autoResetTimerRef.current);
 
       await addScanRecord({
         batchId,
         batchName: batchData?.name || `Lô hàng #${batchId}`,
-        origin: batchData?.origin || "",
-        status: "verified",
+        origin:    batchData?.origin || "",
+        status:    "verified",
       });
 
-      // ✅ Truyền batchData đã fetch sang BatchDetailScreen
-      // → BatchDetail không cần gọi getBatch lại, chỉ fetch history
+      // Truyền batchData đã fetch sang BatchDetailScreen để hiện ngay header
+      // không cần gọi getBatch lại lần nữa (tránh duplicate request)
       navigation.replace("BatchDetail", {
         batchId,
         prefetchedBatch: batchData,
       });
     } catch (err) {
+      if (autoResetTimerRef.current) clearTimeout(autoResetTimerRef.current);
       setVerifying(false);
 
       await addScanRecord({
         batchId,
         batchName: `Lô hàng #${batchId}`,
-        status: "failed",
+        status:    "failed",
       });
 
       const msg = err.friendlyMessage || "Không thể kết nối server.";
@@ -112,13 +160,7 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
-  const resetScan = () => {
-    scanLockRef.current = false;
-    setScanned(false);
-    setVerifying(false);
-  };
-
-  // ── Gallery picker ──
+  // ── Gallery QR picker ──
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -127,8 +169,8 @@ export default function ScannerScreen({ navigation }) {
     });
     if (!result.canceled) {
       Alert.alert(
-        "Thông báo",
-        "Tính năng đọc QR từ ảnh tĩnh đang phát triển — sẽ gửi ảnh lên backend để decode.",
+        "Tính năng đang phát triển",
+        "Đọc QR từ ảnh thư viện sẽ được hỗ trợ trong bản cập nhật tiếp theo.",
         [{ text: "OK" }]
       );
     }
@@ -144,13 +186,20 @@ export default function ScannerScreen({ navigation }) {
       />
 
       <View style={styles.overlay}>
+        {/* ── Verifying banner ── */}
         {verifying && (
           <View style={styles.verifyingBanner}>
             <ActivityIndicator size="small" color="#10b981" />
-            <Text style={styles.verifyingText}>Đang xác thực với Blockchain...</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.verifyingText}>Đang xác thực với Blockchain...</Text>
+              {verifyingId && (
+                <Text style={styles.verifyingSubText}>Lô hàng #{verifyingId}</Text>
+              )}
+            </View>
           </View>
         )}
 
+        {/* ── Scan frame ── */}
         <View style={styles.centerBox}>
           <View style={[styles.scanFrame, scanned && styles.scanFrameScanned]}>
             <View style={[styles.corner, styles.topLeft]} />
@@ -166,21 +215,28 @@ export default function ScannerScreen({ navigation }) {
           </View>
           <Text style={styles.hint}>
             {verifying
-              ? "Đang kiểm tra lô hàng trên Blockchain..."
+              ? `Đang kiểm tra lô #${verifyingId} trên Blockchain...`
               : scanned
               ? "Đã quét — đang xử lý..."
               : "Đưa camera vào tem QR trên bao bì"}
           </Text>
         </View>
 
+        {/* ── Bottom toolbar ── */}
         <View style={styles.bottomToolbar}>
-          <TouchableOpacity style={styles.actionBtn} onPress={pickImage} disabled={verifying}>
+          {/* Thư viện ảnh */}
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={pickImage}
+            disabled={verifying}
+          >
             <View style={styles.iconCircle}>
               <Ionicons name="image-outline" size={24} color="#fff" />
             </View>
             <Text style={styles.actionText}>Thư viện</Text>
           </TouchableOpacity>
 
+          {/* Flash toggle */}
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={() => setFlashMode(!flashMode)}
@@ -193,8 +249,12 @@ export default function ScannerScreen({ navigation }) {
                 color={flashMode ? "#10b981" : "#fff"}
               />
             </View>
+            <Text style={[styles.actionText, flashMode && { color: "#10b981" }]}>
+              {flashMode ? "Đèn BẬT" : "Đèn"}
+            </Text>
           </TouchableOpacity>
 
+          {/* Lịch sử */}
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={() => navigation.navigate("ScanningHistory")}
@@ -211,25 +271,48 @@ export default function ScannerScreen({ navigation }) {
   );
 }
 
-// ── extractBatchId — xử lý 3 định dạng QR ──
-// Format 1: JSON   → {"batchId": 3}
-// Format 2: URL    → https://agri.hailamdev.space/batch/3 hoặc /batches/3
-// Format 3: Plain  → "3"
+// ─── extractBatchId ───
+// Xử lý tất cả các định dạng QR mà web AgriTrace có thể tạo ra:
+//
+//  1. JSON:  {"batchId": 3}  hoặc  {"id": 3}
+//  2. URL web:   https://agri.hailamdev.space/batch/3
+//               https://agri.hailamdev.space/batches/3
+//  3. URL API:   https://agritrace-api.onrender.com/api/batches/3
+//  4. URL chung: /batch/3  hoặc  /batches/3  (relative)
+//  5. Plain:     "3"  (số nguyên dương)
+//
+// Trả về String(batchId) hoặc null nếu không nhận ra
+
 function extractBatchId(data) {
-  if (!data) return null;
-  try {
-    if (data.trim().startsWith("{")) {
-      const parsed = JSON.parse(data);
-      if (parsed.batchId) return String(parsed.batchId);
+  if (!data || typeof data !== "string") return null;
+  const trimmed = data.trim();
+  if (!trimmed) return null;
+
+  // 1. JSON
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      const id = parsed.batchId ?? parsed.id ?? parsed.batch_id;
+      if (id !== undefined && id !== null) return String(id);
+    } catch {
+      // không phải JSON hợp lệ → thử các bước tiếp
     }
-    const urlMatch = data.match(/\/batch(?:es)?\/([a-zA-Z0-9_-]+)/);
-    if (urlMatch) return urlMatch[1];
-    const trimmed = data.trim();
-    if (trimmed !== "") return trimmed;
-    return null;
-  } catch {
-    return data.trim() || null;
   }
+
+  // 2 + 3 + 4. URL patterns — /batch/X hoặc /batches/X
+  // Regex bắt cả domain lẫn relative path, và cả "batch" lẫn "batches"
+  const urlMatch = trimmed.match(/\/batches?\/([a-zA-Z0-9_-]+)/);
+  if (urlMatch?.[1]) return urlMatch[1];
+
+  // 5. Plain number string
+  if (/^\d+$/.test(trimmed)) return trimmed;
+
+  // 6. Nếu không khớp pattern nào nhưng chuỗi ngắn (< 50 ký tự) và
+  //    không phải URL lạ → dùng toàn bộ chuỗi làm batchId
+  //    (bảo đảm backward compat với QR plain text cũ)
+  if (trimmed.length < 50 && !trimmed.includes("://")) return trimmed;
+
+  return null;
 }
 
 const CORNER_COLOR = "#10b981";
@@ -267,13 +350,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   permissionBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: "space-between" },
+
   verifyingBanner: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
     gap: 10,
-    backgroundColor: "rgba(0,0,0,0.75)",
+    backgroundColor: "rgba(0,0,0,0.80)",
     paddingVertical: 12,
     paddingHorizontal: 20,
     marginTop: 60,
@@ -283,6 +367,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(16,185,129,0.4)",
   },
   verifyingText: { color: "#10b981", fontSize: 13, fontWeight: "600" },
+  verifyingSubText: { color: "#94a3b8", fontSize: 11, marginTop: 2 },
+
   centerBox: { flex: 1, justifyContent: "center", alignItems: "center" },
   scanFrame: {
     width: 250,
@@ -292,6 +378,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   scanFrameScanned: { opacity: 0.85 },
+
   corner: {
     position: "absolute",
     width: 40,
@@ -299,10 +386,11 @@ const styles = StyleSheet.create({
     borderColor: CORNER_COLOR,
     borderWidth: 4,
   },
-  topLeft:    { top: 0, left: 0,   borderBottomWidth: 0, borderRightWidth: 0, borderTopLeftRadius: 16 },
-  topRight:   { top: 0, right: 0,  borderBottomWidth: 0, borderLeftWidth: 0,  borderTopRightRadius: 16 },
-  bottomLeft: { bottom: 0, left: 0,  borderTopWidth: 0, borderRightWidth: 0, borderBottomLeftRadius: 16 },
-  bottomRight:{ bottom: 0, right: 0, borderTopWidth: 0, borderLeftWidth: 0,  borderBottomRightRadius: 16 },
+  topLeft:    { top: 0,    left: 0,   borderBottomWidth: 0, borderRightWidth: 0, borderTopLeftRadius: 16 },
+  topRight:   { top: 0,    right: 0,  borderBottomWidth: 0, borderLeftWidth: 0,  borderTopRightRadius: 16 },
+  bottomLeft: { bottom: 0, left: 0,   borderTopWidth: 0,    borderRightWidth: 0, borderBottomLeftRadius: 16 },
+  bottomRight:{ bottom: 0, right: 0,  borderTopWidth: 0,    borderLeftWidth: 0,  borderBottomRightRadius: 16 },
+
   scanLine: {
     width: "100%",
     height: 2,
@@ -312,6 +400,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   scannedOverlay: { position: "absolute" },
+
   hint: {
     color: "#fff",
     fontSize: 13,
@@ -321,6 +410,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     lineHeight: 20,
   },
+
   bottomToolbar: {
     flexDirection: "row",
     justifyContent: "space-around",

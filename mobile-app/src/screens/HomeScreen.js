@@ -1,11 +1,14 @@
 /**
+ * HomeScreen.js — Màn hình chính
+ *  • RefreshControl → kéo xuống để tải lại server status + total + recent scans
+ *  • Danh sách "Test Batches" dynamic: tự generate từ totalBatches thực trên chain (không còn hardcode 5 item cố định)
+ *  • Thêm stat "Đã quét" — lấy từ local scan history để người dùng thấy số lượng sản phẩm mình đã kiểm tra
+ *  • Khi server offline, vẫn hiện nút Quét và Recent Scans bình thường
+ *
  * Nguồn dữ liệu:
  *  • "Sản phẩm vừa quét"  → scanHistoryService (AsyncStorage, local)
  *  • Total batches         → GET /api/batches/total (Blockchain)
  *  • Server status         → GET /api/health
- *
- * "Recent scans" là user-specific history trên thiết bị, KHÔNG phải list
- * tất cả batches từ blockchain.
  */
 
 import React, { useState, useCallback } from "react";
@@ -16,33 +19,40 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { healthCheck, getTotalBatches } from "../services/api";
-import { getRecentScans, formatScanTime } from "../services/scanHistoryService";
+import {
+  getRecentScans,
+  formatScanTime,
+  getAllScans,
+} from "../services/scanHistoryService";
+
+// ─── Icon pool dùng để gán icon cho batch list động ───
+// Nếu tổng số batch > số icon → loop lại từ đầu
+const BATCH_ICONS = [
+  { icon: "leaf-outline",   color: "#10b981" },
+  { icon: "sunny-outline",  color: "#f59e0b" },
+  { icon: "basket-outline", color: "#8b5cf6" },
+  { icon: "water-outline",  color: "#06b6d4" },
+  { icon: "cube-outline",   color: "#3b82f6" },
+  { icon: "flower-outline", color: "#ec4899" },
+  { icon: "fish-outline",   color: "#f97316" },
+  { icon: "nutrition-outline", color: "#84cc16" },
+];
 
 // ─── Server Status Dot ───
-function ServerStatus() {
-  const [status, setStatus] = useState("checking");
-
-  useFocusEffect(
-    useCallback(() => {
-      setStatus("checking");
-      healthCheck()
-        .then(() => setStatus("online"))
-        .catch(() => setStatus("offline"));
-    }, [])
-  );
-
+function ServerStatus({ status }) {
   const configs = {
     checking: { color: "#94a3b8", label: "Đang kết nối...", bg: "#f1f5f9" },
-    online: { color: "#10b981", label: "Blockchain đang hoạt động", bg: "#ecfdf5" },
-    offline: { color: "#f59e0b", label: "Server đang khởi động (~30s)", bg: "#fefce8" },
+    online:   { color: "#10b981", label: "Blockchain đang hoạt động", bg: "#ecfdf5" },
+    offline:  { color: "#f59e0b", label: "Server đang khởi động (~30s)", bg: "#fefce8" },
   };
-  const c = configs[status];
+  const c = configs[status] ?? configs.checking;
 
   return (
     <View style={[styles.serverBadge, { backgroundColor: c.bg }]}>
@@ -52,6 +62,16 @@ function ServerStatus() {
         <View style={[styles.statusDot, { backgroundColor: c.color }]} />
       )}
       <Text style={[styles.serverBadgeText, { color: c.color }]}>{c.label}</Text>
+    </View>
+  );
+}
+
+// ─── Stat Badge (header) ───
+function StatBadge({ count, label, color = "#064e3b" }) {
+  return (
+    <View style={[styles.statBadge, { backgroundColor: color }]}>
+      <Text style={styles.statNum}>{count}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
@@ -66,7 +86,12 @@ function RecentCard({ item, onPress }) {
       disabled={!isVerified}
       activeOpacity={0.75}
     >
-      <View style={[styles.recentIconBox, isVerified ? styles.recentIconOk : styles.recentIconFail]}>
+      <View
+        style={[
+          styles.recentIconBox,
+          isVerified ? styles.recentIconOk : styles.recentIconFail,
+        ]}
+      >
         <Ionicons
           name={isVerified ? "leaf-outline" : "alert-circle-outline"}
           size={20}
@@ -74,7 +99,9 @@ function RecentCard({ item, onPress }) {
         />
       </View>
       <View style={styles.recentInfo}>
-        <Text style={styles.recentName} numberOfLines={1}>{item.batchName}</Text>
+        <Text style={styles.recentName} numberOfLines={1}>
+          {item.batchName}
+        </Text>
         <Text style={styles.recentTime}>{formatScanTime(item.scannedAt)}</Text>
         {isVerified && (
           <View style={styles.verifiedBadge}>
@@ -90,52 +117,97 @@ function RecentCard({ item, onPress }) {
   );
 }
 
-// ─── Hardcoded test buttons — Blockchain batch IDs 1-5 ───
-const TEST_BATCHES = [
-  { id: "1", label: "Batch #1", icon: "leaf-outline", color: "#10b981" },
-  { id: "2", label: "Batch #2", icon: "sunny-outline", color: "#f59e0b" },
-  { id: "3", label: "Batch #3", icon: "basket-outline", color: "#8b5cf6" },
-  { id: "4", label: "Batch #4", icon: "water-outline", color: "#06b6d4" },
-  { id: "5", label: "Batch #5", icon: "cube-outline", color: "#3b82f6" },
-];
-
 // ─── Main Screen ───
 export default function HomeScreen({ navigation }) {
-  const [recentScans, setRecentScans] = useState([]);
-  const [totalBatches, setTotalBatches] = useState(null);
+  const [recentScans, setRecentScans]     = useState([]);
+  const [totalBatches, setTotalBatches]   = useState(null);
+  const [totalScanned, setTotalScanned]   = useState(null); // số lần quét của user
+  const [serverStatus, setServerStatus]   = useState("checking");
+  const [refreshing, setRefreshing]       = useState(false);
 
-  // Reload recent scans + total batches mỗi khi focus lại màn hình
+  // Tạo danh sách batch động dựa vào tổng số lô trên blockchain
+  // Nếu totalBatches = 8 → hiện batch 1-8 với icon xoay vòng
+  const dynamicBatches = totalBatches
+    ? Array.from({ length: totalBatches }, (_, i) => ({
+        id: String(i + 1),
+        label: `Lô hàng #${i + 1}`,
+        ...BATCH_ICONS[i % BATCH_ICONS.length],
+      }))
+    : [];
+
+  // ── Load tất cả dữ liệu ──
+  const loadData = useCallback(async () => {
+    // Server health (không cần await, badge tự update)
+    setServerStatus("checking");
+    healthCheck()
+      .then(() => setServerStatus("online"))
+      .catch(() => setServerStatus("offline"));
+
+    // Total batches trên blockchain
+    getTotalBatches()
+      .then((res) => setTotalBatches(res.data?.data?.total ?? null))
+      .catch(() => setTotalBatches(null));
+
+    // Recent scans từ AsyncStorage (local)
+    const recents = await getRecentScans(5);
+    setRecentScans(recents);
+
+    // Tổng số lần quét của người dùng (để hiển thị stat badge)
+    try {
+      const all = await getAllScans();
+      setTotalScanned(all.length);
+    } catch {
+      setTotalScanned(null);
+    }
+  }, []);
+
+  // Reload mỗi khi focus lại màn hình (quay từ BatchDetail, Scanner...)
   useFocusEffect(
     useCallback(() => {
-      getRecentScans(5).then(setRecentScans);
-      getTotalBatches()
-        .then((res) => setTotalBatches(res.data?.data?.total ?? null))
-        .catch(() => setTotalBatches(null));
-    }, [])
+      loadData();
+    }, [loadData])
   );
+
+  // Pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, [loadData]);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#10b981"
+            colors={["#10b981"]}
+          />
+        }
       >
-
         {/* ── Header ── */}
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.greetingTitle}>AgriTrace 🌾</Text>
-            <Text style={styles.greetingSub}>Truy xuất nguồn gốc nông sản trên Blockchain</Text>
+            <Text style={styles.greetingSub}>
+              Truy xuất nguồn gốc nông sản trên Blockchain
+            </Text>
           </View>
-          {totalBatches !== null && (
-            <View style={styles.totalBadge}>
-              <Text style={styles.totalNum}>{totalBatches}</Text>
-              <Text style={styles.totalLabel}>lô hàng</Text>
-            </View>
-          )}
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {totalBatches !== null && (
+              <StatBadge count={totalBatches} label="lô hàng" color="#064e3b" />
+            )}
+            {totalScanned !== null && totalScanned > 0 && (
+              <StatBadge count={totalScanned} label="đã quét" color="#7c3aed" />
+            )}
+          </View>
         </View>
 
-        <ServerStatus />
+        <ServerStatus status={serverStatus} />
         <View style={{ height: 20 }} />
 
         {/* ── Main QR Scan Card ── */}
@@ -157,7 +229,7 @@ export default function HomeScreen({ navigation }) {
           <View style={[styles.circleDecor, styles.circleDecor2]} />
         </View>
 
-        {/* ── Recent Scans — từ AsyncStorage (scan history thực) ─── */}
+        {/* ── Recent Scans ── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Sản phẩm vừa quét</Text>
           <TouchableOpacity onPress={() => navigation.navigate("ScanningHistory")}>
@@ -185,35 +257,56 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
 
-        {/* ── Hardcoded Test — 5 Batch IDs thật trên Polygon Amoy ── */}
+        {/* ── Dynamic Batch List từ Blockchain ── */}
         <View style={[styles.sectionHeader, { marginTop: 24 }]}>
           <View style={styles.sectionTitleRow}>
             <View style={styles.testBadge}>
-              <Text style={styles.testBadgeText}>TEST</Text>
+              <Text style={styles.testBadgeText}>BLOCKCHAIN</Text>
             </View>
-            <Text style={styles.sectionTitle}>Quét QR cứng — Blockchain thật</Text>
+            <Text style={styles.sectionTitle}>Tất cả lô hàng</Text>
           </View>
           <Text style={styles.testSubtext}>
-            Có {totalBatches ?? "5"} lô hàng trên Polygon Amoy Testnet
+            {totalBatches !== null
+              ? `${totalBatches} lô hàng trên Polygon Amoy Testnet`
+              : "Đang kết nối blockchain..."}
           </Text>
         </View>
 
-        <View style={styles.testGrid}>
-          {TEST_BATCHES.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.testCard}
-              onPress={() => navigation.navigate("BatchDetail", { batchId: item.id })}
-              activeOpacity={0.75}
-            >
-              <View style={[styles.testIconBox, { backgroundColor: item.color + "18" }]}>
-                <Ionicons name={item.icon} size={20} color={item.color} />
-              </View>
-              <Text style={styles.testCardLabel}>{item.label}</Text>
-              <Ionicons name="chevron-forward" size={15} color="#cbd5e1" />
-            </TouchableOpacity>
-          ))}
-        </View>
+        {dynamicBatches.length === 0 ? (
+          // Fallback: hiện skeleton nhỏ khi chưa có data
+          <View style={styles.batchListLoading}>
+            <ActivityIndicator size="small" color="#10b981" />
+            <Text style={styles.batchListLoadingText}>
+              {serverStatus === "offline"
+                ? "Server đang khởi động, kéo xuống để thử lại"
+                : "Đang tải danh sách lô hàng..."}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.testGrid}>
+            {dynamicBatches.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.testCard}
+                onPress={() =>
+                  navigation.navigate("BatchDetail", { batchId: item.id })
+                }
+                activeOpacity={0.75}
+              >
+                <View
+                  style={[
+                    styles.testIconBox,
+                    { backgroundColor: item.color + "18" },
+                  ]}
+                >
+                  <Ionicons name={item.icon} size={20} color={item.color} />
+                </View>
+                <Text style={styles.testCardLabel}>{item.label}</Text>
+                <Ionicons name="chevron-forward" size={15} color="#cbd5e1" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -244,18 +337,20 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 12,
     marginTop: 8,
+    gap: 12,
   },
   greetingTitle: { fontSize: 24, fontWeight: "800", color: "#0f172a", marginBottom: 2 },
-  greetingSub: { fontSize: 12, color: "#64748b", maxWidth: 220 },
-  totalBadge: {
-    backgroundColor: "#064e3b",
+  greetingSub: { fontSize: 12, color: "#64748b" },
+
+  statBadge: {
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 6,
     alignItems: "center",
+    minWidth: 56,
   },
-  totalNum: { color: "#fff", fontSize: 20, fontWeight: "800" },
-  totalLabel: { color: "#d1fae5", fontSize: 10, fontWeight: "600" },
+  statNum: { color: "#fff", fontSize: 18, fontWeight: "800" },
+  statLabel: { color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: "600" },
 
   // Server badge
   serverBadge: {
@@ -320,17 +415,22 @@ const styles = StyleSheet.create({
 
   // Section
   sectionHeader: { marginBottom: 12 },
-  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 3 },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 3,
+  },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: "#1e293b" },
   seeAllText: { fontSize: 13, color: "#10b981", fontWeight: "600" },
   testSubtext: { fontSize: 11, color: "#94a3b8" },
   testBadge: {
-    backgroundColor: "#fef9c3",
+    backgroundColor: "#ecfdf5",
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  testBadgeText: { fontSize: 9, fontWeight: "800", color: "#854d0e" },
+  testBadgeText: { fontSize: 9, fontWeight: "800", color: "#065f46" },
 
   // Recent scans
   emptyRecent: {
@@ -346,7 +446,6 @@ const styles = StyleSheet.create({
   },
   emptyRecentText: { fontSize: 13, color: "#94a3b8" },
   recentList: { gap: 8 },
-
   recentCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -393,7 +492,18 @@ const styles = StyleSheet.create({
   },
   recentBatchTagText: { fontSize: 10, color: "#64748b", fontWeight: "700" },
 
-  // Test grid
+  // Dynamic batch list
+  batchListLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+  },
+  batchListLoadingText: { fontSize: 13, color: "#94a3b8" },
   testGrid: { gap: 8 },
   testCard: {
     flexDirection: "row",
@@ -420,7 +530,13 @@ const styles = StyleSheet.create({
   testCardLabel: { flex: 1, fontSize: 14, fontWeight: "700", color: "#1e293b" },
 
   // FAB
-  fabContainer: { position: "absolute", bottom: 20, left: 0, right: 0, alignItems: "center" },
+  fabContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
   fabButton: {
     backgroundColor: "#064e3b",
     width: 64,

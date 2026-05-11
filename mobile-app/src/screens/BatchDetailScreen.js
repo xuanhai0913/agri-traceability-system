@@ -1,15 +1,17 @@
 /**
- * Tối ưu render:
- *  • Nhận `prefetchedBatch` từ ScannerScreen qua route.params
- *    → Hiện ngay header (tên, xuất xứ, stage) KHÔNG cần đợi API
- *  • Chỉ fetch getStageHistory (timeline) sau khi mount
- *    → Skeleton chỉ xuất hiện ở phần timeline, không che header
- *  • Nếu vào trực tiếp từ HomeScreen (không có prefetchedBatch)
- *    → Fetch song song cả 2 API như cũ
- *  • Nút Retry gọi invalidateBatchCache để xóa cache cũ
+ * BatchDetailScreen.js — Chi tiết lô hàng 
+ *  • useFocusEffect → luôn refetch khi navigate lại màn hình
+ *  • RefreshControl → kéo xuống để làm mới (bỏ qua cache, lấy data mới nhất)
+ *  • Nút Share → share link web + thông tin lô hàng qua Share API native
+ *  • Nút "Xem trên Web" → mở https://agri.hailamdev.space/batch/:id
+ *  • BatchHeader mở rộng hiển thị đầy đủ mọi trường API trả về:
+ *      description, farmerName, farmerContact, farmerAddress,
+ *      certifications[], productType, quantity+unit, createdAt
+ *  • Stage progress bar (X/Y giai đoạn)
+ *  • Tối ưu: prefetchedBatch vẫn hiện ngay, nhưng force-refresh khi focus lại
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -20,36 +22,26 @@ import {
   ActivityIndicator,
   Linking,
   Animated,
+  RefreshControl,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+
 import {
   getBatch,
   getStageHistory,
   getStageInfo,
   formatTimestamp,
   getTxExplorerUrl,
+  getBatchWebUrl,
   invalidateBatchCache,
 } from "../services/api";
 
-// ─── STAGE ICON ───
-function StageIcon({ stageInfo, size = 36 }) {
-  return (
-    <View
-      style={[
-        styles.stageIconCircle,
-        { backgroundColor: stageInfo.color, width: size, height: size, borderRadius: size / 2 },
-      ]}
-    >
-      <Ionicons name={stageInfo.icon} size={size * 0.55} color="#fff" />
-    </View>
-  );
-}
-
-// ─── SKELETON (chỉ dùng cho timeline) ───
+// ─── SKELETON ───
 function Skeleton({ width, height, borderRadius = 8, style }) {
   const opacity = React.useRef(new Animated.Value(0.4)).current;
-
   useEffect(() => {
     const anim = Animated.loop(
       Animated.sequence([
@@ -60,7 +52,6 @@ function Skeleton({ width, height, borderRadius = 8, style }) {
     anim.start();
     return () => anim.stop();
   }, [opacity]);
-
   return (
     <Animated.View
       style={[{ width, height, borderRadius, backgroundColor: "#e2e8f0", opacity }, style]}
@@ -68,7 +59,6 @@ function Skeleton({ width, height, borderRadius = 8, style }) {
   );
 }
 
-// Skeleton chỉ cho phần timeline (header đã hiện rồi)
 function TimelineSkeleton() {
   return (
     <View style={{ gap: 0 }}>
@@ -90,7 +80,6 @@ function TimelineSkeleton() {
   );
 }
 
-// Skeleton toàn màn hình (dùng khi không có prefetchedBatch)
 function FullSkeleton() {
   return (
     <View style={{ gap: 0 }}>
@@ -141,7 +130,203 @@ function BlockchainBadge({ txHash }) {
         <Text style={styles.txLabel}>On-chain</Text>
       </View>
       <Text style={styles.txHash}>{shortHash}</Text>
+      <Ionicons name="open-outline" size={11} color="#7c3aed" />
     </TouchableOpacity>
+  );
+}
+
+// ─── STAGE PROGRESS BAR ───
+function StageProgressBar({ currentIndex, total }) {
+  if (!total || total <= 0) return null;
+  const progress = Math.min((currentIndex + 1) / total, 1);
+  return (
+    <View style={styles.progressContainer}>
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+      </View>
+      <Text style={styles.progressLabel}>
+        Giai đoạn {currentIndex + 1}/{total}
+      </Text>
+    </View>
+  );
+}
+
+// ─── CERTIFICATION BADGE ───
+function CertBadge({ label }) {
+  return (
+    <View style={styles.certBadge}>
+      <Ionicons name="ribbon-outline" size={11} color="#059669" />
+      <Text style={styles.certText}>{label}</Text>
+    </View>
+  );
+}
+
+// ─── INFO ROW (dùng trong farmer card) ───
+function InfoRow({ icon, label, value, onPress }) {
+  if (!value) return null;
+  return (
+    <TouchableOpacity
+      style={styles.infoRow}
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      <Ionicons name={icon} size={14} color="#64748b" style={{ marginTop: 1 }} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
+      {onPress && <Ionicons name="open-outline" size={13} color="#94a3b8" />}
+    </TouchableOpacity>
+  );
+}
+
+// ─── EXTENDED BATCH HEADER ───
+// Hiển thị tất cả trường mà backend có thể trả về, cùng nhất quán với web
+function BatchHeader({ batch }) {
+  const currentStageInfo = batch?.currentStage ? getStageInfo(batch.currentStage) : null;
+  const isCompleted =
+    batch?.currentStageIndex !== undefined &&
+    batch?.totalStages !== undefined &&
+    batch.currentStageIndex + 1 >= batch.totalStages;
+
+  const hasFarmerInfo =
+    batch?.farmerName || batch?.farmerContact || batch?.farmerAddress;
+
+  const hasCerts = Array.isArray(batch?.certifications) && batch.certifications.length > 0;
+
+  return (
+    <View style={styles.batchHeader}>
+      {/* ── Tên + xuất xứ ── */}
+      <Text style={styles.batchName}>{batch?.name || `Lô hàng #${batch?.id}`}</Text>
+
+      {!!batch?.origin && (
+        <View style={styles.originRow}>
+          <Ionicons name="location-outline" size={14} color="#64748b" />
+          <Text style={styles.originText}>{batch.origin}</Text>
+        </View>
+      )}
+
+      {/* ── Badges: ID + stage + completed ── */}
+      <View style={styles.badgeRow}>
+        <View style={styles.badgeId}>
+          <Text style={styles.badgeIdText}>#{batch?.id}</Text>
+        </View>
+        {currentStageInfo && (
+          <View style={[styles.badgeStage, { backgroundColor: currentStageInfo.color + "18" }]}>
+            <View style={[styles.stageDot, { backgroundColor: currentStageInfo.color }]} />
+            <Text style={[styles.badgeStageText, { color: currentStageInfo.color }]}>
+              {currentStageInfo.label}
+            </Text>
+          </View>
+        )}
+        {isCompleted && (
+          <View style={styles.completedBadge}>
+            <Ionicons name="checkmark-circle" size={13} color="#10b981" />
+            <Text style={styles.completedText}>Hoàn thành</Text>
+          </View>
+        )}
+        {/* Loại sản phẩm nếu có */}
+        {!!batch?.productType && (
+          <View style={styles.productTypeBadge}>
+            <Text style={styles.productTypeText}>{batch.productType}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* ── Stage progress bar ── */}
+      {batch?.currentStageIndex !== undefined && batch?.totalStages !== undefined && (
+        <StageProgressBar
+          currentIndex={batch.currentStageIndex}
+          total={batch.totalStages}
+        />
+      )}
+
+      {/* ── Mô tả lô hàng ── */}
+      {!!batch?.description && (
+        <View style={styles.descriptionCard}>
+          <Text style={styles.descriptionLabel}>Mô tả sản phẩm</Text>
+          <Text style={styles.descriptionText}>{batch.description}</Text>
+        </View>
+      )}
+
+      {/* ── Số lượng / khối lượng ── */}
+      {!!batch?.quantity && (
+        <View style={styles.quantityRow}>
+          <Ionicons name="scale-outline" size={14} color="#64748b" />
+          <Text style={styles.quantityText}>
+            Số lượng: <Text style={styles.quantityValue}>{batch.quantity}{batch.unit ? ` ${batch.unit}` : ""}</Text>
+          </Text>
+        </View>
+      )}
+
+      {/* ── Certifications ── */}
+      {hasCerts && (
+        <View style={styles.certSection}>
+          <Text style={styles.certSectionTitle}>Chứng nhận</Text>
+          <View style={styles.certRow}>
+            {batch.certifications.map((c, i) => (
+              <CertBadge key={i} label={c} />
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* ── Nhà sản xuất / Nông dân ── */}
+      {hasFarmerInfo && (
+        <View style={styles.farmerCard}>
+          <View style={styles.farmerCardHeader}>
+            <Ionicons name="person-circle-outline" size={16} color="#166534" />
+            <Text style={styles.farmerCardTitle}>Nhà sản xuất</Text>
+          </View>
+          {!!batch.farmerName && (
+            <InfoRow icon="person-outline" label="Tên" value={batch.farmerName} />
+          )}
+          {!!batch.farmerContact && (
+            <InfoRow
+              icon="call-outline"
+              label="Liên hệ"
+              value={batch.farmerContact}
+              onPress={() => Linking.openURL(`tel:${batch.farmerContact}`)}
+            />
+          )}
+          {!!batch.farmerAddress && (
+            <InfoRow icon="home-outline" label="Địa chỉ" value={batch.farmerAddress} />
+          )}
+        </View>
+      )}
+
+      {/* ── Ví chủ sở hữu (blockchain) ── */}
+      {!!batch?.owner && (
+        <View style={styles.ownerStrip}>
+          <Ionicons name="wallet-outline" size={13} color="#166534" />
+          <Text style={styles.ownerText} numberOfLines={1}>
+            {batch.owner}
+          </Text>
+        </View>
+      )}
+
+      {/* ── Ngày tạo ── */}
+      {!!batch?.createdAt && (
+        <Text style={styles.createdAtText}>
+          Tạo lúc: {formatTimestamp(batch.createdAt)}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+// ─── STAGE ICON ───
+function StageIcon({ stageInfo, size = 36 }) {
+  return (
+    <View
+      style={[
+        styles.stageIconCircle,
+        { backgroundColor: stageInfo.color, width: size, height: size, borderRadius: size / 2 },
+      ]}
+    >
+      <Ionicons name={stageInfo.icon} size={size * 0.55} color="#fff" />
+    </View>
   );
 }
 
@@ -168,6 +353,12 @@ function TimelineItem({ item, isLast }) {
           />
         )}
         <View style={styles.metaBox}>
+          {!!item.location && (
+            <View style={styles.metaRow}>
+              <Ionicons name="location-outline" size={13} color="#64748b" />
+              <Text style={styles.metaText}>{item.location}</Text>
+            </View>
+          )}
           {!!item.updatedBy && (
             <View style={styles.metaRow}>
               <Ionicons name="wallet-outline" size={13} color="#64748b" />
@@ -191,67 +382,22 @@ function TimelineItem({ item, isLast }) {
   );
 }
 
-// ─── BATCH HEADER (hiện ngay khi có data) ───
-function BatchHeader({ batch }) {
-  const currentStageInfo = batch?.currentStage ? getStageInfo(batch.currentStage) : null;
-  return (
-    <View style={styles.batchHeader}>
-      <Text style={styles.batchName}>{batch?.name || `Lô hàng #${batch?.id}`}</Text>
-      {!!batch?.origin && (
-        <View style={styles.originRow}>
-          <Ionicons name="location-outline" size={14} color="#64748b" />
-          <Text style={styles.originText}>{batch.origin}</Text>
-        </View>
-      )}
-      <View style={styles.badgeRow}>
-        <View style={styles.badgeId}>
-          <Text style={styles.badgeIdText}>#{batch?.id}</Text>
-        </View>
-        {currentStageInfo && (
-          <View style={[styles.badgeStage, { backgroundColor: currentStageInfo.color + "18" }]}>
-            <View style={[styles.stageDot, { backgroundColor: currentStageInfo.color }]} />
-            <Text style={[styles.badgeStageText, { color: currentStageInfo.color }]}>
-              {currentStageInfo.label}
-            </Text>
-          </View>
-        )}
-        {batch?.currentStageIndex !== undefined &&
-          batch?.totalStages !== undefined &&
-          batch.currentStageIndex + 1 >= batch.totalStages && (
-            <View style={styles.completedBadge}>
-              <Ionicons name="checkmark-circle" size={13} color="#10b981" />
-              <Text style={styles.completedText}>Hoàn thành</Text>
-            </View>
-          )}
-      </View>
-      {!!batch?.owner && (
-        <View style={styles.ownerStrip}>
-          <Ionicons name="wallet-outline" size={13} color="#166534" />
-          <Text style={styles.ownerText} numberOfLines={1}>
-            {batch.owner}
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
 // ─── MAIN SCREEN ───
 export default function BatchDetailScreen({ route, navigation }) {
   const { batchId, prefetchedBatch } = route.params || {};
 
-  // batch: hiện ngay nếu có prefetchedBatch
   const [batch, setBatch] = useState(prefetchedBatch || null);
   const [stages, setStages] = useState([]);
-
-  // Trạng thái loading tách biệt
   const [batchLoading, setBatchLoading] = useState(!prefetchedBatch);
   const [stagesLoading, setStagesLoading] = useState(true);
-
-  // Lỗi: nếu batch fail → hiện full error; nếu chỉ stages fail → vẫn hiện header
   const [batchError, setBatchError] = useState(null);
   const [stagesError, setStagesError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
+  // Tránh gọi fetch nhiều lần đồng thời
+  const fetchingRef = useRef(false);
+
+  // ── Hàm fetch chính ──
   const fetchAll = useCallback(
     async (forceRefresh = false) => {
       if (!batchId) {
@@ -261,7 +407,11 @@ export default function BatchDetailScreen({ route, navigation }) {
         return;
       }
 
+      if (fetchingRef.current && !forceRefresh) return;
+      fetchingRef.current = true;
+
       if (forceRefresh) {
+        // Xóa cache → luôn lấy dữ liệu mới nhất từ blockchain
         invalidateBatchCache(batchId);
         setBatch(null);
         setStages([]);
@@ -271,48 +421,91 @@ export default function BatchDetailScreen({ route, navigation }) {
         setStagesError(null);
       }
 
-      // Nếu đã có prefetchedBatch (và không forceRefresh), chỉ fetch history
-      if (!forceRefresh && prefetchedBatch) {
-        try {
-          const historyRes = await getStageHistory(batchId);
+      try {
+        // Nếu có prefetchedBatch (từ ScannerScreen) và không force → chỉ fetch history
+        // nhưng nếu force (pull-to-refresh / focus) → fetch cả hai để đảm bảo mới nhất
+        if (!forceRefresh && prefetchedBatch && batch) {
+          const historyRes = await getStageHistory(batchId, false);
           setStages(historyRes.data?.data?.stages ?? []);
-        } catch (err) {
-          setStagesError(err.friendlyMessage || "Không thể tải hành trình lô hàng.");
-        } finally {
           setStagesLoading(false);
+          fetchingRef.current = false;
+          return;
         }
-        return;
+
+        // Fetch batch + history song song
+        const [batchRes, historyRes] = await Promise.allSettled([
+          getBatch(batchId, forceRefresh),
+          getStageHistory(batchId, forceRefresh),
+        ]);
+
+        if (batchRes.status === "fulfilled") {
+          setBatch(batchRes.value.data?.data);
+          setBatchError(null);
+        } else {
+          setBatchError(
+            batchRes.reason?.friendlyMessage || "Không thể tải thông tin lô hàng."
+          );
+        }
+        setBatchLoading(false);
+
+        if (historyRes.status === "fulfilled") {
+          setStages(historyRes.value.data?.data?.stages ?? []);
+          setStagesError(null);
+        } else {
+          setStagesError(
+            historyRes.reason?.friendlyMessage || "Không thể tải hành trình lô hàng."
+          );
+        }
+        setStagesLoading(false);
+      } catch {
+        setBatchLoading(false);
+        setStagesLoading(false);
+      } finally {
+        fetchingRef.current = false;
       }
-
-      // Fetch batch + history song song
-      const batchPromise = getBatch(batchId)
-        .then((res) => {
-          setBatch(res.data?.data);
-          setBatchLoading(false);
-        })
-        .catch((err) => {
-          setBatchError(err.friendlyMessage || "Không thể tải thông tin lô hàng.");
-          setBatchLoading(false);
-        });
-
-      const historyPromise = getStageHistory(batchId)
-        .then((res) => {
-          setStages(res.data?.data?.stages ?? []);
-          setStagesLoading(false);
-        })
-        .catch((err) => {
-          setStagesError(err.friendlyMessage || "Không thể tải hành trình lô hàng.");
-          setStagesLoading(false);
-        });
-
-      await Promise.all([batchPromise, historyPromise]);
     },
-    [batchId, prefetchedBatch]
+    [batchId, prefetchedBatch, batch]
   );
 
+  // ── Lần đầu mount ──
   useEffect(() => {
-    fetchAll();
+    fetchAll(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Mỗi lần focus lại màn hình → refresh (luôn dữ liệu mới nhất) ────────
+  // Điều này đảm bảo nếu web/admin vừa cập nhật stage mới, mobile sẽ thấy ngay
+  useFocusEffect(
+    useCallback(() => {
+      // Chỉ auto-refresh nếu đã có data (không chặn lần load đầu)
+      if (batch || stages.length > 0) {
+        fetchAll(true);
+      }
+    }, []) // intentionally empty deps để không trigger vòng lặp
+  );
+
+  // ── Pull-to-refresh ──
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAll(true);
+    setRefreshing(false);
   }, [fetchAll]);
+
+  // ── Share ──
+  const handleShare = async () => {
+    const webUrl = getBatchWebUrl(batchId);
+    const batchName = batch?.name || `Lô hàng #${batchId}`;
+    const origin = batch?.origin ? ` • ${batch.origin}` : "";
+    try {
+      await Share.share({
+        title: `AgriTrace — ${batchName}`,
+        message: `${batchName}${origin}\n\nXem hành trình Blockchain tại:\n${webUrl}`,
+        url: webUrl,
+      });
+    } catch {
+      // user cancelled share
+    }
+  };
 
   // ── Lỗi nghiêm trọng: không có batch data ──
   if (batchError && !batch) {
@@ -330,7 +523,7 @@ export default function BatchDetailScreen({ route, navigation }) {
     );
   }
 
-  // ── Đang tải batch (chưa có prefetched data) ──
+  // ── Đang tải lần đầu (chưa có data) ──
   if (batchLoading && !batch) {
     return (
       <SafeAreaView style={styles.container}>
@@ -352,7 +545,7 @@ export default function BatchDetailScreen({ route, navigation }) {
     );
   }
 
-  // ── Render chính: header luôn hiện, timeline có thể đang tải ──
+  // ── Render chính ──
   return (
     <SafeAreaView style={styles.container}>
       {/* Custom Header */}
@@ -363,24 +556,52 @@ export default function BatchDetailScreen({ route, navigation }) {
         <Text style={styles.customHeaderTitle} numberOfLines={1}>
           {batch?.name || `Lô hàng #${batchId}`}
         </Text>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => fetchAll(true)}>
-          <Ionicons name="refresh-outline" size={20} color="#64748b" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity style={styles.iconBtn} onPress={handleShare}>
+            <Ionicons name="share-outline" size={20} color="#064e3b" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => fetchAll(true)}>
+            <Ionicons name="refresh-outline" size={20} color="#64748b" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#10b981"
+            colors={["#10b981"]}
+            title="Đang cập nhật từ Blockchain..."
+            titleColor="#64748b"
+          />
+        }
       >
-        {/* ── BATCH HEADER — hiện ngay ── */}
+        {/* ── BATCH HEADER ── */}
         <BatchHeader batch={batch} />
+
+        {/* ── Xem trên Web ── */}
+        <TouchableOpacity
+          style={styles.viewOnWebBtn}
+          onPress={() => Linking.openURL(getBatchWebUrl(batchId))}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="web" size={16} color="#3b82f6" />
+          <Text style={styles.viewOnWebText}>Xem chi tiết trên web</Text>
+          <Ionicons name="open-outline" size={14} color="#3b82f6" />
+        </TouchableOpacity>
 
         <View style={styles.divider} />
 
         {/* ── TIMELINE HEADER ── */}
         <View style={styles.timelineHeader}>
           <Text style={styles.timelineTitle}>
-            {stagesLoading ? "Hành trình lô hàng" : `Hành trình ${stages.length} giai đoạn`}
+            {stagesLoading
+              ? "Hành trình lô hàng"
+              : `Hành trình ${stages.length} giai đoạn`}
           </Text>
           <View style={styles.verifiedChip}>
             <Ionicons name="cube-outline" size={11} color="#7c3aed" />
@@ -388,7 +609,7 @@ export default function BatchDetailScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* ── TIMELINE: skeleton khi đang tải, lỗi nhẹ, hoặc list ── */}
+        {/* ── TIMELINE ── */}
         {stagesLoading ? (
           <View>
             <View style={styles.loadingInfo}>
@@ -427,7 +648,8 @@ export default function BatchDetailScreen({ route, navigation }) {
           <View style={styles.footer}>
             <Ionicons name="information-circle-outline" size={14} color="#94a3b8" />
             <Text style={styles.footerText}>
-              Dữ liệu được lưu bất biến trên Blockchain. Không thể giả mạo hoặc chỉnh sửa.
+              Dữ liệu được lưu bất biến trên Blockchain Polygon Amoy. Không thể giả mạo
+              hoặc chỉnh sửa. Kéo xuống để cập nhật thông tin mới nhất.
             </Text>
           </View>
         )}
@@ -438,11 +660,12 @@ export default function BatchDetailScreen({ route, navigation }) {
   );
 }
 
+// ─── STYLES ───
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc" },
   scrollContent: { padding: 20 },
 
-  // ── Custom Header ──
+  // Header
   customHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -474,7 +697,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  // ── Loading banner ──
+  // Loading banner
   loadingInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -487,7 +710,7 @@ const styles = StyleSheet.create({
   },
   loadingText: { fontSize: 13, color: "#064e3b", fontWeight: "500" },
 
-  // ── Error (full) ──
+  // Error
   errorContainer: {
     flex: 1,
     justifyContent: "center",
@@ -505,7 +728,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   errorTitle: { fontSize: 18, fontWeight: "700", color: "#1e293b", marginBottom: 8 },
-  errorMessage: { fontSize: 14, color: "#64748b", textAlign: "center", lineHeight: 22, marginBottom: 24 },
+  errorMessage: {
+    fontSize: 14,
+    color: "#64748b",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 24,
+  },
   retryButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -517,7 +746,7 @@ const styles = StyleSheet.create({
   },
   retryText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 
-  // ── Stages error (inline, non-blocking) ──
+  // Stages error (non-blocking)
   stagesErrorBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -531,11 +760,12 @@ const styles = StyleSheet.create({
   stagesErrorText: { flex: 1, fontSize: 13, color: "#92400e" },
   stagesRetryText: { fontSize: 13, color: "#10b981", fontWeight: "700" },
 
-  // ── Batch Header ──
-  batchHeader: { marginBottom: 20 },
+  // Batch Header
+  batchHeader: { marginBottom: 16 },
   batchName: { fontSize: 22, fontWeight: "800", color: "#0f172a", marginBottom: 8, lineHeight: 30 },
   originRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 12 },
   originText: { fontSize: 13, color: "#64748b" },
+
   badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
   badgeId: {
     backgroundColor: "#0f172a",
@@ -564,6 +794,115 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   completedText: { color: "#10b981", fontSize: 11, fontWeight: "700" },
+  productTypeBadge: {
+    backgroundColor: "#eff6ff",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  productTypeText: { color: "#3b82f6", fontSize: 11, fontWeight: "700" },
+
+  // Progress bar
+  progressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 14,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: "#e2e8f0",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#10b981",
+    borderRadius: 3,
+  },
+  progressLabel: { fontSize: 11, color: "#64748b", fontWeight: "600", minWidth: 72 },
+
+  // Description card
+  descriptionCard: {
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+  },
+  descriptionLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#94a3b8",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  descriptionText: { fontSize: 13, color: "#475569", lineHeight: 20 },
+
+  // Quantity
+  quantityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  quantityText: { fontSize: 13, color: "#64748b" },
+  quantityValue: { fontWeight: "700", color: "#1e293b" },
+
+  // Certifications
+  certSection: { marginBottom: 12 },
+  certSectionTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#94a3b8",
+    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  certRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  certBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0fdf4",
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+  },
+  certText: { fontSize: 11, color: "#059669", fontWeight: "700" },
+
+  // Farmer card
+  farmerCard: {
+    backgroundColor: "#f0fdf4",
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  farmerCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
+  farmerCardTitle: { fontSize: 13, fontWeight: "700", color: "#166534" },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    paddingVertical: 2,
+  },
+  infoLabel: { fontSize: 10, color: "#94a3b8", fontWeight: "600", marginBottom: 1 },
+  infoValue: { fontSize: 13, color: "#1e293b", fontWeight: "500" },
+
+  // Owner wallet
   ownerStrip: {
     flexDirection: "row",
     alignItems: "center",
@@ -572,13 +911,32 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     gap: 6,
+    marginBottom: 8,
   },
   ownerText: { flex: 1, fontSize: 12, color: "#166534", fontFamily: "monospace" },
 
-  // ── Divider ──
+  // Created at
+  createdAtText: { fontSize: 11, color: "#94a3b8", marginBottom: 4 },
+
+  // View on web button
+  viewOnWebBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#eff6ff",
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+    borderRadius: 10,
+    paddingVertical: 10,
+    gap: 6,
+    marginBottom: 20,
+  },
+  viewOnWebText: { fontSize: 13, fontWeight: "600", color: "#3b82f6" },
+
+  // Divider
   divider: { height: 1, backgroundColor: "#e2e8f0", marginBottom: 20 },
 
-  // ── Timeline Header ──
+  // Timeline header
   timelineHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -597,7 +955,7 @@ const styles = StyleSheet.create({
   },
   verifiedChipText: { fontSize: 10, fontWeight: "700", color: "#7c3aed" },
 
-  // ── Timeline ──
+  // Timeline
   timelineContainer: { marginTop: 0 },
   timelineItem: { flexDirection: "row" },
   leftCol: { alignItems: "center", width: 40, marginRight: 14 },
@@ -613,7 +971,7 @@ const styles = StyleSheet.create({
   rightCol: { flex: 1, paddingBottom: 28 },
   rightColLast: { paddingBottom: 0 },
 
-  // ── Stage Card ──
+  // Stage card content
   stageTitle: { fontSize: 16, fontWeight: "700", color: "#1e293b", marginBottom: 3, marginTop: 4 },
   timeText: { fontSize: 12, color: "#94a3b8", marginBottom: 8, fontWeight: "500" },
   descText: { fontSize: 13, color: "#475569", lineHeight: 20, marginBottom: 12 },
@@ -625,7 +983,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  // ── Meta Box ──
+  // Meta box
   metaBox: {
     backgroundColor: "#f8fafc",
     borderWidth: 1,
@@ -637,7 +995,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   metaText: { fontSize: 12, color: "#475569", flex: 1, fontFamily: "monospace" },
 
-  // ── Blockchain TX Badge ──
+  // TX badge
   txBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -650,13 +1008,13 @@ const styles = StyleSheet.create({
   },
   txBadgeLeft: { flexDirection: "row", alignItems: "center", gap: 4 },
   txLabel: { fontSize: 11, fontWeight: "700", color: "#7c3aed" },
-  txHash: { fontSize: 11, color: "#7c3aed", fontFamily: "monospace" },
+  txHash: { fontSize: 11, color: "#7c3aed", fontFamily: "monospace", flex: 1, marginLeft: 4 },
 
-  // ── Empty Stage ──
+  // Empty stage
   emptyStage: { alignItems: "center", paddingVertical: 40, gap: 10 },
   emptyText: { fontSize: 14, color: "#94a3b8", textAlign: "center" },
 
-  // ── Footer ──
+  // Footer
   footer: {
     flexDirection: "row",
     alignItems: "flex-start",

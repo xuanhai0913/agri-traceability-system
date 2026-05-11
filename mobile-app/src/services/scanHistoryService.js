@@ -1,12 +1,14 @@
 /**
- * Service lưu trữ lịch sử quét QR trên thiết bị cục bộ dùng AsyncStorage.
+ * scanHistoryService.js — Lưu trữ lịch sử quét QR trên thiết bị (AsyncStorage)
+ *  • Thêm getAllScans() → trả về toàn bộ mảng phẳng, dùng cho stat badge HomeScreen
+ *
  * SCHEMA mỗi scan record:
  * {
- *   id:        string   — UUID v4 duy nhất
+ *   id:        string   — UUID v4
  *   batchId:   string   — ID lô hàng từ QR
- *   batchName: string   — Tên lô hàng (lấy từ API sau khi scan thành công)
+ *   batchName: string   — Tên lô hàng (lấy từ API)
  *   origin:    string   — Xuất xứ lô hàng
- *   status:    "verified" | "failed"  — Kết quả xác thực
+ *   status:    "verified" | "failed"
  *   scannedAt: number   — Unix timestamp milliseconds
  * }
  */
@@ -14,12 +16,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "agritrace:scan_history";
-const MAX_HISTORY = 100; // Giữ tối đa 100 bản ghi, tự xóa cũ nhất
+const MAX_HISTORY = 100;
 
 // ─── Tiện ích ───
 
 function generateId() {
-  // UUID v4 đơn giản không cần thư viện ngoài
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
@@ -42,11 +43,8 @@ async function writeAll(records) {
 // ─── Public API ───
 
 /**
- * Thêm một bản ghi lịch sử mới.
+ * Thêm bản ghi lịch sử mới.
  * Tự động xóa bản ghi cũ nhất nếu vượt MAX_HISTORY.
- *
- * @param {{batchId: string, batchName: string, origin?: string, status: "verified"|"failed"}} entry
- * @returns {Promise<ScanRecord>} Bản ghi vừa lưu
  */
 export async function addScanRecord({ batchId, batchName, origin = "", status }) {
   const records = await readAll();
@@ -57,31 +55,39 @@ export async function addScanRecord({ batchId, batchName, origin = "", status })
     batchName: batchName || `Lô hàng #${batchId}`,
     origin,
     status,
-    scannedAt: Date.now(), // milliseconds
+    scannedAt: Date.now(),
   };
 
-  // Thêm vào đầu mảng (mới nhất lên đầu)
   const updated = [newRecord, ...records];
-
-  // Giới hạn số lượng
-  if (updated.length > MAX_HISTORY) {
-    updated.splice(MAX_HISTORY);
-  }
+  if (updated.length > MAX_HISTORY) updated.splice(MAX_HISTORY);
 
   await writeAll(updated);
   return newRecord;
 }
 
 /**
- * Lấy toàn bộ lịch sử, nhóm theo ngày (YYYY-MM-DD) để dùng trong SectionList.
- *
- * @returns {Promise<Array<{title: string, data: ScanRecord[]}>>}
+ * Toàn bộ lịch sử dạng mảng phẳng (mới nhất trước).
+ * Dùng cho: stat badge HomeScreen ("đã quét X lô").
+ */
+export async function getAllScans() {
+  return readAll();
+}
+
+/**
+ * Danh sách phẳng giới hạn số lượng, dùng cho HomeScreen "Recent Scans".
+ */
+export async function getRecentScans(limit = 5) {
+  const records = await readAll();
+  return records.slice(0, limit);
+}
+
+/**
+ * Lịch sử nhóm theo tháng, dùng cho SectionList trong ScanningHistoryScreen.
  */
 export async function getScanHistorySections() {
   const records = await readAll();
   if (records.length === 0) return [];
 
-  // Nhóm theo tháng/năm — "Tháng M, YYYY"
   const groups = {};
   records.forEach((record) => {
     const date = new Date(record.scannedAt);
@@ -91,52 +97,11 @@ export async function getScanHistorySections() {
     groups[key].data.push(record);
   });
 
-  // Trả về theo thứ tự tháng mới nhất trước
   return Object.values(groups);
 }
 
 /**
- * Lấy danh sách phẳng (không nhóm), dùng cho HomeScreen "Recent Scans".
- *
- * @param {number} limit Số bản ghi tối đa
- * @returns {Promise<ScanRecord[]>}
- */
-export async function getRecentScans(limit = 5) {
-  const records = await readAll();
-  return records.slice(0, limit);
-}
-
-/**
- * Format thời gian quét sang chuỗi
- * - Hôm nay → "Hôm nay, HH:mm"
- * - Hôm qua → "Hôm qua, HH:mm"
- * - Còn lại → "DD/MM/YYYY, HH:mm"
- */
-export function formatScanTime(scannedAtMs) {
-  const date = new Date(scannedAtMs);
-  const now = new Date();
-  const diff = now.setHours(0, 0, 0, 0) - new Date(date).setHours(0, 0, 0, 0);
-
-  const time = date.toLocaleTimeString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  if (diff === 0) return `Hôm nay, ${time}`;
-  if (diff === 86400000) return `Hôm qua, ${time}`;
-
-  return date.toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }) + `, ${time}`;
-}
-
-/**
- * Tìm kiếm trong lịch sử theo tên lô hàng hoặc batchId.
- *
- * @param {string} query
- * @returns {Promise<Array<{title: string, data: ScanRecord[]}>>} Sections đã filter
+ * Tìm kiếm trong lịch sử, trả về sections đã filter.
  */
 export async function searchScanHistory(query) {
   const sections = await getScanHistorySections();
@@ -157,7 +122,35 @@ export async function searchScanHistory(query) {
 }
 
 /**
- * Xóa toàn bộ lịch sử
+ * Format thời gian quét:
+ *  - Hôm nay → "Hôm nay, HH:mm"
+ *  - Hôm qua → "Hôm qua, HH:mm"
+ *  - Còn lại → "DD/MM/YYYY, HH:mm"
+ */
+export function formatScanTime(scannedAtMs) {
+  const date = new Date(scannedAtMs);
+  const now = new Date();
+  const diff = now.setHours(0, 0, 0, 0) - new Date(date).setHours(0, 0, 0, 0);
+
+  const time = date.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  if (diff === 0) return `Hôm nay, ${time}`;
+  if (diff === 86_400_000) return `Hôm qua, ${time}`;
+
+  return (
+    date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }) + `, ${time}`
+  );
+}
+
+/**
+ * Xóa toàn bộ lịch sử.
  */
 export async function clearScanHistory() {
   await AsyncStorage.removeItem(STORAGE_KEY);
