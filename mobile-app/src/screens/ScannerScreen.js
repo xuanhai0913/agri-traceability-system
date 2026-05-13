@@ -8,8 +8,6 @@
  *      - Plain text: "3"
  *  • Auto-reset sau 15 giây nếu scan thất bại để không bị kẹt màn hình
  *  • Flashlight toggle có label ON/OFF rõ ràng
- *  • Hiện batchId đang xác thực trong banner để người dùng biết đang kiểm tra lô nào
- *  • Tách biệt lỗi "QR không hợp lệ" vs "Lô hàng không tìm thấy trên blockchain"
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -37,19 +35,17 @@ export default function ScannerScreen({ navigation }) {
   const [scanned, setScanned]         = useState(false);
   const [flashMode, setFlashMode]     = useState(false);
   const [verifying, setVerifying]     = useState(false);
-  const [verifyingId, setVerifyingId] = useState(null); // batchId đang xác thực
+  const [verifyingId, setVerifyingId] = useState(null);
 
-  const scanLockRef     = useRef(false);
+  const scanLockRef       = useRef(false);
   const autoResetTimerRef = useRef(null);
 
-  // Dọn timer khi unmount
   useEffect(() => {
     return () => {
       if (autoResetTimerRef.current) clearTimeout(autoResetTimerRef.current);
     };
   }, []);
 
-  // ── Permission gates ──
   if (!permission) return <View style={styles.container} />;
 
   if (!permission.granted) {
@@ -69,7 +65,6 @@ export default function ScannerScreen({ navigation }) {
     );
   }
 
-  // ── Đặt lại về trạng thái sẵn sàng quét ──
   const resetScan = () => {
     if (autoResetTimerRef.current) clearTimeout(autoResetTimerRef.current);
     scanLockRef.current = false;
@@ -78,9 +73,7 @@ export default function ScannerScreen({ navigation }) {
     setVerifyingId(null);
   };
 
-  // ── QR scan handler ──
   const handleBarCodeScanned = async ({ data }) => {
-    // scanLockRef đảm bảo chỉ xử lý một QR tại một thời điểm
     if (scanLockRef.current) return;
     scanLockRef.current = true;
     setScanned(true);
@@ -88,7 +81,7 @@ export default function ScannerScreen({ navigation }) {
     console.log(`[QR] Raw data: ${data}`);
     const batchId = extractBatchId(data);
 
-    // ── Case 1: QR không chứa batch ID hợp lệ ──
+    // ── Case 1: QR không hợp lệ ──
     if (!batchId) {
       await addScanRecord({
         batchId: data.slice(0, 20),
@@ -103,24 +96,22 @@ export default function ScannerScreen({ navigation }) {
       return;
     }
 
-    // ── Case 2: Xác thực với blockchain ──
+    // ── Case 2: Xác thực thông tin lô hàng ──
     setVerifying(true);
     setVerifyingId(batchId);
 
-    // Auto-reset nếu quá lâu không có phản hồi
     autoResetTimerRef.current = setTimeout(() => {
       if (scanLockRef.current) {
         setVerifying(false);
         Alert.alert(
           "Hết thời gian",
-          "Server mất quá nhiều thời gian để phản hồi. Vui lòng kiểm tra kết nối mạng và thử lại.",
+          "Máy chủ mất quá nhiều thời gian để phản hồi. Vui lòng kiểm tra kết nối mạng và thử lại.",
           [{ text: "Quét lại", onPress: resetScan }]
         );
       }
     }, SCAN_TIMEOUT_MS);
 
     try {
-      // force = false: dùng cache nếu có (ScannerScreen vừa scan → ít khi cache hit)
       const response = await getBatch(batchId, false);
       const batchData = response.data?.data;
 
@@ -133,8 +124,6 @@ export default function ScannerScreen({ navigation }) {
         status:    "verified",
       });
 
-      // Truyền batchData đã fetch sang BatchDetailScreen để hiện ngay header
-      // không cần gọi getBatch lại lần nữa (tránh duplicate request)
       navigation.replace("BatchDetail", {
         batchId,
         prefetchedBatch: batchData,
@@ -149,7 +138,7 @@ export default function ScannerScreen({ navigation }) {
         status:    "failed",
       });
 
-      const msg = err.friendlyMessage || "Không thể kết nối server.";
+      const msg = err.friendlyMessage || "Không thể kết nối máy chủ.";
       Alert.alert("Không xác thực được", msg, [
         { text: "Quét lại", onPress: resetScan },
         {
@@ -160,7 +149,6 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
-  // ── Gallery QR picker ──
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -191,7 +179,8 @@ export default function ScannerScreen({ navigation }) {
           <View style={styles.verifyingBanner}>
             <ActivityIndicator size="small" color="#10b981" />
             <View style={{ flex: 1 }}>
-              <Text style={styles.verifyingText}>Đang xác thực với Blockchain...</Text>
+              {}
+              <Text style={styles.verifyingText}>Đang xác thực thông tin...</Text>
               {verifyingId && (
                 <Text style={styles.verifyingSubText}>Lô hàng #{verifyingId}</Text>
               )}
@@ -215,7 +204,7 @@ export default function ScannerScreen({ navigation }) {
           </View>
           <Text style={styles.hint}>
             {verifying
-              ? `Đang kiểm tra lô #${verifyingId} trên Blockchain...`
+              ? `Đang kiểm tra lô hàng #${verifyingId}...`
               : scanned
               ? "Đã quét — đang xử lý..."
               : "Đưa camera vào tem QR trên bao bì"}
@@ -224,7 +213,6 @@ export default function ScannerScreen({ navigation }) {
 
         {/* ── Bottom toolbar ── */}
         <View style={styles.bottomToolbar}>
-          {/* Thư viện ảnh */}
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={pickImage}
@@ -236,7 +224,6 @@ export default function ScannerScreen({ navigation }) {
             <Text style={styles.actionText}>Thư viện</Text>
           </TouchableOpacity>
 
-          {/* Flash toggle */}
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={() => setFlashMode(!flashMode)}
@@ -254,7 +241,6 @@ export default function ScannerScreen({ navigation }) {
             </Text>
           </TouchableOpacity>
 
-          {/* Lịch sử */}
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={() => navigation.navigate("ScanningHistory")}
@@ -272,44 +258,26 @@ export default function ScannerScreen({ navigation }) {
 }
 
 // ─── extractBatchId ───
-// Xử lý tất cả các định dạng QR mà web AgriTrace có thể tạo ra:
-//
-//  1. JSON:  {"batchId": 3}  hoặc  {"id": 3}
-//  2. URL web:   https://agri.hailamdev.space/batch/3
-//               https://agri.hailamdev.space/batches/3
-//  3. URL API:   https://agritrace-api.onrender.com/api/batches/3
-//  4. URL chung: /batch/3  hoặc  /batches/3  (relative)
-//  5. Plain:     "3"  (số nguyên dương)
-//
-// Trả về String(batchId) hoặc null nếu không nhận ra
-
 function extractBatchId(data) {
   if (!data || typeof data !== "string") return null;
   const trimmed = data.trim();
   if (!trimmed) return null;
 
-  // 1. JSON
   if (trimmed.startsWith("{")) {
     try {
       const parsed = JSON.parse(trimmed);
       const id = parsed.batchId ?? parsed.id ?? parsed.batch_id;
       if (id !== undefined && id !== null) return String(id);
     } catch {
-      // không phải JSON hợp lệ → thử các bước tiếp
+      // không phải JSON hợp lệ
     }
   }
 
-  // 2 + 3 + 4. URL patterns — /batch/X hoặc /batches/X
-  // Regex bắt cả domain lẫn relative path, và cả "batch" lẫn "batches"
   const urlMatch = trimmed.match(/\/batches?\/([a-zA-Z0-9_-]+)/);
   if (urlMatch?.[1]) return urlMatch[1];
 
-  // 5. Plain number string
   if (/^\d+$/.test(trimmed)) return trimmed;
 
-  // 6. Nếu không khớp pattern nào nhưng chuỗi ngắn (< 50 ký tự) và
-  //    không phải URL lạ → dùng toàn bộ chuỗi làm batchId
-  //    (bảo đảm backward compat với QR plain text cũ)
   if (trimmed.length < 50 && !trimmed.includes("://")) return trimmed;
 
   return null;
@@ -386,10 +354,10 @@ const styles = StyleSheet.create({
     borderColor: CORNER_COLOR,
     borderWidth: 4,
   },
-  topLeft:    { top: 0,    left: 0,   borderBottomWidth: 0, borderRightWidth: 0, borderTopLeftRadius: 16 },
-  topRight:   { top: 0,    right: 0,  borderBottomWidth: 0, borderLeftWidth: 0,  borderTopRightRadius: 16 },
-  bottomLeft: { bottom: 0, left: 0,   borderTopWidth: 0,    borderRightWidth: 0, borderBottomLeftRadius: 16 },
-  bottomRight:{ bottom: 0, right: 0,  borderTopWidth: 0,    borderLeftWidth: 0,  borderBottomRightRadius: 16 },
+  topLeft:     { top: 0,    left: 0,   borderBottomWidth: 0, borderRightWidth: 0, borderTopLeftRadius: 16 },
+  topRight:    { top: 0,    right: 0,  borderBottomWidth: 0, borderLeftWidth: 0,  borderTopRightRadius: 16 },
+  bottomLeft:  { bottom: 0, left: 0,   borderTopWidth: 0,    borderRightWidth: 0, borderBottomLeftRadius: 16 },
+  bottomRight: { bottom: 0, right: 0,  borderTopWidth: 0,    borderLeftWidth: 0,  borderBottomRightRadius: 16 },
 
   scanLine: {
     width: "100%",

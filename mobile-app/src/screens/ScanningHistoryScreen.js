@@ -1,4 +1,5 @@
 /**
+ * ScanningHistoryScreen.js
  * Hiển thị lịch sử quét QR từ AsyncStorage (local, per-device).
  *
  * Tính năng:
@@ -67,7 +68,8 @@ function HistoryCard({ item, onPress }) {
         {isVerified ? (
           <View style={[styles.statusBadge, styles.badgeVerified]}>
             <Ionicons name="checkmark-circle" size={11} color="#10b981" />
-            <Text style={styles.verifiedText}>Blockchain Verified</Text>
+            {}
+            <Text style={styles.verifiedText}>Đã xác thực</Text>
           </View>
         ) : (
           <View style={[styles.statusBadge, styles.badgeFailed]}>
@@ -120,11 +122,10 @@ function EmptyState({ hasQuery }) {
 
 // ─── Main Screen ────
 export default function ScanningHistoryScreen({ navigation }) {
-  const [sections, setSections] = useState([]);
+  const [sections, setSections]       = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]         = useState(true);
 
-  // useFocusEffect: tải lại mỗi khi màn hình được focus (bao gồm lần đầu mount và sau khi navigate từ BatchDetail về)
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -248,7 +249,6 @@ export default function ScanningHistoryScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FAFAFA" },
 
-  // Header
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -272,7 +272,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 17, fontWeight: "700", color: "#1e293b" },
 
-  // Search
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -293,7 +292,6 @@ const styles = StyleSheet.create({
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 14, color: "#1e293b" },
 
-  // Loading
   loadingBox: {
     flex: 1,
     justifyContent: "center",
@@ -302,10 +300,8 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: "#64748b", fontSize: 14 },
 
-  // List
   listContent: { paddingHorizontal: 20, paddingBottom: 40 },
 
-  // Section Header
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -316,7 +312,6 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, fontWeight: "700", color: "#64748b" },
   sectionLine: { flex: 1, height: 1, backgroundColor: "#e2e8f0" },
 
-  // History Card
   historyCard: {
     flexDirection: "row",
     backgroundColor: "#fff",
@@ -372,7 +367,6 @@ const styles = StyleSheet.create({
   },
   batchIdTagText: { fontSize: 10, color: "#64748b", fontWeight: "700" },
 
-  // Empty state
   emptyState: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
   emptyIconBox: {
     width: 72,

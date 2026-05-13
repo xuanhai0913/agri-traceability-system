@@ -1,13 +1,12 @@
 /**
  * HomeScreen.js — Màn hình chính
  *  • RefreshControl → kéo xuống để tải lại server status + total + recent scans
- *  • Danh sách "Test Batches" dynamic: tự generate từ totalBatches thực trên chain (không còn hardcode 5 item cố định)
- *  • Thêm stat "Đã quét" — lấy từ local scan history để người dùng thấy số lượng sản phẩm mình đã kiểm tra
- *  • Khi server offline, vẫn hiện nút Quét và Recent Scans bình thường
+ *  • Danh sách "Lô hàng" dynamic: tự generate từ totalBatches thực
+ *  • Thêm stat "Đã quét" — lấy từ local scan history
  *
  * Nguồn dữ liệu:
  *  • "Sản phẩm vừa quét"  → scanHistoryService (AsyncStorage, local)
- *  • Total batches         → GET /api/batches/total (Blockchain)
+ *  • Total batches         → GET /api/batches/total
  *  • Server status         → GET /api/health
  */
 
@@ -33,24 +32,23 @@ import {
 } from "../services/scanHistoryService";
 
 // ─── Icon pool dùng để gán icon cho batch list động ───
-// Nếu tổng số batch > số icon → loop lại từ đầu
 const BATCH_ICONS = [
-  { icon: "leaf-outline",   color: "#10b981" },
-  { icon: "sunny-outline",  color: "#f59e0b" },
-  { icon: "basket-outline", color: "#8b5cf6" },
-  { icon: "water-outline",  color: "#06b6d4" },
-  { icon: "cube-outline",   color: "#3b82f6" },
-  { icon: "flower-outline", color: "#ec4899" },
-  { icon: "fish-outline",   color: "#f97316" },
+  { icon: "leaf-outline",      color: "#10b981" },
+  { icon: "sunny-outline",     color: "#f59e0b" },
+  { icon: "basket-outline",    color: "#8b5cf6" },
+  { icon: "water-outline",     color: "#06b6d4" },
+  { icon: "cube-outline",      color: "#3b82f6" },
+  { icon: "flower-outline",    color: "#ec4899" },
+  { icon: "fish-outline",      color: "#f97316" },
   { icon: "nutrition-outline", color: "#84cc16" },
 ];
 
 // ─── Server Status Dot ───
 function ServerStatus({ status }) {
   const configs = {
-    checking: { color: "#94a3b8", label: "Đang kết nối...", bg: "#f1f5f9" },
-    online:   { color: "#10b981", label: "Blockchain đang hoạt động", bg: "#ecfdf5" },
-    offline:  { color: "#f59e0b", label: "Server đang khởi động (~30s)", bg: "#fefce8" },
+    checking: { color: "#94a3b8", label: "Đang kết nối...",             bg: "#f1f5f9" },
+    online:   { color: "#10b981", label: "Hệ thống đang hoạt động",     bg: "#ecfdf5" },
+    offline:  { color: "#f59e0b", label: "Hệ thống đang khởi động (~30s)", bg: "#fefce8" },
   };
   const c = configs[status] ?? configs.checking;
 
@@ -106,7 +104,8 @@ function RecentCard({ item, onPress }) {
         {isVerified && (
           <View style={styles.verifiedBadge}>
             <Ionicons name="checkmark-circle" size={10} color="#10b981" />
-            <Text style={styles.verifiedText}>Blockchain Verified</Text>
+            {}
+            <Text style={styles.verifiedText}>Đã xác thực</Text>
           </View>
         )}
       </View>
@@ -119,14 +118,13 @@ function RecentCard({ item, onPress }) {
 
 // ─── Main Screen ───
 export default function HomeScreen({ navigation }) {
-  const [recentScans, setRecentScans]     = useState([]);
-  const [totalBatches, setTotalBatches]   = useState(null);
-  const [totalScanned, setTotalScanned]   = useState(null); // số lần quét của user
-  const [serverStatus, setServerStatus]   = useState("checking");
-  const [refreshing, setRefreshing]       = useState(false);
+  const [recentScans, setRecentScans]   = useState([]);
+  const [totalBatches, setTotalBatches] = useState(null);
+  const [totalScanned, setTotalScanned] = useState(null);
+  const [serverStatus, setServerStatus] = useState("checking");
+  const [refreshing, setRefreshing]     = useState(false);
 
-  // Tạo danh sách batch động dựa vào tổng số lô trên blockchain
-  // Nếu totalBatches = 8 → hiện batch 1-8 với icon xoay vòng
+  // Danh sách lô hàng động
   const dynamicBatches = totalBatches
     ? Array.from({ length: totalBatches }, (_, i) => ({
         id: String(i + 1),
@@ -137,22 +135,18 @@ export default function HomeScreen({ navigation }) {
 
   // ── Load tất cả dữ liệu ──
   const loadData = useCallback(async () => {
-    // Server health (không cần await, badge tự update)
     setServerStatus("checking");
     healthCheck()
       .then(() => setServerStatus("online"))
       .catch(() => setServerStatus("offline"));
 
-    // Total batches trên blockchain
     getTotalBatches()
       .then((res) => setTotalBatches(res.data?.data?.total ?? null))
       .catch(() => setTotalBatches(null));
 
-    // Recent scans từ AsyncStorage (local)
     const recents = await getRecentScans(5);
     setRecentScans(recents);
 
-    // Tổng số lần quét của người dùng (để hiển thị stat badge)
     try {
       const all = await getAllScans();
       setTotalScanned(all.length);
@@ -161,14 +155,12 @@ export default function HomeScreen({ navigation }) {
     }
   }, []);
 
-  // Reload mỗi khi focus lại màn hình (quay từ BatchDetail, Scanner...)
   useFocusEffect(
     useCallback(() => {
       loadData();
     }, [loadData])
   );
 
-  // Pull-to-refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
@@ -193,9 +185,8 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={styles.greetingTitle}>AgriTrace 🌾</Text>
-            <Text style={styles.greetingSub}>
-              Truy xuất nguồn gốc nông sản trên Blockchain
-            </Text>
+            {}
+            <Text style={styles.greetingSub}>Truy xuất nguồn gốc nông sản</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
             {totalBatches !== null && (
@@ -214,8 +205,9 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.mainCard}>
           <View style={styles.mainCardContent}>
             <Text style={styles.mainCardTitle}>Xác thực nguồn gốc</Text>
+            {}
             <Text style={styles.mainCardSub}>
-              Quét mã QR trên bao bì để xem hành trình Blockchain đầy đủ.
+              Quét mã QR trên bao bì để xem hành trình đầy đủ của sản phẩm.
             </Text>
             <TouchableOpacity
               style={styles.scanBtnInside}
@@ -257,28 +249,28 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
 
-        {/* ── Dynamic Batch List từ Blockchain ── */}
+        {/* ── Danh sách lô hàng ── */}
         <View style={[styles.sectionHeader, { marginTop: 24 }]}>
           <View style={styles.sectionTitleRow}>
+            {}
             <View style={styles.testBadge}>
-              <Text style={styles.testBadgeText}>BLOCKCHAIN</Text>
+              <Text style={styles.testBadgeText}>LÔ HÀNG</Text>
             </View>
             <Text style={styles.sectionTitle}>Tất cả lô hàng</Text>
           </View>
           <Text style={styles.testSubtext}>
             {totalBatches !== null
-              ? `${totalBatches} lô hàng trên Polygon Amoy Testnet`
-              : "Đang kết nối blockchain..."}
+              ? `${totalBatches} lô hàng đã được đăng ký`
+              : "Đang tải danh sách..."}
           </Text>
         </View>
 
         {dynamicBatches.length === 0 ? (
-          // Fallback: hiện skeleton nhỏ khi chưa có data
           <View style={styles.batchListLoading}>
             <ActivityIndicator size="small" color="#10b981" />
             <Text style={styles.batchListLoadingText}>
               {serverStatus === "offline"
-                ? "Server đang khởi động, kéo xuống để thử lại"
+                ? "Hệ thống đang khởi động, kéo xuống để thử lại"
                 : "Đang tải danh sách lô hàng..."}
             </Text>
           </View>
@@ -330,7 +322,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FAFAFA" },
   scrollContent: { padding: 22 },
 
-  // Header
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -352,7 +343,6 @@ const styles = StyleSheet.create({
   statNum: { color: "#fff", fontSize: 18, fontWeight: "800" },
   statLabel: { color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: "600" },
 
-  // Server badge
   serverBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -365,7 +355,6 @@ const styles = StyleSheet.create({
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   serverBadgeText: { fontSize: 12, fontWeight: "600" },
 
-  // Main Card
   mainCard: {
     backgroundColor: "#064e3b",
     borderRadius: 20,
@@ -413,7 +402,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.04)",
   },
 
-  // Section
   sectionHeader: { marginBottom: 12 },
   sectionTitleRow: {
     flexDirection: "row",
@@ -432,7 +420,6 @@ const styles = StyleSheet.create({
   },
   testBadgeText: { fontSize: 9, fontWeight: "800", color: "#065f46" },
 
-  // Recent scans
   emptyRecent: {
     alignItems: "center",
     paddingVertical: 24,
@@ -492,7 +479,6 @@ const styles = StyleSheet.create({
   },
   recentBatchTagText: { fontSize: 10, color: "#64748b", fontWeight: "700" },
 
-  // Dynamic batch list
   batchListLoading: {
     flexDirection: "row",
     alignItems: "center",
@@ -529,7 +515,6 @@ const styles = StyleSheet.create({
   },
   testCardLabel: { flex: 1, fontSize: 14, fontWeight: "700", color: "#1e293b" },
 
-  // FAB
   fabContainer: {
     position: "absolute",
     bottom: 20,
