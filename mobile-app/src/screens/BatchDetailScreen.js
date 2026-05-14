@@ -128,22 +128,6 @@ function VerifiedBadge({ txHash }) {
   );
 }
 
-// ─── STAGE PROGRESS BAR ───
-function StageProgressBar({ currentIndex, total }) {
-  if (!total || total <= 0) return null;
-  const progress = Math.min((currentIndex + 1) / total, 1);
-  return (
-    <View style={styles.progressContainer}>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-      </View>
-      <Text style={styles.progressLabel}>
-        Giai đoạn {currentIndex + 1}/{total}
-      </Text>
-    </View>
-  );
-}
-
 // ─── CERTIFICATION BADGE ───
 function CertBadge({ label }) {
   return (
@@ -177,10 +161,6 @@ function InfoRow({ icon, label, value, onPress }) {
 // ─── EXTENDED BATCH HEADER ───
 function BatchHeader({ batch }) {
   const currentStageInfo = batch?.currentStage ? getStageInfo(batch.currentStage) : null;
-  const isCompleted =
-    batch?.currentStageIndex !== undefined &&
-    batch?.totalStages !== undefined &&
-    batch.currentStageIndex + 1 >= batch.totalStages;
 
   const hasFarmerInfo =
     batch?.farmerName || batch?.farmerContact || batch?.farmerAddress;
@@ -199,7 +179,7 @@ function BatchHeader({ batch }) {
         </View>
       )}
 
-      {/* ── Badges ── */}
+      {/* ── Badges: chỉ giữ ID + stage hiện tại + productType ── */}
       <View style={styles.badgeRow}>
         <View style={styles.badgeId}>
           <Text style={styles.badgeIdText}>#{batch?.id}</Text>
@@ -212,26 +192,12 @@ function BatchHeader({ batch }) {
             </Text>
           </View>
         )}
-        {isCompleted && (
-          <View style={styles.completedBadge}>
-            <Ionicons name="checkmark-circle" size={13} color="#10b981" />
-            <Text style={styles.completedText}>Hoàn thành</Text>
-          </View>
-        )}
         {!!batch?.productType && (
           <View style={styles.productTypeBadge}>
             <Text style={styles.productTypeText}>{batch.productType}</Text>
           </View>
         )}
       </View>
-
-      {/* ── Stage progress bar ── */}
-      {batch?.currentStageIndex !== undefined && batch?.totalStages !== undefined && (
-        <StageProgressBar
-          currentIndex={batch.currentStageIndex}
-          total={batch.totalStages}
-        />
-      )}
 
       {/* ── Mô tả lô hàng ── */}
       {!!batch?.description && (
@@ -555,11 +521,7 @@ export default function BatchDetailScreen({ route, navigation }) {
 
         {/* ── TIMELINE HEADER ── */}
         <View style={styles.timelineHeader}>
-          <Text style={styles.timelineTitle}>
-            {stagesLoading
-              ? "Hành trình lô hàng"
-              : `Hành trình ${stages.length} giai đoạn`}
-          </Text>
+          <Text style={styles.timelineTitle}>Hành trình lô hàng</Text>
           {}
           <View style={styles.verifiedChip}>
             <Ionicons name="shield-checkmark-outline" size={11} color="#059669" />
@@ -755,22 +717,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   productTypeText: { color: "#3b82f6", fontSize: 11, fontWeight: "700" },
-
-  progressContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 14,
-  },
-  progressTrack: {
-    flex: 1,
-    height: 6,
-    backgroundColor: "#e2e8f0",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressFill: { height: "100%", backgroundColor: "#10b981", borderRadius: 3 },
-  progressLabel: { fontSize: 11, color: "#64748b", fontWeight: "600", minWidth: 72 },
 
   descriptionCard: {
     backgroundColor: "#f8fafc",
