@@ -23,7 +23,7 @@ import {
   Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 
 import {
@@ -506,17 +506,6 @@ export default function BatchDetailScreen({ route, navigation }) {
         {/* ── BATCH HEADER ── */}
         <BatchHeader batch={batch} />
 
-        {/* ── Xem trên Web ── */}
-        <TouchableOpacity
-          style={styles.viewOnWebBtn}
-          onPress={() => Linking.openURL(getBatchWebUrl(batchId))}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="web" size={16} color="#3b82f6" />
-          <Text style={styles.viewOnWebText}>Xem chi tiết trên web</Text>
-          <Ionicons name="open-outline" size={14} color="#3b82f6" />
-        </TouchableOpacity>
-
         <View style={styles.divider} />
 
         {/* ── TIMELINE HEADER ── */}
@@ -794,20 +783,6 @@ const styles = StyleSheet.create({
   infoValue: { fontSize: 13, color: "#1e293b", fontWeight: "500" },
 
   createdAtText: { fontSize: 11, color: "#94a3b8", marginBottom: 4 },
-
-  viewOnWebBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#eff6ff",
-    borderWidth: 1,
-    borderColor: "#bfdbfe",
-    borderRadius: 10,
-    paddingVertical: 10,
-    gap: 6,
-    marginBottom: 20,
-  },
-  viewOnWebText: { fontSize: 13, fontWeight: "600", color: "#3b82f6" },
 
   divider: { height: 1, backgroundColor: "#e2e8f0", marginBottom: 20 },
 
