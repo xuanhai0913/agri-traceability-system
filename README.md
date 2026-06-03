@@ -15,6 +15,14 @@
 </p>
 
 <p align="center">
+  <a href="https://agri.hailamdev.space/"><b>Production demo</b></a>
+  ·
+  <a href="https://agri.hailamdev.space/batches">Sổ cái truy xuất</a>
+  ·
+  <a href="https://agri.hailamdev.space/compliance">Kiểm chứng tuân thủ</a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <img src="https://img.shields.io/badge/Polygon-Amoy-8247E5?logo=polygon&logoColor=white" alt="Polygon Amoy" />
   <img src="https://img.shields.io/badge/Hardhat-2.22-FFF100?logo=hardhat&logoColor=black" alt="Hardhat" />
@@ -39,6 +47,30 @@ Dự án không đưa toàn bộ dữ liệu lên blockchain. AgriTrace dùng m�
 - Backend đóng vai trò relayer, dùng service wallet ký giao dịch để admin không cần thao tác ví crypto trực tiếp.
 
 Mô hình này giúp dự án vẫn đúng trọng tâm blockchain nhưng có đủ tính thực tế của một sản phẩm quản lý nông sản.
+
+## Demo production
+
+| Mục | Link |
+| --- | --- |
+| Web app production | [https://agri.hailamdev.space/](https://agri.hailamdev.space/) |
+| Sổ cái truy xuất | [https://agri.hailamdev.space/batches](https://agri.hailamdev.space/batches) |
+| Kiểm chứng tuân thủ | [https://agri.hailamdev.space/compliance](https://agri.hailamdev.space/compliance) |
+
+Nếu backend Render đang cold start, trang có thể mất vài giây để tải số liệu blockchain/database lần đầu.
+
+## Ảnh giao diện production
+
+### Dashboard
+
+![Dashboard AgriTrace](docs/screenshots/dashboard.png)
+
+### Sổ cái truy xuất
+
+![Sổ cái truy xuất AgriTrace](docs/screenshots/ledger.png)
+
+### Kiểm chứng tuân thủ
+
+![Kiểm chứng tuân thủ AgriTrace](docs/screenshots/compliance.png)
 
 ## Tính năng chính
 
