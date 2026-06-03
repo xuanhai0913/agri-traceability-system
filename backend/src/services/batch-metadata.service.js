@@ -1,4 +1,8 @@
-const { hasDatabase, query } = require("../config/database");
+const {
+  hasDatabase,
+  isDatabaseConnectionError,
+  query,
+} = require("../config/database");
 const seedProducers = require("../data/producers.json");
 
 const PRODUCER_ROLES = new Set([
@@ -97,6 +101,12 @@ function toFallbackLink(link) {
 
 function getFallbackLinks() {
   return FALLBACK_BATCH_LINKS.map(toFallbackLink).filter(Boolean);
+}
+
+function getFallbackProducerLinkCount(producerId) {
+  return getFallbackLinks().filter(
+    (link) => link.producerId === Number(producerId)
+  ).length;
 }
 
 function toApiLink(row) {
@@ -252,21 +262,30 @@ async function getProducerReference(producerId) {
     );
   }
 
-  const res = await query(
-    `
-    SELECT
-      id AS producer_id,
-      name AS producer_name,
-      location AS producer_location,
-      status AS producer_status,
-      image_url AS producer_image_url
-    FROM producers
-    WHERE id = $1
-    `,
-    [producerId]
-  );
+  try {
+    const res = await query(
+      `
+      SELECT
+        id AS producer_id,
+        name AS producer_name,
+        location AS producer_location,
+        status AS producer_status,
+        image_url AS producer_image_url
+      FROM producers
+      WHERE id = $1
+      `,
+      [producerId]
+    );
 
-  return res.rows[0] ? toProducer(res.rows[0]) : null;
+    return res.rows[0] ? toProducer(res.rows[0]) : null;
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      return toSeedProducer(
+        seedProducers.find((producer) => producer.id === Number(producerId))
+      );
+    }
+    throw error;
+  }
 }
 
 async function linkBatchToProducer({ batchId, producerId, producerRole, notes }) {
@@ -299,30 +318,37 @@ async function getBatchProducerLinks(batchId) {
     return getFallbackLinks().filter((link) => link.batchId === Number(batchId));
   }
 
-  const res = await query(
-    `
-    SELECT
-      l.*,
-      p.name AS producer_name,
-      p.location AS producer_location,
-      p.status AS producer_status,
-      p.image_url AS producer_image_url
-    FROM batch_producer_links l
-    JOIN producers p ON p.id = l.producer_id
-    WHERE l.batch_id = $1
-    ORDER BY
-      CASE l.producer_role
-        WHEN 'primary_producer' THEN 1
-        WHEN 'processor' THEN 2
-        WHEN 'distributor' THEN 3
-        ELSE 4
-      END,
-      l.id ASC
-    `,
-    [batchId]
-  );
+  try {
+    const res = await query(
+      `
+      SELECT
+        l.*,
+        p.name AS producer_name,
+        p.location AS producer_location,
+        p.status AS producer_status,
+        p.image_url AS producer_image_url
+      FROM batch_producer_links l
+      JOIN producers p ON p.id = l.producer_id
+      WHERE l.batch_id = $1
+      ORDER BY
+        CASE l.producer_role
+          WHEN 'primary_producer' THEN 1
+          WHEN 'processor' THEN 2
+          WHEN 'distributor' THEN 3
+          ELSE 4
+        END,
+        l.id ASC
+      `,
+      [batchId]
+    );
 
-  return res.rows.map(toApiLink);
+    return res.rows.map(toApiLink);
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      return getFallbackLinks().filter((link) => link.batchId === Number(batchId));
+    }
+    throw error;
+  }
 }
 
 async function getBatchLinksByBatchIds(batchIds) {
@@ -333,23 +359,31 @@ async function getBatchLinksByBatchIds(batchIds) {
     return getFallbackLinks().filter((link) => allowedIds.has(link.batchId));
   }
 
-  const res = await query(
-    `
-    SELECT
-      l.*,
-      p.name AS producer_name,
-      p.location AS producer_location,
-      p.status AS producer_status,
-      p.image_url AS producer_image_url
-    FROM batch_producer_links l
-    JOIN producers p ON p.id = l.producer_id
-    WHERE l.batch_id = ANY($1::bigint[])
-    ORDER BY l.batch_id DESC, l.id ASC
-    `,
-    [batchIds]
-  );
+  try {
+    const res = await query(
+      `
+      SELECT
+        l.*,
+        p.name AS producer_name,
+        p.location AS producer_location,
+        p.status AS producer_status,
+        p.image_url AS producer_image_url
+      FROM batch_producer_links l
+      JOIN producers p ON p.id = l.producer_id
+      WHERE l.batch_id = ANY($1::bigint[])
+      ORDER BY l.batch_id DESC, l.id ASC
+      `,
+      [batchIds]
+    );
 
-  return res.rows.map(toApiLink);
+    return res.rows.map(toApiLink);
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      const allowedIds = new Set(batchIds.map(Number));
+      return getFallbackLinks().filter((link) => allowedIds.has(link.batchId));
+    }
+    throw error;
+  }
 }
 
 async function getProducerBatchLinks(producerId) {
@@ -359,23 +393,32 @@ async function getProducerBatchLinks(producerId) {
     );
   }
 
-  const res = await query(
-    `
-    SELECT
-      l.*,
-      p.name AS producer_name,
-      p.location AS producer_location,
-      p.status AS producer_status,
-      p.image_url AS producer_image_url
-    FROM batch_producer_links l
-    JOIN producers p ON p.id = l.producer_id
-    WHERE l.producer_id = $1
-    ORDER BY l.batch_id DESC
-    `,
-    [producerId]
-  );
+  try {
+    const res = await query(
+      `
+      SELECT
+        l.*,
+        p.name AS producer_name,
+        p.location AS producer_location,
+        p.status AS producer_status,
+        p.image_url AS producer_image_url
+      FROM batch_producer_links l
+      JOIN producers p ON p.id = l.producer_id
+      WHERE l.producer_id = $1
+      ORDER BY l.batch_id DESC
+      `,
+      [producerId]
+    );
 
-  return res.rows.map(toApiLink);
+    return res.rows.map(toApiLink);
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      return getFallbackLinks().filter(
+        (link) => link.producerId === Number(producerId)
+      );
+    }
+    throw error;
+  }
 }
 
 async function getBatchLinkSummary() {
@@ -385,10 +428,20 @@ async function getBatchLinkSummary() {
     };
   }
 
-  const res = await query(`
-    SELECT COUNT(*)::int AS total_links
-    FROM batch_producer_links
-  `);
+  let res;
+  try {
+    res = await query(`
+      SELECT COUNT(*)::int AS total_links
+      FROM batch_producer_links
+    `);
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      return {
+        totalLinks: getFallbackLinks().length,
+      };
+    }
+    throw error;
+  }
 
   return {
     totalLinks: Number(res.rows[0]?.total_links || 0),
@@ -438,47 +491,57 @@ async function recordBatchTransaction({
 async function getBatchTransactionRecords(batchId) {
   if (!hasDatabase()) return [];
 
-  const res = await query(
-    `
-    SELECT
-      t.*,
-      p.id AS producer_id,
-      p.name AS producer_name,
-      p.location AS producer_location,
-      p.status AS producer_status,
-      p.image_url AS producer_image_url
-    FROM batch_transaction_records t
-    LEFT JOIN producers p ON p.id = t.actor_producer_id
-    WHERE t.batch_id = $1
-    ORDER BY COALESCE(t.block_number, 0) ASC, t.id ASC
-    `,
-    [batchId]
-  );
+  try {
+    const res = await query(
+      `
+      SELECT
+        t.*,
+        p.id AS producer_id,
+        p.name AS producer_name,
+        p.location AS producer_location,
+        p.status AS producer_status,
+        p.image_url AS producer_image_url
+      FROM batch_transaction_records t
+      LEFT JOIN producers p ON p.id = t.actor_producer_id
+      WHERE t.batch_id = $1
+      ORDER BY COALESCE(t.block_number, 0) ASC, t.id ASC
+      `,
+      [batchId]
+    );
 
-  return res.rows.map(toApiTransaction);
+    return res.rows.map(toApiTransaction);
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) return [];
+    throw error;
+  }
 }
 
 async function getBatchTransactionsByBatchIds(batchIds) {
   if (batchIds.length === 0 || !hasDatabase()) return [];
 
-  const res = await query(
-    `
-    SELECT
-      t.*,
-      p.id AS producer_id,
-      p.name AS producer_name,
-      p.location AS producer_location,
-      p.status AS producer_status,
-      p.image_url AS producer_image_url
-    FROM batch_transaction_records t
-    LEFT JOIN producers p ON p.id = t.actor_producer_id
-    WHERE t.batch_id = ANY($1::bigint[])
-    ORDER BY t.batch_id DESC, COALESCE(t.block_number, 0) DESC, t.id DESC
-    `,
-    [batchIds]
-  );
+  try {
+    const res = await query(
+      `
+      SELECT
+        t.*,
+        p.id AS producer_id,
+        p.name AS producer_name,
+        p.location AS producer_location,
+        p.status AS producer_status,
+        p.image_url AS producer_image_url
+      FROM batch_transaction_records t
+      LEFT JOIN producers p ON p.id = t.actor_producer_id
+      WHERE t.batch_id = ANY($1::bigint[])
+      ORDER BY t.batch_id DESC, COALESCE(t.block_number, 0) DESC, t.id DESC
+      `,
+      [batchIds]
+    );
 
-  return res.rows.map(toApiTransaction);
+    return res.rows.map(toApiTransaction);
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) return [];
+    throw error;
+  }
 }
 
 function attachTransactionRecordsToBatch(batch, transactionRecords) {
@@ -537,6 +600,7 @@ module.exports = {
   getBatchProducerLinks,
   getBatchTransactionRecords,
   getBatchTransactionsByBatchIds,
+  getFallbackProducerLinkCount,
   getPrimaryProducerLink,
   getProducerBatchLinks,
   getProducerReference,

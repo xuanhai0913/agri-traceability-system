@@ -1,5 +1,10 @@
 const seedProducers = require("../data/producers.json");
-const { hasDatabase, query } = require("../config/database");
+const {
+  hasDatabase,
+  isDatabaseConnectionError,
+  query,
+} = require("../config/database");
+const { getFallbackProducerLinkCount } = require("./batch-metadata.service");
 
 const DEFAULT_IMAGE = "/images/farm-highland.png";
 const PRODUCER_STATUSES = new Set(["verified", "audit_pending"]);
@@ -135,6 +140,8 @@ function seedToRow(producer) {
 }
 
 function toFallbackProducer(producer) {
+  const linkedBatchCount = getFallbackProducerLinkCount(producer.id);
+
   return {
     ...producer,
     certifications: sanitizeTextArray(producer.certifications || []),
@@ -148,8 +155,8 @@ function toFallbackProducer(producer) {
       "Chưa cập nhật"
     ),
     audits: Array.isArray(producer.audits) ? producer.audits.map(sanitizeAudit) : [],
-    activeBatches: 0,
-    linkedBatchCount: 0,
+    activeBatches: linkedBatchCount,
+    linkedBatchCount,
     profileActiveBatches: producer.activeBatches || 0,
   };
 }
@@ -273,19 +280,26 @@ async function listProducers() {
     return seedProducers.map(toFallbackProducer);
   }
 
-  const res = await query(`
-    SELECT
-      p.*,
-      COALESCE(link_counts.count, 0)::int AS linked_batch_count
-    FROM producers p
-    LEFT JOIN (
-      SELECT producer_id, COUNT(*)::int AS count
-      FROM batch_producer_links
-      GROUP BY producer_id
-    ) link_counts ON link_counts.producer_id = p.id
-    ORDER BY p.id ASC
-  `);
-  return res.rows.map(toApiProducer);
+  try {
+    const res = await query(`
+      SELECT
+        p.*,
+        COALESCE(link_counts.count, 0)::int AS linked_batch_count
+      FROM producers p
+      LEFT JOIN (
+        SELECT producer_id, COUNT(*)::int AS count
+        FROM batch_producer_links
+        GROUP BY producer_id
+      ) link_counts ON link_counts.producer_id = p.id
+      ORDER BY p.id ASC
+    `);
+    return res.rows.map(toApiProducer);
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      return seedProducers.map(toFallbackProducer);
+    }
+    throw error;
+  }
 }
 
 async function getProducerById(id) {
@@ -295,22 +309,30 @@ async function getProducerById(id) {
     return toFallbackProducer(producer);
   }
 
-  const res = await query(
-    `
-    SELECT
-      p.*,
-      COALESCE(link_counts.count, 0)::int AS linked_batch_count
-    FROM producers p
-    LEFT JOIN (
-      SELECT producer_id, COUNT(*)::int AS count
-      FROM batch_producer_links
-      GROUP BY producer_id
-    ) link_counts ON link_counts.producer_id = p.id
-    WHERE p.id = $1
-    `,
-    [id]
-  );
-  return res.rows[0] ? toApiProducer(res.rows[0]) : null;
+  try {
+    const res = await query(
+      `
+      SELECT
+        p.*,
+        COALESCE(link_counts.count, 0)::int AS linked_batch_count
+      FROM producers p
+      LEFT JOIN (
+        SELECT producer_id, COUNT(*)::int AS count
+        FROM batch_producer_links
+        GROUP BY producer_id
+      ) link_counts ON link_counts.producer_id = p.id
+      WHERE p.id = $1
+      `,
+      [id]
+    );
+    return res.rows[0] ? toApiProducer(res.rows[0]) : null;
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      const producer = seedProducers.find((item) => item.id === Number(id));
+      return producer ? toFallbackProducer(producer) : null;
+    }
+    throw error;
+  }
 }
 
 async function createProducer(payload) {

@@ -208,6 +208,8 @@ export default function ProducerNetworkPage() {
         ) : filtered.map((producer) => {
           const IconComp = PRODUCT_ICONS[producer.id % PRODUCT_ICONS.length];
           const certifications = producer.certifications || [];
+          const linkedBatchCount =
+            producer.linkedBatchCount ?? producer.activeBatches ?? 0;
 
           return (
             <div
@@ -275,7 +277,7 @@ export default function ProducerNetworkPage() {
                       {isVi ? "Lô hàng liên kết thật" : "Linked batches"}
                     </span>
                     <span className="text-emerald-900 font-bold">
-                      {producer.activeBatches} {t("common.batches")}
+                      {linkedBatchCount} {t("common.batches")}
                     </span>
                   </div>
                   <div className="flex gap-1.5 overflow-hidden">
@@ -283,7 +285,7 @@ export default function ProducerNetworkPage() {
                       <div
                         key={i}
                         className={`h-1 flex-1 rounded-full ${
-                          i < Math.min(Math.ceil(producer.activeBatches / 6), 5)
+                          i < Math.min(Math.ceil(linkedBatchCount / 6), 5)
                             ? "bg-emerald-600"
                             : "bg-surface-container-high"
                         }`}

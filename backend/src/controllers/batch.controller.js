@@ -1,4 +1,5 @@
 const { getContract, getReadOnlyContract } = require("../config/blockchain");
+const { hasDatabase, pingDatabase } = require("../config/database");
 const {
   attachProducerLinksToBatch,
   attachProducerLinksToBatches,
@@ -127,6 +128,14 @@ const createBatch = async (req, res, next) => {
     }
 
     if (producerId) {
+      if (!hasDatabase() || !(await pingDatabase())) {
+        return res.status(503).json({
+          success: false,
+          message:
+            "Database metadata đang tạm unavailable, không thể tạo lô hàng có liên kết producer. Vui lòng thử lại sau khi DB connected.",
+        });
+      }
+
       const producer = await getProducerReference(producerId);
       if (!producer) {
         return res.status(400).json({
@@ -226,6 +235,14 @@ const addStage = async (req, res, next) => {
     }
 
     if (actorProducerId) {
+      if (!hasDatabase() || !(await pingDatabase())) {
+        return res.status(503).json({
+          success: false,
+          message:
+            "Database metadata đang tạm unavailable, không thể ghi stage có actor/producer liên kết. Vui lòng thử lại sau khi DB connected.",
+        });
+      }
+
       const producer = await getProducerReference(actorProducerId);
       if (!producer) {
         return res.status(400).json({

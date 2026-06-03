@@ -9,20 +9,39 @@ const {
 } = require("./src/config/database");
 
 const PORT = process.env.PORT || 3000;
+const DB_INIT_RETRY_MS = Number(process.env.DATABASE_INIT_RETRY_MS || 30_000);
+
+async function initializeDatabaseStore({ retry = true } = {}) {
+  if (!hasDatabase()) return false;
+
+  try {
+    await initProducerStore();
+    await initBatchMetadataStore();
+    console.log("Database store initialized.");
+    return true;
+  } catch (error) {
+    await disableDatabase(error);
+    console.warn(
+      `[WARN] Database unavailable (${getDatabaseStatus().disabledReason}). ` +
+        "Continuing with read-only JSON fallback."
+    );
+
+    if (retry) {
+      const retryTimer = setTimeout(() => {
+        initializeDatabaseStore().catch((retryError) => {
+          console.warn(`[WARN] Database retry failed: ${retryError.message}`);
+        });
+      }, DB_INIT_RETRY_MS);
+      retryTimer.unref?.();
+    }
+
+    return false;
+  }
+}
 
 async function startServer() {
   if (hasDatabase()) {
-    try {
-      await initProducerStore();
-      await initBatchMetadataStore();
-      console.log("Database store initialized.");
-    } catch (error) {
-      await disableDatabase(error);
-      console.warn(
-        `[WARN] Database unavailable (${getDatabaseStatus().disabledReason}). ` +
-          "Continuing with read-only JSON fallback."
-      );
-    }
+    await initializeDatabaseStore();
   } else {
     console.warn("[WARN] DATABASE_URL is not configured. Using read-only JSON fallback.");
   }

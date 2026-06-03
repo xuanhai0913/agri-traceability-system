@@ -103,7 +103,7 @@ export default function BatchDetailPage() {
 
   async function handleAddStage(e) {
     e.preventDefault();
-    if (!newStage.stage) return;
+    if (newStage.stage === "") return;
 
     try {
       setAddingStage(true);

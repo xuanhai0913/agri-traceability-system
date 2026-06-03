@@ -151,14 +151,25 @@ export default function CreateBatchPage() {
       });
 
       const batchId = res.data.data.batchId;
+      const metadataWarning = res.data.data.metadataWarning;
       localStorage.removeItem(DRAFT_KEY);
-      toast.success(
-        <div>
-          <b>Thêm lô hàng thành công!</b>
-          <p className="text-xs mt-1">Lô #{String(batchId).padStart(4, "0")}</p>
-        </div>,
-        { duration: 5000 }
-      );
+      if (metadataWarning) {
+        toast.error(
+          <div>
+            <b>Lô đã ghi on-chain nhưng chưa liên kết producer.</b>
+            <p className="text-xs mt-1">{metadataWarning}</p>
+          </div>,
+          { duration: 7000 }
+        );
+      } else {
+        toast.success(
+          <div>
+            <b>Thêm lô hàng thành công!</b>
+            <p className="text-xs mt-1">Lô #{String(batchId).padStart(4, "0")}</p>
+          </div>,
+          { duration: 5000 }
+        );
+      }
       navigate(`/batches/${batchId}`);
     } catch (err) {
       setError(
@@ -395,7 +406,9 @@ export default function CreateBatchPage() {
                           }`}
                         >
                           {selectedProducer.location} •{" "}
-                          {selectedProducer.linkedBatchCount || 0} lô hàng đã liên kết
+                          {selectedProducer.linkedBatchCount ??
+                            selectedProducer.activeBatches ??
+                            0} lô hàng đã liên kết
                           {" "}•{" "}
                           {selectedProducer.status === "verified"
                             ? "Đủ điều kiện tạo lô"

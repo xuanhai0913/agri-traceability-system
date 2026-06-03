@@ -9,7 +9,7 @@ const complianceRoutes = require("./routes/compliance.routes");
 const authRoutes = require("./routes/auth.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const mediaRoutes = require("./routes/media.routes");
-const { getDatabaseStatus } = require("./config/database");
+const { getDatabaseStatus, pingDatabase } = require("./config/database");
 
 const app = express();
 
@@ -41,7 +41,9 @@ app.use(morgan("dev"));
 
 // --- Routes ---
 
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", async (_req, res) => {
+  await pingDatabase();
+
   res.json({
     success: true,
     message: "AgriTrace API is running",
