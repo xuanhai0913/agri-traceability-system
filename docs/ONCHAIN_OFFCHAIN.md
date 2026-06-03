@@ -96,7 +96,34 @@ Khi người dùng mở QR hoặc trang Batch Detail:
 
 Nếu database tạm lỗi, hệ thống vẫn có thể đọc dữ liệu lô hàng/stage từ blockchain, nhưng thông tin producer, số lô liên kết và hồ sơ liên hệ có thể thiếu. Nếu blockchain/RPC lỗi, hệ thống vẫn có thể xem hồ sơ producer, nhưng không thể xác minh vòng đời lô hàng.
 
-## 6. Vì sao không đưa toàn bộ dữ liệu lên blockchain?
+## 6. Bằng chứng transaction mẫu
+
+Ví dụ dưới đây dùng batch `BTC-0009` trên production demo. Đây là lô hàng được tạo qua backend relayer và có transaction thật trên Polygon Amoy testnet.
+
+| Trường | Giá trị |
+| --- | --- |
+| Batch detail | [https://agri.hailamdev.space/batches/9](https://agri.hailamdev.space/batches/9) |
+| Transaction | [0xd28b6207032e7e1106a52970e997eadf3d7444f67ed473a0055911c85778d2ef](https://amoy.polygonscan.com/tx/0xd28b6207032e7e1106a52970e997eadf3d7444f67ed473a0055911c85778d2ef) |
+| Block | `39496920` |
+| Timestamp | `2026-06-03T08:40:06.000Z` |
+| Service wallet | `0xCBe061edb5159ac5E61Ff3C87e2402e5a4CAac5f` |
+| Smart contract | `0x29569935f27d966DcA1C308B2b00f6A1BAF487b3` |
+| Action | `create_batch` / tạo lô hàng `BTC-0009` |
+| Producer metadata | `Nhà Phân Phối Hải Làm Dev`, vai trò `Nhà sản xuất chính`, lưu off-chain trong PostgreSQL |
+
+Ảnh Batch Detail trên product cho thấy QR verification, producer link, timeline on-chain, block number và link mở Polygonscan:
+
+![Batch 9 on-chain evidence](screenshots/batch-9-evidence.png)
+
+Ảnh receipt dưới đây được render từ dữ liệu thật lấy qua production API và Polygon Amoy JSON-RPC. Đây không phải transaction giả; phần "mô phỏng" chỉ là giao diện trình bày để dễ đưa vào tài liệu/báo cáo.
+
+![Polygon Amoy RPC transaction receipt](screenshots/rpc-transaction-receipt.png)
+
+Khi trình bày phản biện, có thể nói ngắn gọn:
+
+> Batch Detail hiển thị dữ liệu gộp: lifecycle đọc từ smart contract, producer metadata đọc từ PostgreSQL. Transaction hash và block number có thể mở trên Polygonscan hoặc đối chiếu bằng JSON-RPC để chứng minh giao dịch đã được xác nhận trên Polygon Amoy.
+
+## 7. Vì sao không đưa toàn bộ dữ liệu lên blockchain?
 
 | Loại dữ liệu | Có nên on-chain? | Lý do |
 | --- | --- | --- |
@@ -107,7 +134,7 @@ Nếu database tạm lỗi, hệ thống vẫn có thể đọc dữ liệu lô 
 | Trạng thái kiểm định nội bộ | Off-chain hiện tại | Cần admin cập nhật linh hoạt; phiên bản sau có thể anchor hash nếu cần kiểm toán mạnh hơn. |
 | Search, dashboard, linked batch count | Không | Đây là dữ liệu tổng hợp phục vụ UX, có thể tính lại từ on-chain + database. |
 
-## 7. Điểm trung thực cần nêu trong phản biện
+## 8. Điểm trung thực cần nêu trong phản biện
 
 Nên trình bày rõ các điểm sau:
 
@@ -121,7 +148,7 @@ Cách trả lời ngắn khi bị hỏi "dùng DB như vậy có sai đề tài 
 
 > Không sai, vì mục tiêu của đề tài là dùng blockchain để đảm bảo tính bất biến và kiểm chứng được cho vòng đời truy xuất nông sản. Database chỉ lưu metadata vận hành như hồ sơ producer, contact, linked count và search. Nếu bỏ database, sản phẩm khó dùng và khó quản trị; nếu bỏ blockchain, hệ thống mất bằng chứng giao dịch độc lập và khả năng kiểm chứng bằng Polygonscan.
 
-## 8. Hướng phát triển tiếp theo
+## 9. Hướng phát triển tiếp theo
 
 - Lưu thêm `producerIdHash` hoặc `producerProfileHash` trong transaction để neo quan hệ producer vào blockchain.
 - Lưu hash nội dung ảnh hoặc IPFS CID thay vì chỉ lưu URL.
