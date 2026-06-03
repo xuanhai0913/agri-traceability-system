@@ -49,8 +49,9 @@ Một điểm thường bị hiểu lầm trong thiết kế Web3 là *"Mọi th
 Việc lưu trữ trực tiếp 1 tấm hình chất lượng cao (Vài Megabytes) lên mạng lưới Polygon có thể tốn hàng trăm đô la tiền phí Gas. Đây là điều cấm kị trong thiết kế phi tập trung.
 
 Do đó, AgriTrace sử dụng mô hình **Lưu Trữ Kết Lai (Hybrid Storage)**:
-1. **Phần Off-chain (Dưới Lưới):** Hình ảnh minh chứng thu hoạch được nông dân tải lên sẽ được đẩy vào **Cloudinary** (Một nền tảng lưu trữ Web2/Cloud). Cloudinary trả về một đường link URL tĩnh (Ví dụ: `https://.../cam-sanh.jpg`).
-2. **Phần On-chain (Sổ Cái Blockchain):** Chúng ta chỉ lấy Độc Nhất đường link `URL` đó, ghép chung với một câu mô tả (*"Bón phân hữu cơ"*) và nạp vào Smart Contract để băm thành mã Hash lưu vĩnh viễn trên Sổ cái (Ledger).
+1. **Phần off-chain:** Hình ảnh minh chứng được upload lên **Cloudinary** hoặc chọn từ thư viện ảnh. Cloudinary trả về một đường link URL tĩnh, ví dụ `https://.../cam-sanh.jpg`.
+2. **Phần on-chain:** Smart contract chỉ lưu chuỗi `imageUrl` đó cùng với stage, mô tả, timestamp và địa chỉ ví ghi transaction. Contract hiện tại không lưu byte ảnh và cũng không tự tạo content hash cho ảnh.
+3. **Phần database:** PostgreSQL lưu hồ sơ producer, trạng thái kiểm định, liên kết producer-batch và transaction metadata để UI có thể tìm kiếm, thống kê và mở Polygonscan nhanh.
 
 Hãy nhìn vào cấu trúc Contract để thấy rõ:
 ```solidity
@@ -63,7 +64,9 @@ struct StageRecord {
 ```
 
 ### Tại Sao Cách Này Giữ Được Tính Minh Bạch (Transparency)?
-Mặc dù ảnh nằm trên Cloud, nhưng đường link trỏ tới ảnh đó đã bị Ghi Tử (Khóa chết) trên Blockchain. Nông dân **không thể sửa đổi** đường link này trỏ đi chỗ khác sau khi đã bấm Lưu. Bản thân URL đã trở thành một "Bằng chứng bất biến" cho vòng đời của Lô hàng.
+Mặc dù ảnh nằm trên Cloud, nhưng URL ảnh đã được ghi vào transaction của stage. Sau khi transaction được xác nhận, người dùng không thể âm thầm sửa lại lịch sử stage hoặc đổi URL cũ trong smart contract. Nếu cần mức kiểm chứng mạnh hơn, phiên bản sau có thể lưu thêm SHA-256 hash hoặc IPFS CID của ảnh.
+
+Chi tiết ranh giới dữ liệu on-chain/off-chain được trình bày trong [ONCHAIN_OFFCHAIN.md](ONCHAIN_OFFCHAIN.md).
 
 ---
 

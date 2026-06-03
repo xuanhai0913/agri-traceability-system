@@ -23,14 +23,15 @@
 
 ## About
 
-Manages the lifecycle of agricultural product batches (from seeding to harvest). Text data is stored immutably on-chain for transparency; images are hosted on Cloudinary with URLs recorded on the blockchain. A QR code is generated per batch for mobile scanning.
+Manages the lifecycle of agricultural product batches from seeding to delivery. Core batch and stage records are written to the smart contract for immutable verification; producer profiles, batch-producer links, dashboard metrics and search metadata are stored off-chain in PostgreSQL. Evidence images are hosted externally, and their URLs can be recorded on-chain as part of each batch/stage transaction. A QR code is generated per batch for public verification.
 
 ### Production Features (Latest Updates)
-- 🔐 **On-chain Role-Based Access Control**: Smart contract whitelisting ensures only authorized farmers can create and update batches.
-- 🚀 **Progressive Image Loading**: Custom React hook for lazy loading decentralized images via `framer-motion` skeleton cross-fading.
-- 🛸 **Framer Motion Animations**: Web3.0 futuristic hover scale effects and counting numbers on the dashboard.
-- 📊 **CSV Data Export**: One-click data export directly from the smart-contract ledger to ERP systems with UTF-8 BOM encoding.
-- ⚡ **Vercel SPA Routing**: Fully configured rewrites for robust client-side React Router behaviors.
+- **Hybrid on-chain/off-chain data model**: Smart contract stores immutable batch lifecycle data; PostgreSQL stores operational metadata.
+- **Admin relayer workflow**: Backend service wallet signs Polygon Amoy transactions so users do not need to manage wallets or gas.
+- **Producer management**: Admin can create, edit and verify producer profiles before linking them to batches.
+- **Compliance evidence dashboard**: Surfaces API health, DB status, contract address, transaction records and explorer links.
+- **CSV data export**: Exports ledger data with producer and transaction metadata where available.
+- **Vercel SPA routing**: Supports direct access to React Router pages in production.
 
 ## Project Structure
 
@@ -39,7 +40,8 @@ agri-traceability-system/
 ├── smart-contracts/    Hardhat project, Solidity contracts, deploy scripts
 ├── backend/            Node.js Express API, Cloudinary integration
 ├── frontend-web/       React (Vite) admin portal for farmers & inspectors
-└── mobile-app/         Expo React Native consumer app (QR scanning)
+├── mobile-app/         Expo React Native consumer app (QR scanning)
+└── docs/               Architecture, demo, defense and data model documents
 ```
 
 ## Tech Stack
@@ -56,6 +58,10 @@ agri-traceability-system/
   <tr>
     <td>Backend</td>
     <td><img src="https://img.shields.io/badge/-Node.js-339933?logo=nodedotjs&logoColor=white&style=flat-square" /> <img src="https://img.shields.io/badge/-Express-000000?logo=express&logoColor=white&style=flat-square" /> <img src="https://img.shields.io/badge/-ethers.js-7B3FE4?logo=ethereum&logoColor=white&style=flat-square" /></td>
+  </tr>
+  <tr>
+    <td>Database</td>
+    <td><img src="https://img.shields.io/badge/-PostgreSQL-4169E1?logo=postgresql&logoColor=white&style=flat-square" /></td>
   </tr>
   <tr>
     <td>Image Storage</td>
@@ -83,11 +89,25 @@ flowchart LR
     C[Consumer] -->|QR Scan| D[Mobile App]
     B --> E[Backend API]
     D --> E
-    E -->|ethers.js| F[Smart Contract]
-    E -->|upload| G[Cloudinary]
-    F -->|on-chain data| H[(Blockchain)]
-    G -->|image URL| F
+    E -->|ethers.js transactions| F[Smart Contract]
+    F -->|batch + stage lifecycle| H[(Polygon Amoy)]
+    E -->|producer profiles + links| I[(PostgreSQL)]
+    E -->|upload evidence image| G[Cloudinary]
+    G -->|image URL| E
+    E -->|imageUrl string| F
 ```
+
+## Data Model: On-chain vs Off-chain
+
+AgriTrace uses a hybrid model to keep the traceability proof immutable without turning the blockchain into a file store or admin database.
+
+| Layer | Stored data | Purpose |
+|-------|-------------|---------|
+| Smart contract | Batch ID, name, origin, owner/service wallet, current stage, creation time, active status, stage history, image URL strings, whitelist state and events | Immutable lifecycle evidence for each agricultural batch. |
+| PostgreSQL | Producer profiles, contact fields, verification status, producer-batch links, actor roles, transaction hashes, block numbers and dashboard/search metadata | Operational management, UI enrichment and fast lookup. |
+| Cloudinary / image library | Image files selected or uploaded by admins | Stores media assets; the smart contract only stores the URL string when submitted. |
+
+See [docs/ONCHAIN_OFFCHAIN.md](docs/ONCHAIN_OFFCHAIN.md) for the detailed data boundary, defense talking points and future improvements.
 
 ## Quick Start
 
@@ -120,7 +140,13 @@ npm run mobile:start
 | `POST` | `/api/batches/:id/stages` | Add a growth stage |
 | `GET` | `/api/batches/:id/history` | Get stage timeline |
 | `GET` | `/api/batches/total` | Total batch count |
+| `GET` | `/api/producers` | List producer profiles |
+| `POST` | `/api/producers` | Create a producer profile |
+| `PATCH` | `/api/producers/:id` | Update a producer profile |
+| `GET` | `/api/dashboard/summary` | Live dashboard summary |
+| `GET` | `/api/compliance/evidence` | Compliance evidence summary |
 | `POST` | `/api/upload` | Upload image to Cloudinary |
+| `POST` | `/api/auth/login` | Admin login |
 | `GET` | `/api/health` | Health check |
 
 ## Environment Setup
@@ -130,7 +156,8 @@ Copy `.env.example` in each sub-directory and fill in your values:
 | Directory | Variables |
 |-----------|----------|
 | `smart-contracts/` | Private key, RPC URLs (Sepolia, Amoy) |
-| `backend/` | Blockchain RPC, contract address, Cloudinary credentials |
+| `backend/` | `DATABASE_URL`, blockchain RPC, contract address, service wallet private key, Cloudinary credentials, admin auth variables |
+| `frontend-web/` | `VITE_API_URL` for the deployed backend API |
 
 ## Core Workflow
 
@@ -141,15 +168,18 @@ sequenceDiagram
     participant B as Backend
     participant C as Cloudinary
     participant S as Smart Contract
+    participant D as PostgreSQL
 
     F->>W: Fill form (name, origin, image)
     W->>B: POST /api/upload (image)
     B->>C: Upload image
     C-->>B: image_url
-    W->>B: POST /api/batches
+    W->>B: POST /api/batches (producerId, image_url)
+    B->>D: Validate verified producer
     B->>S: createBatch(name, origin, imageUrl)
-    S-->>B: batchId (event)
-    B-->>W: { batchId, txHash }
+    S-->>B: batchId, txHash, blockNumber
+    B->>D: Store producer link + transaction metadata
+    B-->>W: { batchId, txHash, producerLink }
     W->>W: Generate QR code with batchId
 ```
 
