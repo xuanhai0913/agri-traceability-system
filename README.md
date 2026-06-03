@@ -161,6 +161,33 @@ sequenceDiagram
     W->>P: Mở tx hash để kiểm chứng
 ```
 
+## Giới hạn hiện tại và hướng phát triển
+
+Phần này được nêu rõ để phản biện thấy phạm vi dự án minh bạch. AgriTrace hiện là product demo/testnet phục vụ báo cáo tốt nghiệp, chưa tự nhận là hệ thống production thương mại hoàn chỉnh.
+
+### Giới hạn hiện tại
+
+| Vấn đề | Hiện trạng | Lý do chấp nhận trong phạm vi đề tài |
+| --- | --- | --- |
+| Blockchain network | Đang chạy trên Polygon Amoy testnet. | Phù hợp demo học thuật, không phát sinh chi phí mainnet và vẫn có transaction thật để kiểm chứng. |
+| Service wallet relayer | Backend dùng một service wallet để ký transaction thay người dùng. | Giúp người dùng nông nghiệp không cần cài ví hoặc trả gas; đây là mô hình phù hợp UX cho B2B/demo. |
+| Producer-batch link | Quan hệ producer với batch lưu ở PostgreSQL metadata, chưa được neo trực tiếp vào smart contract. | Contract hiện tập trung vào lifecycle của lô hàng; metadata producer cần linh hoạt để cập nhật hồ sơ. |
+| Ảnh minh chứng | Smart contract lưu `imageUrl`, chưa lưu hash nội dung ảnh hoặc IPFS CID. | Tránh lưu file lớn trên-chain; đủ để chứng minh URL đã được gắn vào stage tại thời điểm ghi transaction. |
+| Xác thực admin | Auth hiện là admin đơn giản bằng email/password/JWT. | Đủ cho demo vận hành; chưa phải hệ thống phân quyền nhiều vai trò cấp production. |
+| Dữ liệu kiểm định | Một số chứng nhận/audit là testnet record, không phải chứng nhận pháp lý thật. | Phục vụ mô phỏng nghiệp vụ và được gắn nhãn testnet/demo trong UI. |
+| Tính sẵn sàng hệ thống | Backend/DB phụ thuộc Render/Railway; cold start có thể làm lần tải đầu chậm vài giây. | Chấp nhận được cho demo; có cache đọc blockchain và health status để minh bạch trạng thái hệ thống. |
+
+### Hướng phát triển
+
+- **Neo producer metadata vào blockchain**: Thêm `producerIdHash`, `producerProfileHash` hoặc `metadataHash` vào transaction để chứng minh quan hệ producer-batch không chỉ nằm ở DB.
+- **Tăng độ tin cậy ảnh minh chứng**: Lưu SHA-256 hash hoặc IPFS CID của ảnh trong stage record, thay vì chỉ lưu URL.
+- **Phân quyền nhiều vai trò**: Tách ví hoặc tài khoản cho producer, distributor, inspector; hỗ trợ role-based workflow thay vì một admin chung.
+- **Audit trail cho database**: Ghi lịch sử thay đổi producer profile, trạng thái kiểm định và metadata liên kết để truy vết thao tác admin.
+- **Nâng cấp hạ tầng production**: Dùng Redis/shared cache, queue cho transaction, monitoring/logging và chiến lược retry khi RPC hoặc DB lỗi.
+- **Mở rộng mobile/consumer flow**: Hoàn thiện app QR scanner cho người tiêu dùng, hiển thị thông tin batch công khai và cảnh báo khi dữ liệu chưa đủ bằng chứng.
+
+Tóm lại, AgriTrace chọn phạm vi thực tế: blockchain đảm bảo bằng chứng bất biến cho vòng đời lô hàng, còn off-chain database phục vụ quản trị và trải nghiệm người dùng. Các giới hạn trên là hướng phát triển tự nhiên nếu dự án được nâng từ demo tốt nghiệp lên sản phẩm production.
+
 ## Cài đặt nhanh
 
 ```bash
