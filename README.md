@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/Workflow-Agri-System.png" alt="AgriTrace Banner" width="800" />
+  <img src="Workflow-Agri-System.png" alt="AgriTrace Banner" width="800" />
 </p>
 
 <h1 align="center">
