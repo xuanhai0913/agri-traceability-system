@@ -245,6 +245,7 @@ Không commit private key, database URL, JWT secret hoặc tài khoản admin th
 - [On-chain vs Off-chain Data Model](docs/ONCHAIN_OFFCHAIN.md)
 - [Kiến trúc và bảo mật](docs/KIEN_TRUC_VA_BAO_MAT.md)
 - [Hướng dẫn demo](docs/HUONG_DAN_DEMO.md)
+- [Câu hỏi phản biện ngắn gọn](docs/CAU_HOI_PHAN_BIEN_NGAN_GON.md)
 - [Câu hỏi phản biện](docs/CAU_HOI_PHAN_BIEN.md)
 
 ## License
