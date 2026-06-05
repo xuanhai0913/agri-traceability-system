@@ -22,7 +22,7 @@ Muc tieu: dung nhu checklist ra soat truoc khi demo, deploy, nop bao cao hoac tr
 - [x] Da them `warehouse_stock_movements` de ghi xuat kho/giu hang/da van chuyen off-chain, khong lam sai scope blockchain.
 - [x] Da them tra nhanh QR trong Warehouse Inventory: quet camera neu Chrome ho tro `BarcodeDetector`, fallback dan QR URL/BTC code.
 - [x] Da them mini audit log trong `/producer/profile` de thay lich su gan `producer_id` cho user.
-- [ ] Can test production lai sau deploy moi: inventory filter, movement submit, QR scan/fallback, producer profile audit log.
+- [x] Da test production sau deploy moi: inventory filter hien kho, QR lookup fallback, movement modal mo dung, movement API validate 400, producer profile audit log hien dung.
 - [ ] Checklist chua hoan thien 100%: con can verify source contract tren explorer/Sourcify neu muon diem demo cao hon va tiep tuc test mobile scan cuoi.
 
 ## 1. Nguyen Tac Kien Truc Can Giu
