@@ -6,7 +6,7 @@ import {
   MapPin, Lock, Loader2, Wallet,
   Save, Trash2, UserCheck,
 } from "@icons";
-import { createBatch, getProducers, uploadImage } from "../services/api";
+import { createBatch, getProducer, getProducers, uploadImage } from "../services/api";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../components/auth/useAuth";
 import AdminRequired from "../components/auth/AdminRequired";
@@ -18,6 +18,7 @@ export default function CreateBatchPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const isProducerUser = user?.role === "PRODUCER";
 
   const [form, setForm] = useState({
     name: "",
@@ -42,19 +43,27 @@ export default function CreateBatchPage() {
 
     try {
       const parsed = JSON.parse(savedDraft);
+      const draftProducerId =
+        user?.role === "PRODUCER" && user?.producerId
+          ? String(user.producerId)
+          : parsed.producerId || "";
+
       setForm({
         name: parsed.name || "",
         origin: parsed.origin || "",
         description: parsed.description || "",
-        producerId: parsed.producerId || "",
-        producerRole: parsed.producerRole || "primary_producer",
+        producerId: draftProducerId,
+        producerRole:
+          user?.role === "PRODUCER"
+            ? "primary_producer"
+            : parsed.producerRole || "primary_producer",
         imageUrl: parsed.imageUrl || "",
       });
       if (parsed.savedAt) setDraftMeta({ savedAt: parsed.savedAt, restored: true });
     } catch {
       localStorage.removeItem(DRAFT_KEY);
     }
-  }, []);
+  }, [user?.producerId, user?.role]);
 
   useEffect(() => {
     return () => {
@@ -64,8 +73,37 @@ export default function CreateBatchPage() {
 
   useEffect(() => {
     async function loadProducers() {
+      if (!isAuthenticated || !["ADMIN", "PRODUCER"].includes(user?.role)) {
+        setProducers([]);
+        setProducersLoading(false);
+        return;
+      }
+
       try {
         setProducersLoading(true);
+        if (user?.role === "PRODUCER") {
+          if (!user?.producerId) {
+            setProducers([]);
+            return;
+          }
+
+          setForm((current) => ({
+            ...current,
+            producerId: String(user.producerId),
+            producerRole: "primary_producer",
+          }));
+          const res = await getProducer(user.producerId);
+          const producer = res.data.data;
+          setProducers(producer ? [producer] : []);
+          setForm((current) => ({
+            ...current,
+            producerId: String(user.producerId),
+            producerRole: "primary_producer",
+            origin: current.origin || producer?.location || "",
+          }));
+          return;
+        }
+
         const res = await getProducers();
         setProducers(res.data.data || []);
       } catch {
@@ -76,7 +114,7 @@ export default function CreateBatchPage() {
     }
 
     loadProducers();
-  }, []);
+  }, [isAuthenticated, user?.producerId, user?.role]);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -113,6 +151,16 @@ export default function CreateBatchPage() {
 
     if (!form.name.trim()) {
       setError("Tên sản phẩm là bắt buộc.");
+      return;
+    }
+
+    if (isProducerUser && !user?.producerId) {
+      setError("Tài khoản PRODUCER chưa liên kết hồ sơ nhà sản xuất. Hãy nhờ ADMIN gắn producer_id trước.");
+      return;
+    }
+
+    if (isProducerUser && String(form.producerId) !== String(user.producerId)) {
+      setError("Producer chỉ được tạo lô hàng cho hồ sơ đã gắn với tài khoản.");
       return;
     }
 
@@ -157,8 +205,12 @@ export default function CreateBatchPage() {
         name: form.name.trim(),
         origin: form.origin.trim(),
         imageUrl,
-        producerId: form.producerId ? Number(form.producerId) : undefined,
-        producerRole: form.producerRole,
+        producerId: isProducerUser
+          ? Number(user.producerId)
+          : form.producerId
+          ? Number(form.producerId)
+          : undefined,
+        producerRole: isProducerUser ? "primary_producer" : form.producerRole,
         producerNotes: "Linked from AgriTrace Create Batch form",
         ...evidenceMeta,
       });
@@ -210,7 +262,7 @@ export default function CreateBatchPage() {
       name: "",
       origin: "",
       description: "",
-      producerId: "",
+      producerId: isProducerUser && user?.producerId ? String(user.producerId) : "",
       producerRole: "primary_producer",
       imageUrl: "",
     });
@@ -352,55 +404,85 @@ export default function CreateBatchPage() {
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
                     Nhà sản xuất / đối tác liên kết
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-3">
-                    <select
-                      name="producerId"
-                      value={form.producerId}
-                      onChange={handleProducerChange}
-                      className="input-ledger"
-                      disabled={producersLoading}
-                      required={producers.some(
-                        (producer) => producer.status === "verified"
-                      )}
-                    >
-                      <option value="">
-                        {producersLoading
-                          ? "Đang tải danh sách..."
-                          : "Chọn producer đã xác thực từ database"}
-                      </option>
-                      {producers.map((producer) => (
-                        <option
-                          key={producer.id}
-                          value={producer.id}
-                          disabled={producer.status === "audit_pending"}
-                        >
-                          {producer.name} — {producer.location} —{" "}
-                          {producer.status === "verified"
-                            ? "Đã xác thực"
-                            : "Chờ kiểm định"}
+                  {isProducerUser ? (
+                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <UserCheck size={20} className="mt-0.5 shrink-0 text-emerald-700" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-emerald-950">
+                            {producersLoading
+                              ? "Đang tải hồ sơ producer..."
+                              : selectedProducer?.name || "Chưa gắn hồ sơ producer"}
+                          </p>
+                          <p className="mt-1 text-xs leading-relaxed text-emerald-700">
+                            Role PRODUCER chỉ được tạo batch cho producer đã liên kết
+                            với tài khoản. Hệ thống sẽ tự gắn producer này vào lô hàng,
+                            không cho chọn NSX khác.
+                          </p>
+                          {selectedProducer?.location && (
+                            <p className="mt-2 text-xs font-bold text-emerald-800">
+                              {selectedProducer.location} • NSX chính
+                            </p>
+                          )}
+                          {!user?.producerId && (
+                            <p className="mt-2 text-xs font-bold text-amber-700">
+                              Tài khoản này chưa có producer_id. ADMIN cần cập nhật user trước.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-3">
+                      <select
+                        name="producerId"
+                        value={form.producerId}
+                        onChange={handleProducerChange}
+                        className="input-ledger"
+                        disabled={producersLoading}
+                        required={producers.some(
+                          (producer) => producer.status === "verified"
+                        )}
+                      >
+                        <option value="">
+                          {producersLoading
+                            ? "Đang tải danh sách..."
+                            : "Chọn producer đã xác thực từ database"}
                         </option>
-                      ))}
-                    </select>
-                    <select
-                      name="producerRole"
-                      value={form.producerRole}
-                      onChange={handleChange}
-                      className="input-ledger"
-                    >
-                      <option value="primary_producer">NSX chính</option>
-                      <option value="distributor">Nhà phân phối</option>
-                      <option value="processor">Đơn vị xử lý</option>
-                      <option value="inspector">Đơn vị kiểm định</option>
-                    </select>
-                  </div>
-                  {pendingProducerCount > 0 && (
+                        {producers.map((producer) => (
+                          <option
+                            key={producer.id}
+                            value={producer.id}
+                            disabled={producer.status === "audit_pending"}
+                          >
+                            {producer.name} — {producer.location} —{" "}
+                            {producer.status === "verified"
+                              ? "Đã xác thực"
+                              : "Chờ kiểm định"}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        name="producerRole"
+                        value={form.producerRole}
+                        onChange={handleChange}
+                        className="input-ledger"
+                      >
+                        <option value="primary_producer">NSX chính</option>
+                        <option value="distributor">Nhà phân phối</option>
+                        <option value="processor">Đơn vị xử lý</option>
+                        <option value="inspector">Đơn vị kiểm định</option>
+                      </select>
+                    </div>
+                  )}
+                  {!isProducerUser && pendingProducerCount > 0 && (
                     <p className="text-xs text-amber-700 mt-2 px-1">
                       {pendingProducerCount} producer đang chờ kiểm định đã bị khóa
                       trong form tạo lô. Vào Producer Detail để xác thực trước khi
                       ghi dữ liệu on-chain.
                     </p>
                   )}
-                  {selectedProducer && (
+                  {!isProducerUser && selectedProducer && (
                     <div
                       className={`mt-3 flex items-start gap-3 rounded-xl border p-4 ${
                         selectedProducer.status === "verified"
