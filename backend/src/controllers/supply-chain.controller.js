@@ -7,11 +7,16 @@ const {
   recordBatchTransaction,
 } = require("../services/batch-metadata.service");
 const {
+  createWarehouse,
   createQualityInspection,
   createWarehouseReceipt,
   getQualityInspection,
+  getWarehouseById,
   getWarehouseReceipt,
+  listWarehouseInventory,
+  listWarehouseReceipts,
   listWarehouses,
+  updateWarehouse,
 } = require("../services/supply-chain.service");
 const { invalidateTraceabilityReadCaches } = require("../services/cache.service");
 
@@ -19,6 +24,9 @@ const STAGES = {
   Harvesting: 3,
   QualityInspection: 4,
   WarehouseReceived: 5,
+  Packaging: 6,
+  Shipping: 7,
+  Completed: 8,
 };
 
 function assertV2Contract() {
@@ -76,6 +84,33 @@ async function getWarehouses(_req, res, next) {
   }
 }
 
+async function getWarehouse(req, res, next) {
+  try {
+    const warehouse = await getWarehouseById(req.params.id);
+    res.json({ success: true, data: warehouse });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function postWarehouse(req, res, next) {
+  try {
+    const warehouse = await createWarehouse(req.body);
+    res.status(201).json({ success: true, data: warehouse });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function patchWarehouse(req, res, next) {
+  try {
+    const warehouse = await updateWarehouse(req.params.id, req.body);
+    res.json({ success: true, data: warehouse });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function getInspectionQueue(_req, res, next) {
   try {
     const batches = await loadRecentBatches();
@@ -85,6 +120,30 @@ async function getInspectionQueue(_req, res, next) {
       if (!batch.isActive || batch.currentStageIndex !== STAGES.Harvesting) continue;
       const inspection = await getQualityInspection(batch.id);
       if (!inspection) queue.push(batch);
+    }
+
+    res.json({ success: true, data: queue });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getDistributorQueue(_req, res, next) {
+  try {
+    const batches = await loadRecentBatches();
+    const queue = [];
+
+    for (const batch of batches) {
+      if (!batch.isActive) continue;
+      if (
+        batch.currentStageIndex < STAGES.WarehouseReceived ||
+        batch.currentStageIndex >= STAGES.Completed
+      ) {
+        continue;
+      }
+
+      const receipt = await getWarehouseReceipt(batch.id);
+      queue.push({ ...batch, warehouseReceipt: receipt });
     }
 
     res.json({ success: true, data: queue });
@@ -107,6 +166,28 @@ async function getReceivingQueue(_req, res, next) {
     }
 
     res.json({ success: true, data: queue });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getWarehouseReceipts(req, res, next) {
+  try {
+    const receipts = await listWarehouseReceipts({
+      warehouseId: req.query.warehouseId || null,
+    });
+    res.json({ success: true, data: receipts });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getWarehouseInventory(req, res, next) {
+  try {
+    const inventory = await listWarehouseInventory({
+      warehouseId: req.params.id || req.query.warehouseId || null,
+    });
+    res.json({ success: true, data: inventory });
   } catch (error) {
     next(error);
   }
@@ -364,9 +445,15 @@ async function postWarehouseReceipt(req, res, next) {
 module.exports = {
   getBatchQualityInspections,
   getBatchWarehouseReceipts,
+  getDistributorQueue,
   getInspectionQueue,
   getReceivingQueue,
+  getWarehouse,
+  getWarehouseInventory,
+  getWarehouseReceipts,
   getWarehouses,
+  patchWarehouse,
+  postWarehouse,
   postQualityInspection,
   postWarehouseReceipt,
 };

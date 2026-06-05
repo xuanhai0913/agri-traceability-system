@@ -246,10 +246,20 @@ npm run mobile:start
 | `GET` | `/api/batches/:id` | Chi tiết batch. |
 | `GET` | `/api/batches/:id/history` | Lịch sử stage on-chain của batch. |
 | `POST` | `/api/batches/:id/stages` | Thêm stage mới cho batch. |
+| `GET` | `/api/users` | Admin xem danh sách tài khoản vận hành. |
+| `POST` | `/api/users` | Admin tạo tài khoản role mới. |
+| `PATCH` | `/api/users/:id` | Admin cập nhật tài khoản/role/liên kết producer/kho. |
+| `PATCH` | `/api/users/:id/disable` | Admin vô hiệu hóa tài khoản. |
 | `GET` | `/api/inspections/queue` | Hàng chờ kiểm định cho `QUALITY_INSPECTOR`. |
 | `POST` | `/api/batches/:id/quality-inspections` | Ghi stage `QualityInspection` và metadata kiểm định. |
+| `GET` | `/api/warehouses` | Danh sách kho nhận hàng. |
+| `POST` | `/api/warehouses` | Admin tạo kho nhận hàng. |
+| `PATCH` | `/api/warehouses/:id` | Admin cập nhật kho nhận hàng. |
 | `GET` | `/api/warehouse/receiving-queue` | Hàng đã PASS chờ nhập kho cho `WAREHOUSE_STAFF`. |
+| `GET` | `/api/warehouse/receipts` | Lịch sử biên nhận nhập kho. |
+| `GET` | `/api/warehouse/inventory` | Inventory từ các batch đã nhập kho. |
 | `POST` | `/api/batches/:id/warehouse-receipts` | Ghi stage `WarehouseReceived` và metadata nhập kho. |
+| `GET` | `/api/distributor/queue` | Hàng chờ đóng gói/vận chuyển cho `DISTRIBUTOR`. |
 | `POST` | `/api/upload` | Upload file evidence lên Pinata/IPFS, trả SHA-256 hash và CID. |
 | `GET` | `/api/producers` | Danh sách producer. |
 | `POST` | `/api/producers` | Tạo producer profile. |
@@ -257,7 +267,6 @@ npm run mobile:start
 | `PATCH` | `/api/producers/:id/status` | Cập nhật trạng thái verified/audit pending. |
 | `GET` | `/api/dashboard/summary` | Dashboard summary từ blockchain + database. |
 | `GET` | `/api/compliance/evidence` | Compliance evidence, contract/network links và batch summary. |
-| `POST` | `/api/upload` | Tính SHA-256 và upload ảnh/evidence lên Pinata/IPFS. |
 | `GET` | `/api/health` | Health check API, database và cấu hình backend. |
 
 ## Biến môi trường

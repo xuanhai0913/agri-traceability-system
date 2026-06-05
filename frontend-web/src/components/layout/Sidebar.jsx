@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Plus,
   LogIn,
+  Truck,
   X,
   ClipboardCheck,
   PackageCheck,
@@ -22,6 +23,9 @@ const NAV_ICONS = {
   "/compliance": ShieldCheck,
   "/inspector/queue": ClipboardCheck,
   "/warehouse/receiving": PackageCheck,
+  "/distributor/queue": Truck,
+  "/admin/users": Users,
+  "/admin/warehouses": Warehouse,
 };
 
 export default function Sidebar({ open, onClose }) {
@@ -37,11 +41,20 @@ export default function Sidebar({ open, onClose }) {
     { to: "/compliance", label: t("nav.compliance") },
   ];
   const roleNavItems = [
+    ...(user?.role === "ADMIN"
+      ? [
+          { to: "/admin/users", label: "Tài khoản" },
+          { to: "/admin/warehouses", label: "Kho" },
+        ]
+      : []),
     ...(user?.role === "ADMIN" || user?.role === "QUALITY_INSPECTOR"
       ? [{ to: "/inspector/queue", label: "Kiểm định" }]
       : []),
     ...(user?.role === "ADMIN" || user?.role === "WAREHOUSE_STAFF"
       ? [{ to: "/warehouse/receiving", label: "Nhập kho" }]
+      : []),
+    ...(user?.role === "ADMIN" || user?.role === "DISTRIBUTOR"
+      ? [{ to: "/distributor/queue", label: "Phân phối" }]
       : []),
   ];
   const navItems = [...baseNavItems, ...roleNavItems];
@@ -54,7 +67,7 @@ export default function Sidebar({ open, onClose }) {
       return { to: "/warehouse/receiving", label: "Mở nhập kho", icon: PackageCheck };
     }
     if (user?.role === "DISTRIBUTOR") {
-      return { to: "/batches", label: "Cập nhật vận chuyển", icon: GitBranch };
+      return { to: "/distributor/queue", label: "Mở phân phối", icon: Truck };
     }
     return { to: "/batches/new", label: t("nav.newBatch"), icon: Plus };
   })();

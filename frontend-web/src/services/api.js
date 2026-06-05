@@ -205,8 +205,32 @@ export function getUsers() {
   return api.get("/users");
 }
 
+export function createUser(payload) {
+  return api.post("/users", payload);
+}
+
+export function updateUser(userId, payload) {
+  return api.patch(`/users/${userId}`, payload);
+}
+
+export function disableUser(userId) {
+  return api.patch(`/users/${userId}/disable`);
+}
+
+export function updateUserPassword(userId, password) {
+  return api.patch(`/users/${userId}/password`, { password });
+}
+
 export function getWarehouses() {
   return api.get("/warehouses");
+}
+
+export function createWarehouse(payload) {
+  return api.post("/warehouses", payload);
+}
+
+export function updateWarehouse(warehouseId, payload) {
+  return api.patch(`/warehouses/${warehouseId}`, payload);
 }
 
 export function getInspectionQueue() {
@@ -225,12 +249,24 @@ export function getReceivingQueue() {
   return api.get("/warehouse/receiving-queue");
 }
 
+export function getWarehouseReceipts(params = {}) {
+  return api.get("/warehouse/receipts", { params });
+}
+
+export function getWarehouseInventory(params = {}) {
+  return api.get("/warehouse/inventory", { params });
+}
+
 export function createWarehouseReceipt(batchId, payload) {
   return api.post(`/batches/${batchId}/warehouse-receipts`, payload);
 }
 
 export function getBatchWarehouseReceipts(batchId) {
   return api.get(`/batches/${batchId}/warehouse-receipts`);
+}
+
+export function getDistributorQueue() {
+  return api.get("/distributor/queue");
 }
 
 // ── Compliance evidence endpoint ─────────────────────

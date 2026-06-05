@@ -1,4 +1,12 @@
-const { listUsers, loginUser } = require("../services/auth.service");
+const {
+  createUser,
+  disableUser,
+  getUserById,
+  listUsers,
+  loginUser,
+  updateUser,
+  updateUserPassword,
+} = require("../services/auth.service");
 
 async function postLogin(req, res, next) {
   try {
@@ -42,8 +50,77 @@ async function getUsers(_req, res, next) {
   }
 }
 
+async function getUser(req, res, next) {
+  try {
+    const user = await getUserById(req.params.id);
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function postUser(req, res, next) {
+  try {
+    const user = await createUser(req.body);
+    res.status(201).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function patchUser(req, res, next) {
+  try {
+    const user = await updateUser(req.params.id, req.body);
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    if (error.code === "23505") {
+      error.message = "Email đã tồn tại";
+      error.status = 409;
+    }
+    next(error);
+  }
+}
+
+async function patchUserDisable(req, res, next) {
+  try {
+    const user = await disableUser(req.params.id);
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function patchUserPassword(req, res, next) {
+  try {
+    const user = await updateUserPassword(req.params.id, req.body.password);
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getMe,
+  getUser,
   getUsers,
+  patchUser,
+  patchUserDisable,
+  patchUserPassword,
   postLogin,
+  postUser,
 };

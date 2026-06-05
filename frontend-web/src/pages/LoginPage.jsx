@@ -14,13 +14,13 @@ export default function LoginPage() {
   function getRoleHome(role) {
     switch (role) {
       case "PRODUCER":
-        return "/batches/new";
+        return "/producer/batches/new";
       case "QUALITY_INSPECTOR":
         return "/inspector/queue";
       case "WAREHOUSE_STAFF":
         return "/warehouse/receiving";
       case "DISTRIBUTOR":
-        return "/batches";
+        return "/distributor/queue";
       default:
         return "/";
     }

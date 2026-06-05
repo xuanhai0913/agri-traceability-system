@@ -9,6 +9,7 @@ const {
 
 const TOKEN_EXPIRES_IN = "8h";
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 10);
+const DEFAULT_DEMO_WAREHOUSE_ID = "11111111-1111-4111-8111-111111111111";
 const ROLES = new Set([
   "ADMIN",
   "PRODUCER",
@@ -36,6 +37,7 @@ const DEMO_USERS = [
     password: "Warehouse@123",
     name: "Warehouse Staff Demo",
     role: "WAREHOUSE_STAFF",
+    warehouseId: DEFAULT_DEMO_WAREHOUSE_ID,
   },
   {
     email: "distributor@agritrace.local",
@@ -254,6 +256,182 @@ async function listUsers() {
   return res.rows.map(publicUser);
 }
 
+async function getUserById(id) {
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required for user management");
+    err.status = 503;
+    throw err;
+  }
+
+  const res = await query(
+    `
+    SELECT id, email, name, role, status, producer_id, warehouse_id, created_at, updated_at
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [id]
+  );
+
+  if (!res.rows[0]) {
+    const err = new Error("Không tìm thấy tài khoản");
+    err.status = 404;
+    throw err;
+  }
+
+  return publicUser(res.rows[0]);
+}
+
+async function createUser({
+  email,
+  password,
+  name,
+  role,
+  status = "ACTIVE",
+  producerId = null,
+  warehouseId = null,
+}) {
+  if (!email || !password || !name) {
+    const err = new Error("Email, tên và mật khẩu là bắt buộc");
+    err.status = 400;
+    throw err;
+  }
+
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    const err = new Error("Email đã tồn tại");
+    err.status = 409;
+    throw err;
+  }
+
+  const normalizedRole = normalizeRole(role);
+
+  return upsertUser({
+    email,
+    password,
+    name,
+    role: normalizedRole,
+    status,
+    producerId: normalizedRole === "PRODUCER" ? producerId : null,
+    warehouseId: normalizedRole === "WAREHOUSE_STAFF" ? warehouseId : null,
+    updatePassword: true,
+  });
+}
+
+async function updateUser(id, payload) {
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required for user management");
+    err.status = 503;
+    throw err;
+  }
+
+  const current = await getUserById(id);
+  const nextEmail = String(payload.email ?? current.email).trim().toLowerCase();
+  const nextName = String(payload.name ?? current.name).trim();
+  const nextRole = normalizeRole(payload.role ?? current.role);
+  const nextStatus = payload.status ?? current.status;
+  const nextProducerId =
+    Object.prototype.hasOwnProperty.call(payload, "producerId")
+      ? payload.producerId
+      : current.producerId;
+  const nextWarehouseId =
+    Object.prototype.hasOwnProperty.call(payload, "warehouseId")
+      ? payload.warehouseId
+      : current.warehouseId;
+
+  if (!nextEmail || !nextName) {
+    const err = new Error("Email và tên là bắt buộc");
+    err.status = 400;
+    throw err;
+  }
+
+  const res = await query(
+    `
+    UPDATE users
+    SET
+      email = $2,
+      name = $3,
+      role = $4,
+      status = $5,
+      producer_id = $6,
+      warehouse_id = $7,
+      updated_at = now()
+    WHERE id = $1
+    RETURNING id, email, name, role, status, producer_id, warehouse_id, created_at, updated_at
+    `,
+    [
+      id,
+      nextEmail,
+      nextName,
+      nextRole,
+      nextStatus === "DISABLED" ? "DISABLED" : "ACTIVE",
+      nextRole === "PRODUCER" && nextProducerId ? Number(nextProducerId) : null,
+      nextRole === "WAREHOUSE_STAFF" && nextWarehouseId ? nextWarehouseId : null,
+    ]
+  );
+
+  return publicUser(res.rows[0]);
+}
+
+async function disableUser(id) {
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required for user management");
+    err.status = 503;
+    throw err;
+  }
+
+  const res = await query(
+    `
+    UPDATE users
+    SET status = 'DISABLED', updated_at = now()
+    WHERE id = $1
+    RETURNING id, email, name, role, status, producer_id, warehouse_id, created_at, updated_at
+    `,
+    [id]
+  );
+
+  if (!res.rows[0]) {
+    const err = new Error("Không tìm thấy tài khoản");
+    err.status = 404;
+    throw err;
+  }
+
+  return publicUser(res.rows[0]);
+}
+
+async function updateUserPassword(id, password) {
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required for user management");
+    err.status = 503;
+    throw err;
+  }
+
+  if (!password || String(password).length < 8) {
+    const err = new Error("Mật khẩu mới cần tối thiểu 8 ký tự");
+    err.status = 400;
+    throw err;
+  }
+
+  const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const res = await query(
+    `
+    UPDATE users
+    SET password_hash = $2, updated_at = now()
+    WHERE id = $1
+    RETURNING id, email, name, role, status, producer_id, warehouse_id, created_at, updated_at
+    `,
+    [id, hash]
+  );
+
+  if (!res.rows[0]) {
+    const err = new Error("Không tìm thấy tài khoản");
+    err.status = 404;
+    throw err;
+  }
+
+  return publicUser(res.rows[0]);
+}
+
 async function loginUser({ email, password }) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
 
@@ -348,6 +526,9 @@ function verifyToken(token) {
 }
 
 module.exports = {
+  createUser,
+  disableUser,
+  getUserById,
   initAuthStore,
   listUsers,
   loginAdmin,
@@ -355,6 +536,8 @@ module.exports = {
   normalizeRole,
   publicUser,
   ROLES,
+  updateUser,
+  updateUserPassword,
   upsertUser,
   verifyAdminToken,
   verifyToken,

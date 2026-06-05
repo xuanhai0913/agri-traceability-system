@@ -172,6 +172,143 @@ async function listWarehouses() {
   }
 }
 
+async function getWarehouseById(id) {
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required for warehouse management");
+    err.status = 503;
+    throw err;
+  }
+
+  const res = await query(
+    `
+    SELECT *
+    FROM warehouses
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [id]
+  );
+
+  if (!res.rows[0]) {
+    const err = new Error("Không tìm thấy kho");
+    err.status = 404;
+    throw err;
+  }
+
+  return toWarehouse(res.rows[0]);
+}
+
+async function createWarehouse({
+  name,
+  location = "",
+  managerUserId = null,
+  status = "ACTIVE",
+}) {
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required for warehouse management");
+    err.status = 503;
+    throw err;
+  }
+
+  if (!String(name || "").trim()) {
+    const err = new Error("Tên kho là bắt buộc");
+    err.status = 400;
+    throw err;
+  }
+
+  const res = await query(
+    `
+    INSERT INTO warehouses (id, name, location, manager_user_id, status)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *
+    `,
+    [
+      crypto.randomUUID(),
+      String(name).trim(),
+      String(location || "").trim(),
+      managerUserId || null,
+      status === "DISABLED" ? "DISABLED" : "ACTIVE",
+    ]
+  );
+
+  return toWarehouse(res.rows[0]);
+}
+
+async function updateWarehouse(
+  id,
+  { name, location = "", managerUserId = null, status = "ACTIVE" }
+) {
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required for warehouse management");
+    err.status = 503;
+    throw err;
+  }
+
+  if (!String(name || "").trim()) {
+    const err = new Error("Tên kho là bắt buộc");
+    err.status = 400;
+    throw err;
+  }
+
+  const res = await query(
+    `
+    UPDATE warehouses
+    SET
+      name = $2,
+      location = $3,
+      manager_user_id = $4,
+      status = $5,
+      updated_at = now()
+    WHERE id = $1
+    RETURNING *
+    `,
+    [
+      id,
+      String(name).trim(),
+      String(location || "").trim(),
+      managerUserId || null,
+      status === "DISABLED" ? "DISABLED" : "ACTIVE",
+    ]
+  );
+
+  if (!res.rows[0]) {
+    const err = new Error("Không tìm thấy kho");
+    err.status = 404;
+    throw err;
+  }
+
+  return toWarehouse(res.rows[0]);
+}
+
+async function listWarehouseReceipts({ warehouseId = null } = {}) {
+  if (!hasDatabase()) return [];
+
+  const params = [];
+  const where = warehouseId ? "WHERE warehouse_id = $1" : "";
+  if (warehouseId) params.push(warehouseId);
+
+  const res = await query(
+    `
+    SELECT *
+    FROM warehouse_receipts
+    ${where}
+    ORDER BY received_at DESC, created_at DESC
+    LIMIT 100
+    `,
+    params
+  );
+
+  return res.rows.map(toWarehouseReceipt);
+}
+
+async function listWarehouseInventory({ warehouseId = null } = {}) {
+  const receipts = await listWarehouseReceipts({ warehouseId });
+  return receipts.map((receipt) => ({
+    ...receipt,
+    status: "WAREHOUSE_RECEIVED",
+  }));
+}
+
 async function getQualityInspection(batchId) {
   if (!hasDatabase()) return null;
 
@@ -318,11 +455,16 @@ async function createWarehouseReceipt({
 module.exports = {
   DEFAULT_WAREHOUSE_ID,
   createQualityInspection,
+  createWarehouse,
   createWarehouseReceipt,
   getQualityInspection,
+  getWarehouseById,
   getWarehouseReceipt,
   initSupplyChainStore,
+  listWarehouseInventory,
+  listWarehouseReceipts,
   listWarehouses,
   toInspection,
   toWarehouseReceipt,
+  updateWarehouse,
 };

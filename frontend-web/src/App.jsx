@@ -18,6 +18,9 @@ const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const InspectionQueuePage = lazy(() => import("./pages/InspectionQueuePage"));
 const WarehouseReceivingPage = lazy(() => import("./pages/WarehouseReceivingPage"));
+const DistributorQueuePage = lazy(() => import("./pages/DistributorQueuePage"));
+const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
+const AdminWarehousesPage = lazy(() => import("./pages/AdminWarehousesPage"));
 
 /** Route-level loading fallback */
 function RouteFallback() {
@@ -59,7 +62,39 @@ export default function App() {
               }
             />
             <Route
+              path="/admin/dashboard"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <DashboardPage />
+                </Suspense>
+              }
+            />
+            <Route
               path="/batches"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <TraceabilityLedgerPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/admin/batches"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <TraceabilityLedgerPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/admin/ledger"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <TraceabilityLedgerPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/producer/batches"
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <TraceabilityLedgerPage />
@@ -75,7 +110,39 @@ export default function App() {
               }
             />
             <Route
+              path="/producer/batches/new"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <CreateBatchPage />
+                </Suspense>
+              }
+            />
+            <Route
               path="/batches/:id"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <BatchDetailPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/admin/batches/:id"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <BatchDetailPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/producer/batches/:id"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <BatchDetailPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/distributor/batches/:id"
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <BatchDetailPage />
@@ -91,7 +158,31 @@ export default function App() {
               }
             />
             <Route
+              path="/warehouse/inventory"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <InventoryPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/warehouse/receipts"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <InventoryPage />
+                </Suspense>
+              }
+            />
+            <Route
               path="/inspector/queue"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <InspectionQueuePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/inspector/dashboard"
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <InspectionQueuePage />
@@ -107,7 +198,39 @@ export default function App() {
               }
             />
             <Route
+              path="/warehouse/dashboard"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <WarehouseReceivingPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/distributor/queue"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <DistributorQueuePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/distributor/dashboard"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <DistributorQueuePage />
+                </Suspense>
+              }
+            />
+            <Route
               path="/producers"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <ProducerNetworkPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/admin/producers"
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <ProducerNetworkPage />
@@ -123,7 +246,31 @@ export default function App() {
               }
             />
             <Route
+              path="/admin/users"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AdminUsersPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/admin/warehouses"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <AdminWarehousesPage />
+                </Suspense>
+              }
+            />
+            <Route
               path="/compliance"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <CompliancePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/admin/compliance"
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <CompliancePage />
