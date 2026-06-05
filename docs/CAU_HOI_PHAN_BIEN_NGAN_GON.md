@@ -62,7 +62,7 @@ Vì đây là product demo/testnet, không phải chứng nhận pháp lý thậ
 
 ### 14. Ảnh minh chứng có lưu trên blockchain không?
 
-Không lưu byte ảnh trên blockchain. File upload được pin lên Pinata/IPFS, backend tính SHA-256 hash và trả CID. Contract production lưu IPFS URL trong `imageUrl`; database lưu thêm `evidenceHash/ipfsCid`. Contract v2 trong repo đã chuẩn bị field riêng cho hash/CID.
+Không lưu byte ảnh trên blockchain. File upload được pin lên Pinata/IPFS, backend tính SHA-256 hash và trả CID. Contract v2 production lưu IPFS URL, `evidenceHash` và `ipfsCid`; database lưu thêm metadata để UI truy vấn nhanh.
 
 ### 15. Nếu URL ảnh bị đổi nội dung thì sao?
 
@@ -104,7 +104,7 @@ Vì đối tượng nông nghiệp/chuỗi cung ứng không nhất thiết quen
 
 ### 24. Contract đã verify source chưa?
 
-Có link Sourcify để đối chiếu source contract. Khi demo nên mở Compliance hoặc README để chỉ contract address và Sourcify link.
+Contract address có trên Polygonscan và source nằm trong repo. Nếu chưa verify source đầy đủ trên Polygonscan/Sourcify, nói rõ đây là hướng hoàn thiện trước phản biện để tăng độ tin cậy.
 
 ## 5. Câu hỏi về mạng blockchain và chi phí
 
@@ -128,7 +128,7 @@ Có thể nếu mạng đó tương thích EVM. Contract viết bằng Solidity 
 
 ### 29. Làm sao chứng minh transaction thật?
 
-Mở Batch Detail để xem tx hash/block number, sau đó mở Polygonscan hoặc dùng JSON-RPC `eth_getTransactionReceipt`. File `ONCHAIN_OFFCHAIN.md` có ví dụ receipt mẫu cho batch `BTC-0009`.
+Mở Batch Detail để xem tx hash/block number, sau đó mở Polygonscan hoặc dùng JSON-RPC `eth_getTransactionReceipt`. File `ONCHAIN_OFFCHAIN.md` có ví dụ receipt mẫu cho batch `BTC-0001`.
 
 ### 30. Nếu Polygonscan bị Cloudflare hoặc không mở được thì sao?
 
@@ -140,7 +140,7 @@ Dashboard lấy dữ liệu từ backend summary, smart contract và database. N
 
 ### 32. Vì sao có batch tên hơi test?
 
-Một số batch được tạo trong quá trình kiểm thử production. Khi demo chính thức nên chọn batch có tên nghiêm túc như Robusta/Arabica/Trà Bảo Lộc, hoặc tạo batch demo mới có dữ liệu sạch.
+Một số batch được tạo trong quá trình kiểm thử production. Khi demo chính thức nên chọn batch có đủ evidence để chứng minh kỹ thuật, hoặc tạo trước batch mới có tên nghiêm túc và dữ liệu sạch.
 
 ### 33. Hệ thống đã hoàn thiện production chưa?
 
@@ -152,7 +152,7 @@ Hệ thống đã deploy được và có đầy đủ demo flow: dashboard, led
 
 ### 35. Giới hạn lớn nhất hiện tại là gì?
 
-Repo đã hỗ trợ contract schema v2, Quality Inspection/Warehouse, hash/CID và multi-role JWT. Giới hạn còn lại là cần redeploy contract mới trên testnet/production demo, bổ sung multi-role signing bằng ví riêng, audit trail database và hạ tầng production tốt hơn.
+Repo và production demo đã hỗ trợ contract schema v2, Quality Inspection/Warehouse, hash/CID và multi-role JWT. Giới hạn còn lại là verify source contract, neo thêm producer metadata hash, bổ sung multi-role signing bằng ví riêng, audit trail database và hạ tầng production tốt hơn.
 
 ## 7. Câu kết luận nên nói
 

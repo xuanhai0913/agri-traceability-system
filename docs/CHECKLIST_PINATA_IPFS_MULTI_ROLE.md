@@ -23,6 +23,9 @@ Muc tieu: dung nhu checklist ra soat truoc khi demo, deploy, nop bao cao hoac tr
 - [x] Da them tra nhanh QR trong Warehouse Inventory: quet camera neu Chrome ho tro `BarcodeDetector`, fallback dan QR URL/BTC code.
 - [x] Da them mini audit log trong `/producer/profile` de thay lich su gan `producer_id` cho user.
 - [x] Da test production sau deploy moi: inventory filter hien kho, QR lookup fallback, movement modal mo dung, movement API validate 400, producer profile audit log hien dung.
+- [x] Da don production producer mock: chi con `Nha San Xuat Hai Lam Dev` va `Nha Phan Phoi Hai Lam Dev` lien quan demo.
+- [x] Da chan production auto seed/fallback producer mock bang `SEED_DEMO_PRODUCERS=false` mac dinh.
+- [x] Da cap nhat wording UI tu "producer network" sang huong "doi tac chuoi cung ung" de tranh bi hieu la mang luoi NSX ao.
 - [ ] Checklist chua hoan thien 100%: con can verify source contract tren explorer/Sourcify neu muon diem demo cao hon va tiep tuc test mobile scan cuoi.
 
 ## 1. Nguyen Tac Kien Truc Can Giu
@@ -51,8 +54,8 @@ Muc tieu: dung nhu checklist ra soat truoc khi demo, deploy, nop bao cao hoac tr
 Lenh ra soat de dung truoc khi commit:
 
 ```bash
-grep -Rni "cloudinary\|Cloudinary\|CLOUDINARY" README.md docs backend frontend-web mobile-app smart-contracts
-grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
+rg -n "cloudinary|Cloudinary|CLOUDINARY" README.md docs backend/src frontend-web/src mobile-app/src smart-contracts/contracts smart-contracts/scripts smart-contracts/test
+rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_modules/**' -g '!smart-contracts/artifacts/**' .
 ```
 
 ## 3. Env Can Cau Hinh
@@ -66,6 +69,7 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 - [ ] `ADMIN_PASSWORD` duoc cau hinh va khong commit.
 - [ ] `ADMIN_NAME` duoc cau hinh neu can.
 - [ ] `SEED_DEMO_USERS=true` chi bat cho demo server khi can seed role demo.
+- [x] `SEED_DEMO_PRODUCERS=false` tren production hoac khong bat explicit, de khong tu seed lai producer mock cu.
 - [ ] `RPC_URL` tro toi Polygon Amoy RPC hoat dong.
 - [ ] `PRIVATE_KEY` la service wallet, chi nam tren backend.
 - [ ] `CONTRACT_ADDRESS` la contract dang deploy dung schema.
@@ -79,7 +83,7 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 - [ ] `IPFS_REQUIRED=false` cho demo on dinh neu Pinata tam loi.
 - [ ] `PINATA_JWT` chi dat o Render backend.
 - [ ] `IPFS_GATEWAY` chap nhan dang co hoac khong co `https://`, co hoac khong co `/ipfs/`.
-- [ ] Sau khi sua env tren Render, backend duoc redeploy.
+- [x] Sau khi sua env tren Render, backend duoc redeploy/test production read va write flow.
 
 ### Vercel Frontend
 
@@ -87,7 +91,7 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 - [ ] Khong co `PINATA_JWT` tren Vercel.
 - [ ] Khong co private key/service wallet tren Vercel.
 - [ ] `VITE_IPFS_GATEWAY` chi dung neu can public gateway optional.
-- [ ] Sau khi sua env tren Vercel, frontend duoc rebuild/redeploy.
+- [x] Sau khi sua env tren Vercel, frontend duoc rebuild/redeploy qua commit/push production.
 
 ## 4. Evidence Service Backend
 
@@ -768,7 +772,7 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 
 ### Diem cong
 
-- [ ] IPFS that bang Pinata.
+- [x] IPFS that bang Pinata.
 - [x] Web scan QR trong man hinh warehouse.
 - [ ] On-chain role nang cao.
 - [ ] Mobile role login.
@@ -784,5 +788,5 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 - [ ] Diem can chu y khi deploy production/testnet.
 - [ ] Test da chay va ket qua.
 - [ ] Phan chua lam duoc hoac can cau hinh them.
-- [ ] Ket qua grep Cloudinary.
-- [ ] Ket qua secret scan.
+- [x] Ket qua grep Cloudinary.
+- [x] Ket qua secret scan.

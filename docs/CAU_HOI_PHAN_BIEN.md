@@ -1,94 +1,150 @@
-# 🎯 Bộ Câu Hỏi Phản Biện Đồ Án (Defense Q&A)
+# Bộ Câu Hỏi Phản Biện AgriTrace
 
-Dưới đây là danh sách các câu hỏi "Tử huyệt" mà hội đồng giám khảo ngành CNTT thường xuyên sử dụng để thử thách sinh viên làm đề tài Blockchain. Kèm theo là những câu trả lời "Ghi điểm tuyệt đối" dựa trên chính kiến trúc của dự án.
+Tài liệu này dùng để luyện trả lời phản biện. Mỗi câu nên trả lời trong 30-60 giây, tập trung vào phạm vi thật của dự án: production demo/testnet, hybrid on-chain/off-chain, IPFS evidence và multi-role workflow.
 
----
+## 1. Vì sao dùng blockchain thay vì chỉ dùng database?
 
-### Câu 1: Vấn đề "Rác Đầu Vào" (Garbage In, Garbage Out / Oracle Problem)
-**🤨 Giám khảo hỏi:** *"Blockchain đảm bảo dữ liệu không bị sửa đổi. Nhưng làm sao em đảm bảo được cái lô Gạo ST25 nông dân nhập vào hệ thống lúc ban đầu là Gạo thật, chứ không phải Gạo giả tráo vô?"*
+Database dễ quản trị nhưng admin có thể sửa dữ liệu. Blockchain giúp tạo bằng chứng khó sửa cho lifecycle lô hàng: batch, stage, timestamp, evidence hash/CID và transaction proof. Database vẫn cần để lưu metadata và phục vụ UX.
 
-**💡 Trả lời:** 
-*"Dạ, đây chính là **Bài toán Oracle (Oracle Problem)** kinh điển trong Blockchain. Blockchain không phải là phép thuật để kiểm định sự thật ở thế giới vật lý, nó chỉ là một Sổ cái Đảm bảo Dữ liệu Bất biến. 
-Tuy nhiên, hệ thống của em giải quyết vấn đề rác đầu vào thông qua 2 yếu tố:
-1. **Tính định danh:** Nhờ hệ thống Role-based (Whitelist) mà em đã cấu hình, chỉ những Nông trại đã được Thẩm định (Chính quyền/Chứng nhận VietGAP) mới được cấp quyền ghi dữ liệu. Khi họ nhập sai, dữ liệu bất biến sẽ là bằng chứng vĩnh viễn chống lại họ trước pháp luật.
-2. **Hướng phát triển tương lai:** Ở mức độ đồ án phần mềm em tập trung vào chuỗi dữ liệu. Ở mức độ doanh nghiệp, hệ thống này sẽ được tích hợp với thiết bị cảm biến (IoT) tại nông trại để tự động đẩy thông tin quang học thay vì con người tự nhập."*
+Nói ngắn:
 
----
+> Database phục vụ vận hành; blockchain phục vụ bằng chứng bất biến.
 
-### Câu 2: Tại sao phải dùng Blockchain mà không dùng Database (MySQL/SQL Server)?
-**🤨 Giám khảo hỏi:** *"Anh/chị làm rườm rà quá, chỉ là ghi cái chữ 'Đã Thu Hoạch' xuống DB là xong, tại sao phải dùng Blockchain cho tốn chi phí và phức tạp?"*
+## 2. Dự án có phụ thuộc database quá không?
 
-**💡 Trả lời:** 
-*"Dạ, đúng là về tốc độ và chi phí, SQL Server/MySQL luôn chiến thắng. Tuy nhiên, Database truyền thống đòi hỏi ở người tiêu dùng một thứ: **'Niềm tin mù quáng' (Blind Trust)** vào người quản trị hệ thống. Người quản trị hoàn toàn có thể vào Database đổi ngày sản xuất từ tháng 4 thành tháng 5 để bán hàng hết hạn mà không ai biết.*
-*Với Blockchain, hệ thống của em mang lại **'Sự minh bạch vô tín nhiệm' (Trustless Transparency)**. Nhờ hợp đồng thông minh Smart Contract, một khi lô hàng xuất đi, nó không thể bị can thiệp bởi bất cứ ai kể cả người làm ra phần mềm. Đây là yếu tố sống còn để nông sản Việt Nam đạt chuẩn xuất khẩu vào các thị trường khó tính như Châu Âu (EVFTA)."*
+Không. Phần cần bất biến được ghi on-chain. Database lưu hồ sơ producer, contact, linked count, inventory, audit log và search. Đây là mô hình hybrid phù hợp sản phẩm thực tế vì không thể đưa toàn bộ dữ liệu hồ sơ và ảnh lớn lên blockchain.
 
----
+## 3. Dữ liệu nào thật sự nằm trên blockchain?
 
-### Câu 3: Tính Tiện Dụng và Vấn đề Trả Phí (UX & Gas Fee)
-**🤨 Giám khảo hỏi:** *"Ghi lên Blockchain mỗi lần tốn tiền phí (Gas fee). Bắt nông dân nạp tiền ảo vô để làm ruộng à?"*
+Contract lưu:
 
-**💡 Trả lời:** 
-*"Dạ không. Nhận thức được rào cản thao tác Web3 với nông dân, dự án của em đã chủ động thiết kế theo **Mô hình Trạm Trung Chuyển (Gasless Relayer)**. Nông dân chỉ cần dùng phần mềm như một Web2 bình thường. Backend của hệ thống sẽ tự động dùng Ví Tổng để chi trả khoản phí cực nhỏ (dưới 100 đồng/giao dịch) trên nền tảng Layer-2 Polygon. Nhờ vậy mô hình này cực kỳ triển vọng để ứng dụng thực tiễn ngay lập tức vào các Hợp tác xã."*
+- Batch ID, name, origin.
+- Owner/service wallet, current stage, createdAt, isActive.
+- Stage history: stage, description, IPFS URL, evidence hash, IPFS CID, timestamp, updatedBy.
+- Event log và transaction proof.
 
----
+Transaction hash/block number là bằng chứng cấp blockchain cho mỗi lần ghi.
 
-### Câu 4: Làm sao lưu hình ảnh dung lượng lớn lên Blockchain?
-**🤨 Giám khảo hỏi:** *"Mấy cái ảnh cây trồng của em chụp độ phân giải lớn thế kia chứa trong Blockchain thì sập mạng lưới à?"*
+## 4. PostgreSQL đang lưu gì?
 
-**💡 Trả lời:** 
-*"Hệ thống của em KHÔNG LƯU MÃ BYTE ẢNH lên Blockchain. Khắc phục nhược điểm chi phí cao, em đã sử dụng **Kiến trúc Lưu Trữ Kết Lai (Hybrid Storage)**. 
-- Ảnh nặng được backend tính SHA-256 rồi pin lên Pinata/IPFS.
-- Smart contract schema v2 lưu **IPFS URL**, `evidenceHash` và `ipfsCid` trong stage record; PostgreSQL lưu thêm metadata để UI truy vấn nhanh. Nhờ vậy hệ thống không lưu byte ảnh trên-chain nhưng vẫn có CID/hash để kiểm chứng file."*
+PostgreSQL lưu:
 
----
+- User, role, producer/warehouse link.
+- Producer profile và trạng thái xác thực.
+- Batch-producer link.
+- Quality inspection metadata.
+- Warehouse receipt và inventory movement.
+- Transaction metadata như tx hash, block number, actor role, IPFS CID/hash.
 
-### Câu 5: Lỗ Hổng Dán Mã QR Giả
-**🤨 Giám khảo hỏi:** *"Cô/Thầy lấy cái QR Code của quả dưa hấu sạch, cô in ra 100 bản rồi dán lên 100 quả dưa hấu bẩn mua ở chợ thì người dùng quét cũng ra hàng sạch. Hệ thống của em giải quyết sao?"*
+Dữ liệu này cần cập nhật/tìm kiếm nên không phù hợp ghi hết lên chain.
 
-**💡 Trả lời:** 
-*"Dạ, sao chép mã QR là một lỗ hổng thuộc về Thế giới Vật Lý. Đồ án của chúng em giải quyết bài toán cốt lõi là **'Vết Tích Lô Hàng' (Traceability Ledger)** phần mềm. Để chống việc dán nhãn giả, ở quy mô triển khai thực tế, doanh nghiệp sẽ kết hợp mã QR này vào Tem Vỡ, hoặc mã hóa thẳng vào Chip RFID/NFC hủy khi bóc. Blockchain làm rất tốt việc lưu dữ liệu chứ không chống được việc nhân bản tấm tem giấy."*
+## 5. Ảnh minh chứng có nằm trên blockchain không?
 
----
+Không lưu byte ảnh trên-chain. Backend tính SHA-256 của file gốc, upload lên Pinata/IPFS, nhận CID và URL. Contract v2 lưu IPFS URL, `evidenceHash`, `ipfsCid`; database lưu thêm metadata để UI load nhanh.
 
-### Câu 6: Tại sao lại chọn Polygon (Amoy) thay vì Ethereum Mainnet hay Binance Smart Chain (BSC)?
-**🤨 Giám khảo hỏi:** *"Anh/chị nói Blockchain của anh chị mở rộng tốt, vậy tại sao lại chọn Polygon Testnet/Mainnet mà không dùng mạng lưới số 1 là Ethereum hay BSC?"*
+Nếu ảnh bị sửa, hash/CID sẽ khác với bằng chứng đã ghi.
 
-**💡 Trả lời:** 
-*"Dạ, việc chọn mạng Polygon thay vì Ethereum Mainnet là một quyết định kiến trúc mang tính chiến lược về **Hiệu quả chi phí (Cost-Efficiency)**. Ethereum bảo mật nhất nhưng phí Gas rất cao (có thể lên tới $2 - $10 cho một lần ghi dữ liệu). Polygon là một mạng lưới Layer-2 (Lớp thứ 2) chạy song song với Ethereum, giúp gộp các giao dịch lại với tốc độ cực nhanh và phí Gas cực rẻ (chưa tới 1 cent). Nhờ vậy, hệ thống truy xuất nông sản có thể nhân rộng thực tế hàng triệu lô hàng mà không bị lỗ chi phí hạ tầng. So với BSC (thiên hướng giải trí/Defi), Polygon được các doanh nghiệp thực chuẩn quốc tế tin tưởng hơn trong việc xây dựng DApp."*
+## 6. Blockchain có đảm bảo nông sản ngoài đời là thật không?
 
----
+Không hoàn toàn. Blockchain chỉ đảm bảo dữ liệu đã ghi không bị sửa âm thầm. Việc nông sản ngoài đời có đúng hay không là bài toán oracle, cần quy trình kiểm định, trách nhiệm actor, chứng nhận, IoT hoặc audit bên ngoài.
 
-### Câu 7: Khi quét mã QR trên điện thoại, dữ liệu đó đã bị thao túng chưa?
-**🤨 Giám khảo hỏi:** *"Mã QR quét trên điện thoại chỉ là trỏ về trang Web của em, vậy em hoàn toàn có thể 'đánh tráo' hiển thị Web để lừa người dùng, thế thì phi tập trung chỗ nào?"*
+AgriTrace bổ sung Quality Inspection để giảm rủi ro dữ liệu rác đầu vào, nhưng không tự biến dữ liệu sai thành đúng.
 
-**💡 Trả lời:** 
-*"Dạ em xin xác nhận đây là thắc mắc hoàn toàn chính xác. Ở phiên bản Prototype hiện tại, mã QR trỏ về một giao diện Web (Gateway) để thuận tiện cho điện thoại không cài ví Metamask. Nhưng, mọi dữ liệu hiển thị trên Web đó đều được **Đọc trực tiếp (Fetch)** từ địa chỉ Smart Contract công khai trên block explorer (PolygonScan). 
-Trong môi trường thực tế, bất kỳ chuyên gia hay công ty kiểm toán nào cũng có thể kiểm tra trực tiếp mã ID Lô hàng trên mạng PolygonScan mà không cần thông qua giao diện Web của hệ thống em. Giao diện Web chỉ là 'Bộ đọc hiển thị', còn dữ liệu sinh mạng của lô hàng nằm vĩnh viễn trên máy chủ phân tán toàn cầu."*
+## 7. Nếu người dùng nhập sai dữ liệu thì sao?
 
----
+Blockchain sẽ giữ bản ghi đó như audit trail. Hệ thống xử lý bằng cách phân quyền, kiểm định, ghi actor role, và tạo stage sửa/ghi chú sau đó nếu cần. Không nên xóa hoặc sửa stage cũ.
 
-## 📚 Phần Hỗ Trợ: Các Khái Niệm Cơ Bản Phải Nhớ (Back-to-Basics)
+## 8. Có thể sửa hoặc xóa stage cũ không?
 
-Nếu Thầy/Cô hỏi các khái niệm nền tảng để xem sinh viên có dùng AI làm giùm hay không, hãy bám vào các từ khóa này để trả lời:
+Không theo thiết kế traceability. Stage mới được append vào timeline. Đây là lý do blockchain phù hợp: lịch sử không bị sửa âm thầm.
 
-1. **Smart Contract (Hợp đồng thông minh):** 
-   - Không phải là tờ giấy hay file PDF. Nó là một **Đoạn mã code (Code script)** được cài thẳng vào không gian mạng lưới Blockchain. Nó tự động chạy nếu thỏa điều kiện (Ví dụ: Đúng hàm, đúng quyền) và không ai (kể cả admin) có thể tắt hay sửa mã code đó một khi đã Deploy.
-   - Trọng tâm AgriTrace: *"Em dùng Smart Contract bằng ngôn ngữ Solidity để lập trình các quy định thêm lô hàng."*
+## 9. Có thể thêm stage lùi lại không?
 
-2. **Immutable Ledger (Sổ cái bất biến):**
-   - Giống như cuốn sổ kế toán của dòng họ, nhưng mỗi người trong dòng họ (Node) đều giữ 1 bản sao. Ai ghi sai thì các cuốn sổ khác không cho phép.
-   - Trọng tâm AgriTrace: *"Dữ liệu nông sản ghi vào là vĩnh viễn, không hỗ trợ hàm Update/Delete."*
+Không. Contract/backend enforce stage progression. Nếu batch đã `Completed`, không được thêm stage nữa.
 
-3. **EVM (Ethereum Virtual Machine):**
-   - Máy ảo Ethereum. Các mạng lưới nổi tiếng như Polygon, BSC, Avalanche đều là "EVM-Compatible" (tương thích EVM).
-   - Trọng tâm AgriTrace: *"Do code bằng Solidity tương thích EVM, mốt doanh nghiệp muốn đổi từ Polygon sang Ethereum thì chỉ mất 15 phút đổi cấu hình mạng mà không phải viết lại code."*
+## 10. Vì sao producer không nằm trực tiếp trên smart contract?
 
-4. **Gas Fee (Phí Gas):**
-   - Tiền cước phí phải trả cho mạng lưới (Miner/Validator) để họ tốn điện chạy máy chủ xác nhận giao dịch của mình. Lưu 1 ký tự text cũng tốn tiền.
-   - Trọng tâm AgriTrace: *"Em áp dụng mô hình Gasless Relayer, Backend tự cầm Ví Admin xì tiền túi ra trả tiền Gas để người nông dân không bị ngộp khi dùng Web."*
+Producer profile có contact, website, trạng thái kiểm định và audit testnet, các dữ liệu này có thể thay đổi. Vì vậy hiện lưu off-chain. Contract tập trung vào lifecycle batch. Hướng phát triển là lưu `producerProfileHash` hoặc `metadataHash` trong transaction để neo quan hệ producer-batch.
 
-5. **Off-chain vs On-chain (Trong và Ngoài chuỗi):**
-   - On-chain: Chữ viết, con số ID (nằm trong lõi Blockchain, bất biến cục bộ).
-   - Off-chain/IPFS: Server của chúng ta, giao diện UI, hình ảnh dung lượng lớn hoặc file minh chứng nằm trên Pinata/IPFS và được tham chiếu bằng CID/hash.
+## 11. QR code có tác dụng gì?
 
-*(💡 Lời khuyên: Đừng cố giải thích dài dòng về cấu trúc Mã băm (Hash/Cryptography) của Blockchain nếu thầy cô không gặng hỏi. Hãy tập trung đánh mạnh vào Giá trị Kinh doanh và Triết lý Ứng dụng B2B của nền tảng vào Nông nghiệp).*
+QR trỏ tới public URL `/batches/:id`. Người tiêu dùng quét QR để xem timeline, producer, kiểm định, nhập kho, evidence hash/CID và transaction proof. QR là cổng truy cập; bằng chứng nằm ở contract/API.
+
+## 12. Nếu ai đó copy QR dán lên hàng giả?
+
+Đó là rủi ro vật lý. Blockchain không tự chống copy tem giấy. Triển khai thật cần tem vỡ, serial theo đơn vị đóng gói, QR một lần hoặc NFC/RFID. Đồ án tập trung vào sổ cái truy xuất và bằng chứng dữ liệu.
+
+## 13. Frontend có thể hiển thị sai dữ liệu không?
+
+Về lý thuyết có thể nếu frontend/backend bị sửa. Vì vậy UI cung cấp contract address, tx hash, block number và explorer link để kiểm tra độc lập. Web là giao diện đọc; blockchain là lớp bằng chứng.
+
+## 14. Service wallet là gì?
+
+Service wallet là ví backend dùng để ký transaction thay user. Người dùng thao tác bằng email/password, còn backend relayer trả gas và ghi contract. Cách này phù hợp demo B2B vì producer/warehouse không cần cài ví crypto.
+
+## 15. Vì sao không bắt mỗi role dùng ví riêng?
+
+Dùng ví riêng tăng tính phân tán nhưng UX khó hơn. Dự án chọn relayer để phù hợp người dùng nghiệp vụ. Hướng phát triển là hỗ trợ nhiều ví actor hoặc account abstraction để giữ UX tốt nhưng dấu vết on-chain rõ hơn.
+
+## 16. Nếu service wallet bị lộ private key thì sao?
+
+Đây là rủi ro nghiêm trọng. Cần bảo vệ ENV, dùng vault/KMS, rotate key, revoke whitelist và audit log. Bản demo có whitelist contract và không commit private key, nhưng production thương mại cần quản trị khóa nghiêm ngặt hơn.
+
+## 17. Whitelist trong contract có ý nghĩa gì nếu backend đã có RBAC?
+
+RBAC chặn theo user/role ở backend. Whitelist chặn theo ví ở smart contract. Nếu ví không nằm trong whitelist, gọi RPC trực tiếp cũng không ghi được. Đây là lớp bảo vệ cấp contract.
+
+## 18. Vì sao chọn Polygon Amoy?
+
+Polygon Amoy là testnet EVM phù hợp demo: có explorer, tương thích Solidity/ethers.js và không phát sinh phí mainnet. Nó chứng minh transaction thật mà vẫn phù hợp phạm vi học thuật.
+
+## 19. Testnet có phải production thật không?
+
+Không. Đây là production demo chạy trên testnet: app thật, backend thật, database thật, contract và transaction testnet thật. Nếu thương mại hóa cần mainnet hoặc hạ tầng blockchain phù hợp, audit bảo mật và SLA.
+
+## 20. Làm sao chứng minh transaction thật?
+
+Mở Batch Detail để xem tx hash/block number, sau đó mở Polygonscan hoặc gọi JSON-RPC `eth_getTransactionReceipt`. Ví dụ batch 1:
+
+- Contract: `0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`.
+- Create tx: `0x4db047cc1921b372b6960cb0b31790f818053214a41cae6c043a2598bd210fcb`.
+- Block: `39596735`.
+
+## 21. Compliance page để làm gì?
+
+Compliance gom bằng chứng demo: API health, DB status, network, contract address, service wallet, batch summary, tx hash/block number và link explorer. Đây là trang dùng để phản biện nhanh thay vì phải mở từng API riêng.
+
+## 22. Có còn mock data không?
+
+Production đã dọn producer mock không liên quan. Hiện còn các hồ sơ testnet phục vụ demo như `Nhà Sản Xuất Hải Làm Dev` và `Nhà Phân Phối Hải Làm Dev`. Các chứng nhận/audit được ghi rõ là testnet record, không phải chứng nhận pháp lý thật.
+
+## 23. Vì sao có batch tên chưa thật sự đẹp?
+
+Một số batch được tạo trong quá trình test production. Khi bảo vệ nên chọn batch có đủ evidence để chứng minh kỹ thuật, hoặc tạo trước một batch mới có tên nghiêm túc. Không nên tạo batch tùy tiện trong lúc demo.
+
+## 24. Điểm mạnh nhất của đề tài là gì?
+
+Điểm mạnh là flow hoàn chỉnh:
+
+```text
+Producer tạo lô
+→ Inspector kiểm định
+→ Warehouse nhập kho
+→ Distributor vận chuyển
+→ Consumer quét QR
+→ mở transaction blockchain để kiểm chứng
+```
+
+Hệ thống có contract, transaction hash, QR, evidence hash/CID, RBAC và dashboard compliance.
+
+## 25. Giới hạn lớn nhất hiện tại là gì?
+
+- Đang chạy testnet, chưa phải mainnet thương mại.
+- Service wallet ký thay nhiều actor.
+- Producer metadata chưa được hash trực tiếp lên contract.
+- Source contract nên verify thêm trên explorer/Sourcify để demo thuyết phục hơn.
+- Cần audit trail/monitoring mạnh hơn nếu triển khai thật.
+
+## Câu Kết Luận
+
+> AgriTrace dùng blockchain đúng phần cần bất biến: lifecycle, stage history, evidence hash/CID và transaction proof. Database đảm nhiệm metadata và vận hành. Đây là mô hình hybrid thực tế cho truy xuất nguồn gốc nông sản, không tuyên bố hệ thống phân tán tuyệt đối.

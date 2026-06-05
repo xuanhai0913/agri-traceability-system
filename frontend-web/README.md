@@ -1,16 +1,46 @@
-# React + Vite
+# AgriTrace Frontend Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend web của AgriTrace là operations portal và public QR verification UI cho hệ thống truy xuất nguồn gốc nông sản bằng blockchain.
 
-Currently, two official plugins are available:
+## Vai Trò
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Khu vực | Mục đích |
+| --- | --- |
+| Public | Dashboard, Ledger, Batch Detail, QR verification, Producers, Compliance. |
+| Admin | Quản lý users, producers, warehouses, batches và compliance. |
+| Producer | Xem producer profile, tạo batch, cập nhật stage sản xuất. |
+| Quality Inspector | Xem queue kiểm định, nhập PASS/FAIL và evidence. |
+| Warehouse Staff | Nhập kho, xem receipt history, quản lý inventory movement. |
+| Distributor | Cập nhật Packaging, Shipping và Completed. |
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React + Vite.
+- Tailwind CSS.
+- Axios API client.
+- qrcode.react.
+- Role-based routing và protected actions.
 
-## Expanding the ESLint configuration
+## Environment
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+VITE_API_URL=http://localhost:3000/api
+```
+
+Production Vercel cần trỏ `VITE_API_URL` tới Render backend `/api`. Không đưa `PINATA_JWT`, private key, database URL hoặc admin password vào frontend env.
+
+## Development
+
+```bash
+npm install
+npm run frontend:dev
+```
+
+Frontend local mặc định chạy ở `http://localhost:5173`.
+
+## Production Notes
+
+- Evidence upload đi qua backend, frontend không gọi Pinata trực tiếp.
+- IPFS image URL/hash/CID được đọc từ API response.
+- Các action ghi dữ liệu phải có JWT và backend RBAC; frontend chỉ ẩn menu/action để UX rõ hơn.
+- Public QR page phải hoạt động tốt trên mobile vì consumer quét QR bằng điện thoại.

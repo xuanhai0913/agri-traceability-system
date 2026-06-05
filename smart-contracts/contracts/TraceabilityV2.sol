@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 /**
  * @title TraceabilityV2
  * @notice Phiên bản contract cho flow kiểm định chất lượng, nhập kho và IPFS evidence.
- * @dev Không thay thế contract production đang deploy cho tới khi redeploy và cập nhật ABI/backend.
+ * @dev Bản tham chiếu cho schema v2; production demo hiện dùng schema tương đương trong Traceability.sol.
  */
 contract TraceabilityV2 {
     enum Stage {

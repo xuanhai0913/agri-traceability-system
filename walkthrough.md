@@ -1,215 +1,127 @@
-# 🌾 AgriTrace — Tổng Quan Dự Án
+# AgriTrace - Tổng Quan Dự Án Hiện Tại
 
-## Giới thiệu
+Tài liệu này là bản walkthrough ngắn của repo tại trạng thái hiện tại. Các thông tin cũ về storage legacy, frontend scaffolding hoặc contract schema cũ không còn là flow chính của dự án.
 
-**AgriTrace** (Agri Traceability System) là hệ thống **truy xuất nguồn gốc nông sản trên Blockchain**, cho phép theo dõi toàn bộ vòng đời lô hàng nông sản — **từ gieo trồng đến kệ hàng** (seed to shelf). Dữ liệu text được lưu bất biến trên blockchain, ảnh minh chứng được lưu trên Cloudinary với URL ghi lại on-chain. Mỗi lô hàng sinh ra mã QR để người tiêu dùng quét xác minh.
+## 1. Giới Thiệu
 
----
+AgriTrace là hệ thống truy xuất nguồn gốc nông sản dùng mô hình hybrid on-chain/off-chain:
 
-## Kiến trúc hệ thống (3-Tier)
+- Blockchain Polygon Amoy lưu vòng đời lô hàng, stage history, timestamp, service wallet và transaction proof.
+- PostgreSQL lưu metadata vận hành như user role, producer profile, warehouse receipt, inventory movement và liên kết batch-producer.
+- Pinata/IPFS lưu file minh chứng. Backend tính SHA-256 `evidenceHash`, pin file lên IPFS và trả `ipfsCid/ipfsUrl`.
+- Web app React/Vite phục vụ admin, producer, quality inspector, warehouse staff, distributor và trang public QR cho consumer.
+- Mobile app Expo tập trung vào luồng consumer scan QR và xem timeline truy xuất.
 
-Hệ thống chia 3 tầng rõ ràng:
+Thông điệp chính khi trình bày: AgriTrace không dùng database để thay blockchain; database hỗ trợ quản trị và UX, còn blockchain giữ bằng chứng bất biến.
+
+## 2. Kiến Trúc 3 Tầng
 
 | Tầng | Thành phần | Công nghệ |
-|------|-----------|-----------|
-| **1. Client Tier** | ReactJS Web Admin + Mobile App quét QR | React (Vite), Expo React Native |
-| **2. Server Tier** | Express API Router + Private Key System | Node.js, Express, ethers.js v6 |
-| **3. Infrastructure** | Cloudinary Server + Polygon/Ethereum Testnet | Cloudinary SDK, Solidity 0.8.24 |
+| --- | --- | --- |
+| Client | Web portal, public QR page, mobile QR scanner | React Vite, Tailwind CSS, Expo React Native |
+| Backend | API, auth/RBAC, relayer, evidence service | Node.js, Express, ethers.js v6, bcrypt/JWT |
+| Infrastructure | Blockchain, database, evidence storage | Polygon Amoy, PostgreSQL/Railway, Pinata/IPFS |
 
----
+## 3. Cấu Trúc Repo
 
-## Cấu trúc dự án
-
-```
+```text
 agri-traceability-system/
-├── smart-contracts/          ← Hardhat + Solidity contract
-│   ├── contracts/
-│   │   └── Traceability.sol  ← Smart contract chính (375 dòng)
-│   ├── scripts/deploy.js     ← Deploy script (Sepolia/Amoy/localhost)
-│   ├── test/Traceability.test.js  ← 16 test cases (Chai + Hardhat)
-│   └── hardhat.config.js     ← Solidity 0.8.24, optimizer 200 runs, viaIR
-│
-├── backend/                  ← Node.js Express API
-│   ├── server.js             ← Entry (port 3000)
-│   └── src/
-│       ├── app.js            ← Express setup (CORS, routes, error handler)
-│       ├── config/
-│       │   ├── blockchain.js ← ethers.js provider/signer/contract helpers
-│       │   └── cloudinary.js ← Cloudinary v2 config
-│       ├── controllers/
-│       │   ├── batch.controller.js  ← CRUD lô hàng (5 endpoints)
-│       │   └── upload.controller.js ← Upload ảnh lên Cloudinary
-│       ├── routes/
-│       │   ├── batch.routes.js
-│       │   └── upload.routes.js
-│       └── middleware/
-│           └── errorHandler.js
-│
-├── frontend-web/             ← React (Vite) + Tailwind CSS v4
-│   └── src/App.jsx           ← ⚠️ CÒN TEMPLATE MẶC ĐỊNH (Vite starter)
-│
-├── mobile-app/               ← Expo React Native
-│   ├── App.js                ← Navigation: Home → Scanner → BatchDetail
-│   └── src/
-│       ├── screens/
-│       │   ├── HomeScreen.js        ← Trang chủ + nút "Quét mã QR"
-│       │   ├── ScannerScreen.js     ← Camera + QR decode → batchId
-│       │   └── BatchDetailScreen.js ← Hiển thị timeline lô hàng
-│       └── services/
-│           └── api.js               ← Axios client → Backend API
-│
-└── package.json              ← npm workspaces mono-repo
+├── smart-contracts/     Hardhat, Solidity contract, deploy metadata
+├── backend/             Express API, RBAC, PostgreSQL services, IPFS evidence
+├── frontend-web/        React Vite operations portal và public verification
+├── mobile-app/          Expo QR scanner/consumer timeline
+└── docs/                Tài liệu demo, on-chain/off-chain, phản biện
 ```
 
----
+## 4. Smart Contract
 
-## Smart Contract — `Traceability.sol`
+Contract chính: `smart-contracts/contracts/Traceability.sol`.
 
-> [!IMPORTANT]
-> Đây là core logic của toàn bộ hệ thống. Mọi dữ liệu lô hàng được lưu bất biến on-chain.
-
-### Enum giai đoạn sinh trưởng
+Lifecycle hiện tại:
 
 | Index | Stage | Ý nghĩa |
-|-------|-------|---------|
+| --- | --- | --- |
 | 0 | `Seeding` | Gieo trồng |
-| 1 | `Growing` | Đang phát triển |
-| 2 | `Fertilizing` | Bón phân / Chăm sóc |
+| 1 | `Growing` | Sinh trưởng |
+| 2 | `Fertilizing` | Bón phân |
 | 3 | `Harvesting` | Thu hoạch |
-| 4 | `Packaging` | Đóng gói |
-| 5 | `Shipping` | Vận chuyển |
-| 6 | `Completed` | Hoàn thành chuỗi |
+| 4 | `QualityInspection` | Kiểm định chất lượng |
+| 5 | `WarehouseReceived` | Nhập kho |
+| 6 | `Packaging` | Đóng gói |
+| 7 | `Shipping` | Vận chuyển |
+| 8 | `Completed` | Hoàn tất |
 
-### Cấu trúc dữ liệu
+`StageRecord` hiện lưu stage, mô tả, IPFS URL, `evidenceHash`, `ipfsCid`, timestamp và ví cập nhật. Transaction hash/block number được lấy từ receipt và lưu thêm ở PostgreSQL để UI mở explorer nhanh.
 
-- **`Batch`**: id, name, origin, owner, currentStage, createdAt, isActive
-- **`StageRecord`**: stage, description, imageUrl, timestamp, updatedBy
+Contract v2 production demo trên Polygon Amoy:
 
-### Functions
+```text
+0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8
+```
 
-| Function | Loại | Mô tả |
-|----------|------|-------|
-| `createBatch(name, origin, imageUrl)` | Write | Tạo lô hàng, tự tạo StageRecord Seeding |
-| `addStage(batchId, stage, description, imageUrl)` | Write | Thêm giai đoạn (chỉ owner, phải tiến về trước) |
-| `getBatch(batchId)` | View | Lấy thông tin lô hàng |
-| `getStageHistory(batchId)` | View | Lấy toàn bộ timeline |
-| `getStageAt(batchId, index)` | View | Lấy 1 giai đoạn theo index |
-| `getTotalBatches()` | View | Tổng số lô hàng |
+## 5. Backend API Chính
 
-### Tối ưu Gas
-- **Enum** thay string cho tên giai đoạn (~80% tiết kiệm storage)
-- **Custom errors** thay require strings (~50 gas/lần)
-- **Indexed events** cho filter hiệu quả
-- **Optimizer 200 runs + viaIR** trong hardhat config
+| Method | Endpoint | Mục đích |
+| --- | --- | --- |
+| `POST` | `/api/auth/login` | Đăng nhập theo role. |
+| `GET` | `/api/auth/me` | Lấy user/role hiện tại. |
+| `GET` | `/api/auth/me/audit-log` | Mini audit log cho producer profile/user link. |
+| `POST` | `/api/batches` | Tạo batch và ghi transaction. |
+| `GET` | `/api/batches` | Danh sách batch đọc từ contract, gắn metadata DB. |
+| `GET` | `/api/batches/:id` | Chi tiết batch. |
+| `GET` | `/api/batches/:id/history` | Timeline stage on-chain kèm transaction metadata. |
+| `POST` | `/api/batches/:id/stages` | Thêm stage theo role hợp lệ. |
+| `POST` | `/api/upload` | Upload evidence lên Pinata/IPFS và trả hash/CID. |
+| `GET` | `/api/inspections/queue` | Batch chờ kiểm định. |
+| `POST` | `/api/batches/:id/quality-inspections` | Ghi kết quả kiểm định và stage `QualityInspection`. |
+| `GET` | `/api/warehouse/receiving-queue` | Batch đã PASS chờ nhập kho. |
+| `POST` | `/api/batches/:id/warehouse-receipts` | Ghi biên nhận nhập kho và stage `WarehouseReceived`. |
+| `GET` | `/api/warehouse/inventory` | Tồn kho theo warehouse, inbound/outbound/reserved. |
+| `POST` | `/api/warehouse/inventory/movements` | Ghi xuất kho/giữ hàng/đã vận chuyển off-chain. |
+| `GET` | `/api/compliance/evidence` | Evidence dashboard: API, DB, contract, network, batch summary. |
 
-### Business Rules
-- Giai đoạn chỉ tiến lên, **không thể lùi lại**
-- Chỉ **owner** (người tạo) mới cập nhật được lô hàng
-- Khi đạt `Completed` → batch tự `isActive = false`, không sửa được nữa
-- Tên batch **không được rỗng**
+## 6. Role Và Quyền
 
----
+| Role | Quyền chính |
+| --- | --- |
+| `ADMIN` | Quản lý users, producers, warehouses, batches, ledger, compliance và override thao tác khi cần. |
+| `PRODUCER` | Tạo batch gắn với producer của tài khoản, cập nhật Seeding/Growing/Fertilizing/Harvesting. |
+| `QUALITY_INSPECTOR` | Xem queue kiểm định, nhập PASS/FAIL, certificate, note và evidence. |
+| `WAREHOUSE_STAFF` | Nhập kho batch đã PASS, xem receipt history, quản lý inventory movement. |
+| `DISTRIBUTOR` | Cập nhật Packaging, Shipping, Completed cho batch đã nhập kho. |
+| `CONSUMER` | Không cần login, quét QR/xem public batch detail và transaction proof. |
 
-## API Endpoints (Backend)
+Backend bắt buộc kiểm tra RBAC, frontend chỉ ẩn hoặc điều hướng UI để UX rõ hơn.
 
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| `GET` | `/api/health` | Health check |
-| `POST` | `/api/batches` | Tạo lô hàng mới |
-| `GET` | `/api/batches/total` | Tổng số lô hàng |
-| `GET` | `/api/batches/:id` | Thông tin lô hàng |
-| `GET` | `/api/batches/:id/history` | Timeline giai đoạn |
-| `POST` | `/api/batches/:id/stages` | Thêm giai đoạn |
-| `POST` | `/api/upload` | Upload ảnh → Cloudinary |
+## 7. Luồng Demo Chính
 
----
+```text
+Producer tạo batch
+→ cập nhật sản xuất tới Harvesting
+→ Inspector kiểm định PASS
+→ Warehouse Staff nhập kho
+→ Distributor đóng gói/vận chuyển/hoàn tất
+→ Consumer quét QR
+→ mở Polygonscan để xem transaction thật
+```
 
-## Sơ đồ Use Case — Web Admin Portal
+Batch production nên dùng để demo read-only hiện tại:
 
-**Actor: Nông dân / Quản trị** có thể:
-1. **Đăng nhập / Kết nối Ví** (Metamask tùy chọn)
-2. **Thêm mới Lô** → `<<include>>` Tải ảnh lên đám mây
-3. **Cập nhật Giai đoạn sinh trưởng** → `<<include>>` Tải ảnh lên đám mây
-4. **Xem danh sách & Chi tiết lô hàng**
-5. **In tem QR Code**
+```text
+BTC-0001 / https://agri.hailamdev.space/batches/1
+```
 
-Tất cả đều tương tác với **Smart Contract (Blockchain)** và **Hệ thống** (Cloudinary).
+Batch này có đủ 9 stage, IPFS CID/hash và transaction records trên contract v2. Nếu cần dữ liệu tên nghiêm túc hơn, tạo batch mới bằng role Producer/Admin trước buổi bảo vệ.
 
----
+## 8. Dữ Liệu Producer Hiện Tại
 
-## Sơ đồ Use Case — Mobile App
+Sau khi dọn mock data, production chỉ giữ các hồ sơ liên quan tới demo:
 
-**Actor: Người tiêu dùng** có thể:
-1. **Mở trình quét** → `<<extend>>` Giải mã QR thành ID lô hàng
-2. **Xem thông tin sản phẩm**
-3. **Xem dòng thời gian / Hành trình**
+- `Nhà Sản Xuất Hải Làm Dev`: producer testnet chính, đang linked với batch on-chain.
+- `Nhà Phân Phối Hải Làm Dev`: đối tác phân phối testnet cho luồng handoff/QR.
 
-Tương tác với: **Camera Thiết bị** + **Node.js Backend / Blockchain**
+Các chứng nhận/audit trong hai hồ sơ này là testnet record, không trình bày như chứng nhận pháp lý thật.
 
----
+## 9. Câu Kết Luận Khi Demo
 
-## Sơ đồ Tuần Tự — Web (Tạo Lô Hàng)
-
-**Luồng 14 bước:**
-1. Nông Dân nhập thông tin lô hàng & chọn ảnh
-2. Bấm "Khởi tạo Lô hàng"
-3. Bật trạng thái Loading...
-4. `POST /api/batches` (Dữ liệu + File ảnh) → Backend
-5. Backend Upload file ảnh → Cloudinary
-6. Cloudinary trả về `[image_url]`
-7. Backend ký giao dịch bằng Ethers.js
-8. `createBatch(name, seed, image_url, ...)` → Smart Contract
-9. Blockchain xử lý & xác nhận → trả Transaction Receipt (chứa `batchId`)
-10. Backend trả trạng thái Thành công + `batchId`
-11. Tắt Loading
-12. Truyền `batchId` vào component QR Code
-13. Hiển thị thông báo Thành công & Mã QR
-14. Nông Dân bấm "In Tem" để dán lên sản phẩm
-
----
-
-## Sơ đồ Tuần Tự — Mobile App (Quét QR)
-
-**Luồng 14 bước:**
-1. Người Tiêu Dùng mở App & nhấn "Quét mã QR"
-2. Hiển thị khung Camera
-3. Đưa camera vào tem QR trên bao bì
-4. Quét & Giải mã QR → Lấy được `[batchId]`
-5. Chuyển sang màn hình Loading...
-6. `GET /api/batches/{batchId}` → Backend
-7. Backend gọi `getBatchDetails(batchId)` → Smart Contract
-8. Smart Contract trả về thông tin (Tên, Các giai đoạn, `image_url`)
-9. Backend trả về dữ liệu JSON
-10. **[Song song]** Tải hình ảnh từ `[image_url]` → Cloudinary
-11. Cloudinary trả về hình ảnh (JPEG/PNG)
-12. Tắt Loading
-13. Render đồ thị **Timeline Hành trình**
-14. Hiển thị chi tiết **Hành trình Nông sản minh bạch**
-
----
-
-## Trạng thái hiện tại & Nhận xét
-
-| Component | Trạng thái | Ghi chú |
-|-----------|-----------|---------|
-| **Smart Contract** | ✅ Hoàn chỉnh | 375 dòng, 16 test cases, tối ưu gas |
-| **Backend API** | ✅ Hoàn chỉnh | 7 endpoints, error handling, CORS |
-| **Mobile App** | ✅ Hoàn chỉnh | 3 screens, QR scan, timeline view |
-| **Frontend Web** | ⚠️ Chưa phát triển | Còn là Vite template mặc định |
-
-> [!WARNING]
-> **Frontend Web (`frontend-web/src/App.jsx`) vẫn là template mặc định của Vite** — chưa có bất kỳ tính năng nào của AgriTrace. Đây là phần cần phát triển chính tiếp theo: tạo lô hàng, cập nhật giai đoạn, xem danh sách, xuất QR Code, v.v.
-
----
-
-## Tech Stack tổng hợp
-
-| Layer | Technology |
-|-------|-----------|
-| Smart Contract | Solidity 0.8.24, Hardhat 2.22 |
-| Backend | Node.js, Express 4.21, ethers.js v6 |
-| Image Storage | Cloudinary (SDK v2) |
-| Frontend Web | React (Vite), Tailwind CSS v4 |
-| Mobile App | Expo, React Native, React Navigation |
-| Networks | Polygon Amoy, Ethereum Sepolia, Hardhat local |
-| Mono-repo | npm workspaces |
+> AgriTrace dùng blockchain đúng phần cần bất biến: lifecycle, stage history, evidence hash/CID và transaction proof. Database lưu metadata để sản phẩm vận hành được. Đây là mô hình hybrid thực tế cho truy xuất nguồn gốc nông sản, không phải cố đưa toàn bộ dữ liệu lên blockchain.

@@ -1,124 +1,40 @@
 [
   {
     "id": 1,
-    "name": "Nông trại Xanh Lâm Đồng",
-    "location": "Đà Lạt, Lâm Đồng",
+    "name": "Nhà Sản Xuất Hải Làm Dev",
+    "website": "hailamdev.space",
+    "phone": "0929501116",
+    "email": "2251120085@ut.edu.vn",
+    "location": "70 Tô Ký, Quận 12, TP.HCM",
     "status": "verified",
-    "certifications": ["VietGAP", "Organic"],
-    "activeBatches": 8,
-    "image": "/images/hero-coffee-farm.png",
-    "description": "Nông trại Xanh chuyên sản xuất cà phê Arabica và rau sạch theo tiêu chuẩn VietGAP. Cam kết minh bạch từ gieo trồng đến thu hoạch.",
-    "farmingMethods": ["Canh tác hữu cơ", "Sử dụng phân vi sinh", "Che phủ đất tự nhiên"],
-    "socialImpact": ["Hỗ trợ 20+ gia đình nông dân", "Đào tạo nghề cho thanh niên"],
-    "coordinates": "11.9404° N, 108.4583° E",
-    "totalArea": "50.0 Hectares",
-    "elevation": "1,200m - 1,500m",
-    "latestVerification": "0x44f1...cCB5",
-    "smartContract": "Traceability_v1",
-    "audits": [
-      { "icon": "clipboard-check", "title": "VietGAP Compliance", "date": "Mar 15, 2026", "result": "Passed" },
-      { "icon": "droplets", "title": "Water Quality Review", "date": "Feb 20, 2026", "result": "Passed" }
-    ]
-  },
-  {
-    "id": 2,
-    "name": "HTX Mekong Delta",
-    "location": "Cần Thơ, ĐBSCL",
-    "status": "verified",
-    "certifications": ["GlobalGAP", "Fair Trade"],
-    "activeBatches": 15,
-    "image": "/images/hero-rice-field.png",
-    "description": "Hợp tác xã chuyên sản xuất gạo ST25 chất lượng cao, phục vụ xuất khẩu. Áp dụng công nghệ blockchain để truy xuất nguồn gốc.",
-    "farmingMethods": ["Canh tác lúa nước bền vững", "IPM (Quản lý dịch hại tổng hợp)", "Tiết kiệm nước"],
-    "socialImpact": ["Thu nhập ổn định cho 200+ hộ nông dân", "Chương trình sức khỏe cộng đồng"],
-    "coordinates": "10.0452° N, 105.7469° E",
-    "totalArea": "1,200 Hectares",
-    "elevation": "2m - 5m",
-    "latestVerification": "0xe5b5...6609",
-    "smartContract": "Traceability_v1",
-    "audits": [
-      { "icon": "clipboard-check", "title": "GlobalGAP Annual Audit", "date": "Jan 20, 2026", "result": "Passed" },
-      { "icon": "scale", "title": "Fair Trade Certification", "date": "Dec 15, 2025", "result": "Verified" }
-    ]
-  },
-  {
-    "id": 3,
-    "name": "Bảo Lộc Tea Estate",
-    "location": "Bảo Lộc, Lâm Đồng",
-    "status": "verified",
-    "certifications": ["Organic", "Rainforest Alliance"],
-    "activeBatches": 28,
-    "image": "/images/farm-cooperative.png",
-    "description": "Chuyên trồng trà Oolong cao cấp trên sườn đồi ở độ cao 900m. Ba thế hệ kinh nghiệm canh tác với phương pháp thủ công truyền thống.",
-    "farmingMethods": ["Trồng trà shade-grown", "Thu hái thủ công", "Ủ phân xanh tự nhiên"],
-    "socialImpact": ["Bảo tồn văn hóa trà Việt", "Hỗ trợ 40+ gia đình"],
-    "coordinates": "11.5424° N, 107.8098° E",
-    "totalArea": "85.0 Hectares",
-    "elevation": "850m - 1,100m",
-    "latestVerification": "0x7c98...d90d8",
-    "smartContract": "Traceability_v1",
-    "audits": [
-      { "icon": "clipboard-check", "title": "Organic Soil Test", "date": "Mar 02, 2026", "result": "Passed" },
-      { "icon": "droplets", "title": "Water Usage Review", "date": "Feb 15, 2026", "result": "Passed" },
-      { "icon": "scale", "title": "Annual Labor Cert", "date": "Jan 10, 2026", "result": "Verified" }
-    ]
-  },
-  {
-    "id": 4,
-    "name": "Highland Coffee Co-op",
-    "location": "Đắk Lắk, Tây Nguyên",
-    "status": "verified",
-    "certifications": ["UTZ Certified", "4C Association"],
-    "activeBatches": 12,
+    "certifications": [
+      "AgriTrace Testnet Producer Profile",
+      "Internal Traceability Record"
+    ],
+    "activeBatches": 2,
     "image": "/images/farm-highland.png",
-    "description": "Hợp tác xã cà phê Robusta lớn nhất Tây Nguyên. Tiên phong áp dụng blockchain trong chuỗi cung ứng cà phê Việt Nam.",
-    "farmingMethods": ["Nông lâm kết hợp", "Phân bón hữu cơ vi sinh", "Canh tác đa dạng sinh học"],
-    "socialImpact": ["Đào tạo nông dân 4.0", "Quỹ giáo dục cho thanh niên vùng cao"],
-    "coordinates": "12.6833° N, 108.0500° E",
-    "totalArea": "242.5 Hectares",
-    "elevation": "450m - 800m",
-    "latestVerification": "0x00e6...397a7",
-    "smartContract": "Traceability_v1",
+    "description": "Hồ sơ producer testnet dùng cho demo AgriTrace. Dữ liệu dùng để kiểm thử luồng truy xuất nguồn gốc, không phải chứng nhận pháp lý thật.",
+    "farmingMethods": [
+      "Testnet traceability workflow",
+      "Evidence hash + IPFS metadata"
+    ],
+    "socialImpact": [
+      "Student defense testnet",
+      "Transparent source tracking workflow"
+    ],
+    "coordinates": "10.8465,106.6268",
+    "totalArea": "Testnet record",
+    "elevation": "Chưa cập nhật",
+    "latestVerification": "Admin reviewed testnet producer profile - 2026-06-05",
+    "smartContract": "Traceability_v2",
     "audits": [
-      { "icon": "clipboard-check", "title": "UTZ Annual Audit", "date": "Feb 28, 2026", "result": "Passed" }
-    ]
-  },
-  {
-    "id": 5,
-    "name": "Phú Quốc Pepper Farm",
-    "location": "Phú Quốc, Kiên Giang",
-    "status": "audit_pending",
-    "certifications": ["Chỉ dẫn địa lý"],
-    "activeBatches": 6,
-    "image": "/images/harvest-scene.png",
-    "description": "Trang trại hồ tiêu truyền thống Phú Quốc, nổi tiếng với hạt tiêu đỏ quý hiếm. Đang trong quá trình đăng ký chứng nhận Organic quốc tế.",
-    "farmingMethods": ["Trồng trụ sống tự nhiên", "Phơi nắng truyền thống", "Không thuốc trừ sâu"],
-    "socialImpact": ["Bảo tồn nghề trồng tiêu truyền thống", "Du lịch nông nghiệp"],
-    "coordinates": "10.2899° N, 103.9840° E",
-    "totalArea": "30.0 Hectares",
-    "elevation": "20m - 60m",
-    "latestVerification": "Pending...",
-    "smartContract": "Traceability_v1",
-    "audits": []
-  },
-  {
-    "id": 6,
-    "name": "Sa Pa Herbs",
-    "location": "Sa Pa, Lào Cai",
-    "status": "verified",
-    "certifications": ["Organic", "GMP"],
-    "activeBatches": 4,
-    "image": "/images/smart-farm.png",
-    "description": "Chuyên sản xuất thảo dược và rau hữu cơ vùng cao. Kết hợp kiến thức truyền thống của đồng bào H'Mông với công nghệ IoT hiện đại.",
-    "farmingMethods": ["Canh tác ruộng bậc thang", "IoT monitoring", "Thu hái bằng tay"],
-    "socialImpact": ["Bảo tồn tri thức dân tộc thiểu số", "Nâng cao thu nhập vùng cao"],
-    "coordinates": "22.3364° N, 103.8438° E",
-    "totalArea": "45.0 Hectares",
-    "elevation": "1,500m - 1,800m",
-    "latestVerification": "0x3af2...891b",
-    "smartContract": "Traceability_v1",
-    "audits": [
-      { "icon": "clipboard-check", "title": "GMP Compliance", "date": "Mar 10, 2026", "result": "Passed" }
+      {
+        "icon": "clipboard-check",
+        "title": "Producer profile cleanup",
+        "date": "2026-06-05",
+        "result": "Renamed linked producer profile and removed unrelated seed/mock profiles for defense testnet.",
+        "isDemo": true
+      }
     ]
   },
   {
@@ -129,22 +45,32 @@
     "email": "2251120085@ut.edu.vn",
     "location": "70 Tô Ký, Quận 12, HCM",
     "status": "verified",
-    "certifications": ["Testnet Supply Chain Partner", "Testnet Distributor Verification"],
-    "activeBatches": 0,
+    "certifications": [
+      "Testnet Supply Chain Partner",
+      "Testnet Distributor Verification"
+    ],
+    "activeBatches": 1,
     "image": "/images/farm-highland.png",
     "description": "Đối tác phân phối testnet của AgriTrace, dùng để trình bày luồng truy xuất QR, handoff lô hàng và thông tin liên hệ công khai trong báo cáo.",
-    "farmingMethods": ["QR fulfillment", "Batch handoff", "Cold chain logging"],
-    "socialImpact": ["Testnet partner", "Public contact profile"],
+    "farmingMethods": [
+      "QR fulfillment",
+      "Batch handoff",
+      "Cold chain logging"
+    ],
+    "socialImpact": [
+      "Testnet partner",
+      "Public contact profile"
+    ],
     "coordinates": "10.8490, 106.6278",
     "totalArea": "Chưa cập nhật",
     "elevation": "Chưa cập nhật",
     "latestVerification": "Testnet profile",
-    "smartContract": "Traceability_v1",
+    "smartContract": "Traceability_v2",
     "audits": [
       {
         "icon": "clipboard-check",
         "title": "Testnet distributor verification",
-        "date": "May 2026",
+        "date": "2026-05",
         "result": "Test record only",
         "isDemo": true
       }
