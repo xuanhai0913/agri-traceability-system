@@ -14,6 +14,7 @@ import {
   X,
   ClipboardCheck,
   PackageCheck,
+  UserCheck,
 } from "@icons";
 import { useAuth } from "../auth/useAuth";
 
@@ -24,6 +25,7 @@ const NAV_ICONS = {
   "/admin/ledger": GitBranch,
   "/producer/batches": GitBranch,
   "/producer/batches/new": Plus,
+  "/producer/profile": UserCheck,
   "/inventory": Warehouse,
   "/warehouse/inventory": Warehouse,
   "/warehouse/receipts": FileText,
@@ -77,6 +79,7 @@ export default function Sidebar({ open, onClose }) {
         ];
       case "PRODUCER":
         return [
+          { to: "/producer/profile", label: "Hồ sơ NSX" },
           { to: "/producer/batches/new", label: "Tạo lô hàng" },
           { to: "/producer/batches", label: "Lô sản xuất" },
         ];

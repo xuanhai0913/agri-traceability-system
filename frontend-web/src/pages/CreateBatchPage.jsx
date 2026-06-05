@@ -409,11 +409,16 @@ export default function CreateBatchPage() {
                       <div className="flex items-start gap-3">
                         <UserCheck size={20} className="mt-0.5 shrink-0 text-emerald-700" />
                         <div className="min-w-0">
-                          <p className="text-sm font-black text-emerald-950">
-                            {producersLoading
-                              ? "Đang tải hồ sơ producer..."
-                              : selectedProducer?.name || "Chưa gắn hồ sơ producer"}
-                          </p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-black text-emerald-950">
+                              {producersLoading
+                                ? "Đang tải hồ sơ producer..."
+                                : selectedProducer?.name || "Chưa gắn hồ sơ producer"}
+                            </p>
+                            <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100">
+                              Account-linked producer
+                            </span>
+                          </div>
                           <p className="mt-1 text-xs leading-relaxed text-emerald-700">
                             Role PRODUCER chỉ được tạo batch cho producer đã liên kết
                             với tài khoản. Hệ thống sẽ tự gắn producer này vào lô hàng,

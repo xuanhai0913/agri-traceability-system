@@ -18,10 +18,12 @@ const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const InspectionQueuePage = lazy(() => import("./pages/InspectionQueuePage"));
 const WarehouseReceivingPage = lazy(() => import("./pages/WarehouseReceivingPage"));
+const WarehouseInventoryPage = lazy(() => import("./pages/WarehouseInventoryPage"));
 const WarehouseReceiptsPage = lazy(() => import("./pages/WarehouseReceiptsPage"));
 const DistributorQueuePage = lazy(() => import("./pages/DistributorQueuePage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminWarehousesPage = lazy(() => import("./pages/AdminWarehousesPage"));
+const ProducerProfilePage = lazy(() => import("./pages/ProducerProfilePage"));
 
 /** Route-level loading fallback */
 function RouteFallback() {
@@ -103,6 +105,14 @@ export default function App() {
               }
             />
             <Route
+              path="/producer/profile"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <ProducerProfilePage />
+                </Suspense>
+              }
+            />
+            <Route
               path="/batches/new"
               element={
                 <Suspense fallback={<RouteFallback />}>
@@ -162,7 +172,7 @@ export default function App() {
               path="/warehouse/inventory"
               element={
                 <Suspense fallback={<RouteFallback />}>
-                  <InventoryPage />
+                  <WarehouseInventoryPage />
                 </Suspense>
               }
             />

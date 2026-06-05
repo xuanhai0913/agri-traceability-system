@@ -73,6 +73,36 @@ function toWarehouseReceipt(row) {
   };
 }
 
+function toWarehouseInventoryItem(row) {
+  if (!row) return null;
+  return {
+    inventoryId: `${row.warehouse_id || "default"}:${row.batch_id}`,
+    batchId: Number(row.batch_id),
+    warehouseId: row.warehouse_id || null,
+    warehouseName: row.warehouse_name || "",
+    warehouseLocation: row.warehouse_location || "",
+    quantityOnHand:
+      row.quantity_on_hand === null || row.quantity_on_hand === undefined
+        ? null
+        : Number(row.quantity_on_hand),
+    unit: row.unit || "",
+    receiptCount: Number(row.receipt_count || 0),
+    firstReceivedAt: row.first_received_at,
+    lastReceivedAt: row.last_received_at,
+    latestReceiptId: row.latest_receipt_id || null,
+    conditionNote: row.condition_note || "",
+    evidenceHash: row.evidence_hash || "",
+    ipfsCid: row.ipfs_cid || "",
+    ipfsUrl: row.ipfs_url || "",
+    transactionHash: row.tx_hash || "",
+    blockNumber:
+      row.block_number === null || row.block_number === undefined
+        ? null
+        : Number(row.block_number),
+    status: "IN_STOCK",
+  };
+}
+
 async function initSupplyChainStore() {
   if (!hasDatabase()) return;
 
@@ -302,11 +332,55 @@ async function listWarehouseReceipts({ warehouseId = null } = {}) {
 }
 
 async function listWarehouseInventory({ warehouseId = null } = {}) {
-  const receipts = await listWarehouseReceipts({ warehouseId });
-  return receipts.map((receipt) => ({
-    ...receipt,
-    status: "WAREHOUSE_RECEIVED",
-  }));
+  if (!hasDatabase()) return [];
+
+  const params = [];
+  const where = warehouseId ? "WHERE warehouse_id = $1" : "";
+  if (warehouseId) params.push(warehouseId);
+
+  const res = await query(
+    `
+    WITH ranked_receipts AS (
+      SELECT
+        *,
+        ROW_NUMBER() OVER (
+          PARTITION BY warehouse_id, batch_id
+          ORDER BY received_at DESC, created_at DESC
+        ) AS receipt_rank
+      FROM warehouse_receipts
+      ${where}
+    )
+    SELECT
+      warehouse_id,
+      warehouse_name,
+      warehouse_location,
+      batch_id,
+      COALESCE(NULLIF(unit, ''), 'unit') AS unit,
+      SUM(COALESCE(quantity, 0)) AS quantity_on_hand,
+      COUNT(*) AS receipt_count,
+      MIN(received_at) AS first_received_at,
+      MAX(received_at) AS last_received_at,
+      MAX(CASE WHEN receipt_rank = 1 THEN id::text END) AS latest_receipt_id,
+      MAX(CASE WHEN receipt_rank = 1 THEN condition_note END) AS condition_note,
+      MAX(CASE WHEN receipt_rank = 1 THEN evidence_hash END) AS evidence_hash,
+      MAX(CASE WHEN receipt_rank = 1 THEN ipfs_cid END) AS ipfs_cid,
+      MAX(CASE WHEN receipt_rank = 1 THEN ipfs_url END) AS ipfs_url,
+      MAX(CASE WHEN receipt_rank = 1 THEN tx_hash END) AS tx_hash,
+      MAX(CASE WHEN receipt_rank = 1 THEN block_number END) AS block_number
+    FROM ranked_receipts
+    GROUP BY
+      warehouse_id,
+      warehouse_name,
+      warehouse_location,
+      batch_id,
+      COALESCE(NULLIF(unit, ''), 'unit')
+    ORDER BY MAX(received_at) DESC
+    LIMIT 100
+    `,
+    params
+  );
+
+  return res.rows.map(toWarehouseInventoryItem);
 }
 
 async function getQualityInspection(batchId) {
@@ -464,6 +538,7 @@ module.exports = {
   listWarehouseInventory,
   listWarehouseReceipts,
   listWarehouses,
+  toWarehouseInventoryItem,
   toInspection,
   toWarehouseReceipt,
   updateWarehouse,
