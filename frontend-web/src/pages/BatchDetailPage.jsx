@@ -23,6 +23,7 @@ import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
 import ImageSourcePicker from "../components/ui/ImageSourcePicker";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../components/auth/useAuth";
+import { resolveIpfsAssetUrl } from "../utils/ipfs";
 
 const STAGE_NAMES = [
   "Gieo hạt",
@@ -312,9 +313,12 @@ export default function BatchDetailPage() {
   const primaryProducer = batch.primaryProducer;
   const latestInspection = qualityInspections[0] || null;
   const latestReceipt = warehouseReceipts[0] || null;
-  const latestEvidenceImage = [...stages]
+  const latestEvidenceStage = [...stages]
     .reverse()
-    .find((stage) => stage.imageUrl)?.imageUrl;
+    .find((stage) => stage.imageUrl || stage.ipfsCid);
+  const latestEvidenceImage = latestEvidenceStage
+    ? resolveIpfsAssetUrl(latestEvidenceStage.imageUrl, latestEvidenceStage.ipfsCid)
+    : "";
 
   function isStageAllowedForCurrentRole(stageIdx) {
     if (user?.role === "ADMIN") return ![4, 5].includes(stageIdx);
@@ -741,7 +745,7 @@ export default function BatchDetailPage() {
                         {stage.imageUrl && (
                           <div className="mt-2 w-full h-20">
                             <ImageWithSkeleton
-                              src={stage.imageUrl}
+                              src={resolveIpfsAssetUrl(stage.imageUrl, stage.ipfsCid)}
                               alt={stage.stage}
                               className="rounded-lg"
                               wrapperClassName="w-full h-full rounded-lg"
@@ -764,9 +768,9 @@ export default function BatchDetailPage() {
                                 {stage.evidenceHash}
                               </p>
                             )}
-                            {stage.ipfsUrl && (
+                            {(stage.ipfsUrl || stage.ipfsCid) && (
                               <a
-                                href={stage.ipfsUrl}
+                                href={resolveIpfsAssetUrl(stage.ipfsUrl, stage.ipfsCid)}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-primary hover:underline"
@@ -869,10 +873,13 @@ export default function BatchDetailPage() {
             tone="blue"
             hasRecord={Boolean(latestInspection)}
             empty="Batch chưa có kết quả kiểm định chất lượng."
-            imageUrl={latestInspection?.evidenceImageUrl || latestInspection?.ipfsUrl}
+            imageUrl={resolveIpfsAssetUrl(
+              latestInspection?.evidenceImageUrl || latestInspection?.ipfsUrl,
+              latestInspection?.ipfsCid
+            )}
             evidenceHash={latestInspection?.evidenceHash}
             ipfsCid={latestInspection?.ipfsCid}
-            ipfsUrl={latestInspection?.ipfsUrl}
+            ipfsUrl={resolveIpfsAssetUrl(latestInspection?.ipfsUrl, latestInspection?.ipfsCid)}
             transactionHash={latestInspection?.transactionHash}
             blockNumber={latestInspection?.blockNumber}
             shortHash={shortHash}
@@ -923,10 +930,13 @@ export default function BatchDetailPage() {
             tone="indigo"
             hasRecord={Boolean(latestReceipt)}
             empty="Batch chưa được nhập kho hoặc đang chờ kiểm định PASS."
-            imageUrl={latestReceipt?.evidenceImageUrl || latestReceipt?.ipfsUrl}
+            imageUrl={resolveIpfsAssetUrl(
+              latestReceipt?.evidenceImageUrl || latestReceipt?.ipfsUrl,
+              latestReceipt?.ipfsCid
+            )}
             evidenceHash={latestReceipt?.evidenceHash}
             ipfsCid={latestReceipt?.ipfsCid}
-            ipfsUrl={latestReceipt?.ipfsUrl}
+            ipfsUrl={resolveIpfsAssetUrl(latestReceipt?.ipfsUrl, latestReceipt?.ipfsCid)}
             transactionHash={latestReceipt?.transactionHash}
             blockNumber={latestReceipt?.blockNumber}
             shortHash={shortHash}
@@ -1317,9 +1327,9 @@ function EvidenceItem({ label, tx, empty, onCopy, shortHash }) {
                   {tx.evidenceHash}
                 </p>
               )}
-              {tx.ipfsUrl && (
+              {(tx.ipfsUrl || tx.ipfsCid) && (
                 <a
-                  href={tx.ipfsUrl}
+                  href={resolveIpfsAssetUrl(tx.ipfsUrl, tx.ipfsCid)}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:underline"

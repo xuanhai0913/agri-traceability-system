@@ -1,8 +1,10 @@
 import { useImagePreloader } from "../../hooks/useImagePreloader";
 import { ImageOff } from "@icons";
+import { resolveIpfsAssetUrl } from "../../utils/ipfs";
 
 export function ImageWithSkeleton({ src, alt, className, wrapperClassName = "" }) {
-  const { isLoaded, hasError } = useImagePreloader(src);
+  const resolvedSrc = resolveIpfsAssetUrl(src);
+  const { isLoaded, hasError } = useImagePreloader(resolvedSrc);
 
   return (
     <div className={`relative overflow-hidden bg-surface-container-high ${wrapperClassName}`}>
@@ -21,7 +23,7 @@ export function ImageWithSkeleton({ src, alt, className, wrapperClassName = "" }
 
       {/* Ảnh gốc (Chỉ hiện khi load xong) */}
       <img
-        src={src}
+        src={resolvedSrc}
         alt={alt}
         loading="lazy"
         decoding="async"

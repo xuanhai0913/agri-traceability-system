@@ -14,9 +14,10 @@ Muc tieu: dung nhu checklist ra soat truoc khi demo, deploy, nop bao cao hoac tr
 - [x] Deployment tx: `0x466c89d78d6209eca775c66f695d6f42c9f69143197fbfb055896b193e8e4323`, block `39596189`.
 - [x] Da luu deployment metadata tai `smart-contracts/deployments/amoy-traceability-v2.json`.
 - [x] Da compile `Traceability.sol` bang `solc 0.8.26`, ABI co 23 entries, bytecode khoang 5.5KB.
-- [x] Da test production sau deploy: health DB available, admin login OK, write flow van 409 cho den khi Render env bat schema v2.
-- [ ] Chua cap nhat Render production env trong phien nay: can set `CONTRACT_ADDRESS=0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` va `CONTRACT_STAGE_SCHEMA=v2`, sau do redeploy backend.
-- [ ] Sau khi Render env v2 duoc bat, can tao batch demo moi va test flow ghi that: Producer -> Inspector PASS -> WarehouseReceived -> Distributor Shipping -> Public QR.
+- [x] Da test production sau deploy: health DB available, admin login OK, write flow het bi 409 sau khi Render env bat schema v2.
+- [x] Render production env da duoc bat boi user: `CONTRACT_ADDRESS=0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` va `CONTRACT_STAGE_SCHEMA=v2`.
+- [x] Da tao batch demo moi tren production va test flow ghi that: Producer -> Inspector PASS -> WarehouseReceived -> Distributor Shipping -> Completed -> Public QR.
+- [x] Da xac nhan Pinata upload `pinned`, CID/hash duoc ghi du 9 stage. Gateway custom `mypinata.cloud` tra 401 tren browser, frontend da them fallback public gateway theo CID.
 
 ## 1. Nguyen Tac Kien Truc Can Giu
 
@@ -133,8 +134,8 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 - [x] Hardhat tests cap nhat cho schema moi.
 - [x] ABI moi duoc cap nhat cho backend/frontend.
 - [x] Contract moi duoc deploy local/testnet.
-- [ ] `CONTRACT_ADDRESS` production/testnet duoc cap nhat sau deploy.
-- [ ] `CONTRACT_STAGE_SCHEMA=v2` duoc cau hinh khi dung contract moi.
+- [x] `CONTRACT_ADDRESS` production/testnet duoc cap nhat sau deploy.
+- [x] `CONTRACT_STAGE_SCHEMA=v2` duoc cau hinh khi dung contract moi.
 - [ ] Source contract duoc verify hoac co link Sourcify/Polygonscan neu can demo.
 
 ## 6. Database Va Migration
