@@ -78,7 +78,7 @@ QR trỏ tới trang public `/batches/:id`. Người dùng quét QR để xem ng
 
 ### 18. Giao diện web có thể hiển thị sai dữ liệu không?
 
-Về lý thuyết có thể nếu frontend/backend bị sửa. Vì vậy hệ thống cung cấp transaction hash, block number, contract address và Polygonscan để đối chiếu độc lập. Source contract nằm trong repo; Sourcify là bước verify thêm nếu cần tăng độ tin cậy.
+Về lý thuyết có thể nếu frontend/backend bị sửa. Vì vậy hệ thống cung cấp transaction hash, block number, contract address và Polygonscan để đối chiếu độc lập. Source contract đã verify trên Sourcify để người xem đối chiếu code deployed với source.
 
 ## 4. Câu hỏi về smart contract và bảo mật
 
@@ -104,7 +104,7 @@ Vì đối tượng nông nghiệp/chuỗi cung ứng không nhất thiết quen
 
 ### 24. Contract đã verify source chưa?
 
-Chưa. Contract address có trên Polygonscan và source nằm trong repo, nhưng link Sourcify hiện trả `contract not found`. Khi demo không nói là đã verify; nói đây là việc cần làm thêm để tăng độ tin cậy.
+Có trên Sourcify. Contract `0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` đã có `creationMatch=match` và `runtimeMatch=match`, nên có thể mở Sourcify để xem source verified. Polygonscan vẫn dùng để xem address, tx hash và block; source verification trên Polygonscan có thể làm thêm khi có API key hoặc qua form explorer.
 
 ## 5. Câu hỏi về mạng blockchain và chi phí
 
@@ -152,7 +152,7 @@ Hệ thống đã deploy được và có đầy đủ demo flow: dashboard, led
 
 ### 35. Giới hạn lớn nhất hiện tại là gì?
 
-Repo và production demo đã hỗ trợ contract schema v2, Quality Inspection/Warehouse, hash/CID và multi-role JWT. Giới hạn còn lại là verify source contract, neo thêm producer metadata hash, bổ sung multi-role signing bằng ví riêng, audit trail database và hạ tầng production tốt hơn.
+Repo và production demo đã hỗ trợ contract schema v2, Quality Inspection/Warehouse, hash/CID, multi-role JWT và Sourcify verified source. Giới hạn còn lại là verify thêm trên Polygonscan, neo producer metadata hash, bổ sung multi-role signing bằng ví riêng, audit trail database và hạ tầng production tốt hơn.
 
 ## 7. Câu kết luận nên nói
 

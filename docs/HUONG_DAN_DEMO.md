@@ -17,6 +17,7 @@ Mở sẵn các tab:
 | Producer/partner network | [https://agri.hailamdev.space/producers](https://agri.hailamdev.space/producers) |
 | Compliance | [https://agri.hailamdev.space/compliance](https://agri.hailamdev.space/compliance) |
 | Contract Polygonscan | [https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8](https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8) |
+| Contract Sourcify verified source | [https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8](https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8) |
 
 Trước giờ demo 5-10 phút:
 
@@ -136,7 +137,7 @@ Nói:
 
 Lưu ý hiện tại:
 
-> Contract tồn tại trên Polygon Amoy và có bytecode thật, nhưng chưa verify source trên Sourcify. Vì vậy khi demo chỉ mở Polygonscan/transaction; phần Sourcify là hướng hoàn thiện thêm, không nói là đã verified.
+> Contract tồn tại trên Polygon Amoy, bytecode thật và source đã verify trên Sourcify. Khi demo, dùng Polygonscan để mở transaction/block, dùng Sourcify để chỉ source contract verified.
 
 Nếu Polygonscan load chậm:
 
@@ -227,7 +228,7 @@ Nói:
 | --- | --- |
 | Render cold start | Mở API health, chờ 10-30 giây rồi reload app. |
 | Explorer load chậm | Dùng tx hash/block number và nói có thể kiểm bằng JSON-RPC. |
-| Sourcify contract not found | Nói rõ source chưa verify trên Sourcify; contract vẫn tồn tại on-chain và có thể kiểm bằng Polygonscan/RPC. |
+| Polygonscan chưa hiện verified source | Mở Sourcify verified source để xem code; dùng Polygonscan để xem address, tx hash và block. |
 | Live transaction lâu | Chuyển về batch 1 đã có đủ stage và transaction. |
 | QR quét không kịp | Copy verification link và mở URL public trên browser. |
 | Gateway IPFS riêng trả lỗi | Dùng fallback public IPFS gateway theo CID nếu UI có hiển thị. |

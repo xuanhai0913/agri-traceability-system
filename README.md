@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity&logoColor=white" alt="Solidity" />
+  <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <img src="https://img.shields.io/badge/Polygon-Amoy-8247E5?logo=polygon&logoColor=white" alt="Polygon Amoy" />
   <img src="https://img.shields.io/badge/Hardhat-2.22-FFF100?logo=hardhat&logoColor=black" alt="Hardhat" />
   <img src="https://img.shields.io/badge/Express-4.21-000000?logo=express&logoColor=white" alt="Express" />
@@ -98,7 +98,7 @@ agri-traceability-system/
 | Lớp | Công nghệ | Vai trò |
 | --- | --- | --- |
 | Blockchain network | Polygon Amoy testnet | Mạng testnet dùng để ghi transaction truy xuất nguồn gốc. |
-| Smart contract | Solidity `0.8.24`, Hardhat | Quản lý batch, stage history, whitelist và event bằng chứng. |
+| Smart contract | Solidity `0.8.26`, Hardhat | Quản lý batch, stage history, whitelist và event bằng chứng. |
 | Blockchain SDK | ethers.js v6 | Backend gọi contract, đọc dữ liệu on-chain và gửi transaction. |
 | Backend | Node.js, Express.js | API relayer, multi-role auth/RBAC, upload IPFS evidence, tổng hợp dashboard/compliance. |
 | Database | PostgreSQL trên Railway | Lưu user role, producer profile, batch-producer links, inspection/warehouse metadata, inventory movement và transaction metadata. |
@@ -205,7 +205,7 @@ Phần này được nêu rõ để phản biện thấy phạm vi dự án minh
 ### Hướng phát triển
 
 - **Neo producer metadata vào blockchain**: Thêm `producerIdHash`, `producerProfileHash` hoặc `metadataHash` vào transaction để chứng minh quan hệ producer-batch không chỉ nằm ở DB.
-- **Verify source contract**: xác thực source contract trên Polygonscan/Sourcify để giảng viên có thể đối chiếu contract deployed với source trong repo.
+- **Verify source trên Polygonscan**: Sourcify đã verify source contract; bước tiếp theo là verify thêm trên Polygonscan để explorer phổ biến cũng hiện code trực tiếp.
 - **Phân quyền nhiều vai trò nâng cao**: Tách ví hoặc tài khoản blockchain cho producer, distributor, inspector thay vì toàn bộ transaction đều do service wallet relayer ký.
 - **Audit trail cho database**: Ghi lịch sử thay đổi producer profile, trạng thái kiểm định và metadata liên kết để truy vết thao tác admin.
 - **Nâng cấp hạ tầng production**: Dùng Redis/shared cache, queue cho transaction, monitoring/logging và chiến lược retry khi RPC hoặc DB lỗi.
@@ -280,6 +280,12 @@ npm run mobile:start
 | `frontend-web/` | `VITE_API_URL`, các biến public phục vụ frontend nếu có. |
 
 Không commit private key, database URL, JWT secret hoặc tài khoản admin thật vào repo.
+
+Contract production demo đã được verify source trên Sourcify:
+
+```text
+https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8
+```
 
 ## Tài khoản demo local/dev
 

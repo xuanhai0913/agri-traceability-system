@@ -29,7 +29,7 @@ const DEFAULT_SOURCIFY_BASE_URL = "https://repo.sourcify.dev";
 function getNetworkConfig() {
   const chainId = Number(process.env.CHAIN_ID || DEFAULT_CHAIN_ID);
   const contractAddress = process.env.CONTRACT_ADDRESS || "";
-  const sourcifyVerified = process.env.SOURCIFY_VERIFIED === "true";
+  const sourcifyVerified = process.env.SOURCIFY_VERIFIED !== "false";
   const explorerBaseUrl =
     process.env.EXPLORER_BASE_URL || DEFAULT_EXPLORER_BASE_URL;
   const sourcifyBaseUrl =

@@ -26,10 +26,11 @@ Muc tieu: dung nhu checklist ra soat truoc khi demo, deploy, nop bao cao hoac tr
 - [x] Da don production producer mock: chi con `Nha San Xuat Hai Lam Dev` va `Nha Phan Phoi Hai Lam Dev` lien quan demo.
 - [x] Da chan production auto seed/fallback producer mock bang `SEED_DEMO_PRODUCERS=false` mac dinh.
 - [x] Da cap nhat wording UI tu "producer network" sang huong "doi tac chuoi cung ung" de tranh bi hieu la mang luoi NSX ao.
-- [x] Da kiem tra Sourcify 2026-06-05: `https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` tra 404 contract not found.
+- [x] Da verify contract source tren Sourcify ngay 2026-06-05: `creationMatch=match`, `runtimeMatch=match`, `matchId=31071211`.
+- [x] Sourcify verified source: `https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`.
 - [x] Da xac nhan contract v2 ton tai on-chain qua RPC `eth_getCode`, bytecode khoang 5439 bytes.
-- [x] Da cau hinh backend chi tra Sourcify link khi `SOURCIFY_VERIFIED=true`, mac dinh khong hien link 404.
-- [ ] Checklist chua hoan thien 100%: con can verify source contract tren explorer/Sourcify neu muon diem demo cao hon va tiep tuc test mobile scan cuoi.
+- [x] Da cau hinh backend hien Sourcify link mac dinh sau khi source verified; co the tat bang `SOURCIFY_VERIFIED=false` neu doi sang contract moi chua verify.
+- [ ] Checklist chua hoan thien 100%: con can test mobile scan cuoi va neu can thi verify them tren Polygonscan khi co API key/het daily limit.
 
 ## 1. Nguyen Tac Kien Truc Can Giu
 
@@ -81,7 +82,7 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [ ] `NETWORK_NAME=Polygon Amoy`.
 - [ ] `EXPLORER_BASE_URL=https://amoy.polygonscan.com`.
 - [x] `SOURCIFY_BASE_URL=https://repo.sourcify.dev` neu can verify source.
-- [x] `SOURCIFY_VERIFIED=false` cho production hien tai de khong hien link Sourcify 404.
+- [x] `SOURCIFY_VERIFIED=true` sau khi contract `0xA94D...b7ed8` da duoc verify tren Sourcify.
 - [ ] `IPFS_PROVIDER=pinata`.
 - [ ] `IPFS_ENABLED=true`.
 - [ ] `IPFS_REQUIRED=false` cho demo on dinh neu Pinata tam loi.
@@ -150,7 +151,8 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [x] Contract moi duoc deploy local/testnet.
 - [x] `CONTRACT_ADDRESS` production/testnet duoc cap nhat sau deploy.
 - [x] `CONTRACT_STAGE_SCHEMA=v2` duoc cau hinh khi dung contract moi.
-- [ ] Source contract duoc verify tren Sourcify/Polygonscan neu can demo source verification.
+- [x] Source contract duoc verify tren Sourcify cho demo source verification.
+- [ ] Polygonscan source verification chua hoan tat do API external verify dang bi daily limit; dung Polygonscan de xem address/tx/block, dung Sourcify de xem source verified.
 
 ## 6. Database Va Migration
 
@@ -603,7 +605,7 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [x] `docs/HUONG_DAN_DEMO.md` co flow Producer -> Inspector -> Warehouse -> Distributor -> Consumer QR.
 - [x] `docs/HUONG_DAN_DEMO.md` co buoc upload evidence len Pinata/IPFS.
 - [ ] `docs/HUONG_DAN_DEMO.md` co buoc mo IPFS Gateway.
-- [x] `docs/HUONG_DAN_DEMO.md` co buoc mo Polygonscan va ghi ro Sourcify chua verify.
+- [x] `docs/HUONG_DAN_DEMO.md` co buoc mo Polygonscan va Sourcify verified source.
 - [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Blockchain co dam bao anh khong bi sua khong?".
 - [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Nhap kho duoc ghi o dau?".
 - [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Ai duoc cap nhat kiem dinh?".

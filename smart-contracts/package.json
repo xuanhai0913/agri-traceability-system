@@ -12,8 +12,10 @@
     "clean": "hardhat clean"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "@nomicfoundation/hardhat-verify": "^2.1.0",
     "hardhat": "^2.22.0",
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "chai": "^4.5.0",
     "dotenv": "^16.4.0"
   }
 }

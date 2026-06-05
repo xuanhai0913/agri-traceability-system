@@ -142,7 +142,7 @@ Hệ thống có contract, transaction hash, QR, evidence hash/CID, RBAC và das
 - Đang chạy testnet, chưa phải mainnet thương mại.
 - Service wallet ký thay nhiều actor.
 - Producer metadata chưa được hash trực tiếp lên contract.
-- Source contract nên verify thêm trên explorer/Sourcify để demo thuyết phục hơn.
+- Source contract đã verify trên Sourcify; có thể verify thêm trên Polygonscan nếu cần explorer phổ biến hiển thị code trực tiếp.
 - Cần audit trail/monitoring mạnh hơn nếu triển khai thật.
 
 ## Câu Kết Luận

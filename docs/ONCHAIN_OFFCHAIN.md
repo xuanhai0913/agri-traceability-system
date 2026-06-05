@@ -28,6 +28,14 @@ Polygonscan:
 https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8
 ```
 
+Sourcify verified source:
+
+```text
+https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8
+```
+
+Verification record ngày 2026-06-05: `creationMatch=match`, `runtimeMatch=match`, `matchId=31071211`.
+
 Lifecycle stage:
 
 | Index | Stage | Ý nghĩa |
@@ -189,7 +197,7 @@ Trả lời nhanh câu "dùng DB có sai đề tài blockchain không?":
 
 ## 9. Hướng Phát Triển Tiếp Theo
 
-- Verify source contract trên Polygonscan/Sourcify nếu cần tăng độ thuyết phục khi demo.
+- Verify thêm source contract trên Polygonscan; Sourcify đã có match source/runtime cho contract demo.
 - Neo thêm `producerIdHash` hoặc `producerProfileHash` vào transaction.
 - Tách nhiều ví actor hoặc dùng account abstraction thay vì toàn bộ transaction do service wallet ký.
 - Dùng Redis/shared cache và queue transaction nếu chạy nhiều backend instance.

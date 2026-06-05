@@ -1,6 +1,60 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
+
+async function expectCustomError(promise, contract, errorName) {
+  let thrownError;
+
+  try {
+    await promise;
+  } catch (error) {
+    thrownError = error;
+  }
+
+  expect(thrownError, `Expected custom error ${errorName}`).to.exist;
+
+  const errorData =
+    thrownError.data ||
+    thrownError.error?.data ||
+    thrownError.info?.error?.data;
+
+  if (errorData) {
+    const parsed = contract.interface.parseError(errorData);
+    expect(parsed.name).to.equal(errorName);
+    return;
+  }
+
+  expect(String(thrownError.message)).to.include(errorName);
+}
+
+async function expectRevertMessage(promise, message) {
+  let thrownError;
+
+  try {
+    await promise;
+  } catch (error) {
+    thrownError = error;
+  }
+
+  expect(thrownError, `Expected revert message ${message}`).to.exist;
+  expect(String(thrownError.message)).to.include(message);
+}
+
+async function expectEvent(txPromise, contract, eventName, validateArgs) {
+  const tx = await txPromise;
+  const receipt = await tx.wait();
+  const events = receipt.logs
+    .map((log) => {
+      try {
+        return contract.interface.parseLog(log);
+      } catch {
+        return null;
+      }
+    })
+    .filter((event) => event?.name === eventName);
+
+  expect(events.length, `Expected event ${eventName}`).to.be.greaterThan(0);
+  validateArgs(events[0].args);
+}
 
 describe("Traceability", function () {
   let traceability;
@@ -60,48 +114,57 @@ describe("Traceability", function () {
     });
 
     it("rejects createBatch from non-whitelisted wallets", async function () {
-      await expect(createBatch(traceability.connect(otherUser))).to.be.revertedWithCustomError(
+      await expectCustomError(
+        createBatch(traceability.connect(otherUser)),
         traceability,
         "NotWhitelistedProducer"
       );
     });
 
     it("lets the system admin add and remove producers", async function () {
-      await expect(traceability.addWhitelistedProducer(otherUser.address))
-        .to.emit(traceability, "ProducerAdded")
-        .withArgs(otherUser.address);
+      await expectEvent(
+        traceability.addWhitelistedProducer(otherUser.address),
+        traceability,
+        "ProducerAdded",
+        (args) => {
+          expect(args.producer).to.equal(otherUser.address);
+        }
+      );
 
       expect(await traceability.isWhitelistedProducer(otherUser.address)).to.equal(true);
-      await expect(createBatch(traceability.connect(otherUser))).to.not.be.reverted;
+      await createBatch(traceability.connect(otherUser));
 
-      await expect(traceability.removeWhitelistedProducer(otherUser.address))
-        .to.emit(traceability, "ProducerRemoved")
-        .withArgs(otherUser.address);
+      await expectEvent(
+        traceability.removeWhitelistedProducer(otherUser.address),
+        traceability,
+        "ProducerRemoved",
+        (args) => {
+          expect(args.producer).to.equal(otherUser.address);
+        }
+      );
       expect(await traceability.isWhitelistedProducer(otherUser.address)).to.equal(false);
     });
   });
 
   describe("createBatch", function () {
     it("creates a batch with initial IPFS evidence metadata", async function () {
-      await expect(createBatch())
-        .to.emit(traceability, "BatchCreated")
-        .withArgs(
-          1,
-          "Gạo ST25 - Lô 001",
-          "Sóc Trăng, Việt Nam",
-          owner.address,
-          EVIDENCE_HASH,
-          IPFS_CID,
-          anyValue
-        );
+      await expectEvent(createBatch(), traceability, "BatchCreated", (args) => {
+        expect(Number(args.batchId)).to.equal(1);
+        expect(args.name).to.equal("Gạo ST25 - Lô 001");
+        expect(args.origin).to.equal("Sóc Trăng, Việt Nam");
+        expect(args.owner).to.equal(owner.address);
+        expect(args.evidenceHash).to.equal(EVIDENCE_HASH);
+        expect(args.ipfsCid).to.equal(IPFS_CID);
+        expect(Number(args.timestamp)).to.be.greaterThan(0);
+      });
 
       const batch = await traceability.getBatch(1);
-      expect(batch.currentStage).to.equal(Stage.Seeding);
+      expect(Number(batch.currentStage)).to.equal(Stage.Seeding);
       expect(batch.isActive).to.equal(true);
-      expect(batch.totalStages).to.equal(1);
+      expect(Number(batch.totalStages)).to.equal(1);
 
       const history = await traceability.getStageHistory(1);
-      expect(history[0].stage).to.equal(Stage.Seeding);
+      expect(Number(history[0].stage)).to.equal(Stage.Seeding);
       expect(history[0].imageUrl).to.equal(IMAGE_URL);
       expect(history[0].evidenceHash).to.equal(EVIDENCE_HASH);
       expect(history[0].ipfsCid).to.equal(IPFS_CID);
@@ -111,11 +174,12 @@ describe("Traceability", function () {
       await createBatch();
       await createBatch(traceability, { name: "Lô 2", origin: "Đà Lạt" });
 
-      expect(await traceability.getTotalBatches()).to.equal(2);
+      expect(Number(await traceability.getTotalBatches())).to.equal(2);
     });
 
     it("rejects an empty batch name", async function () {
-      await expect(createBatch(traceability, { name: "" })).to.be.revertedWithCustomError(
+      await expectCustomError(
+        createBatch(traceability, { name: "" }),
         traceability,
         "EmptyBatchName"
       );
@@ -132,23 +196,26 @@ describe("Traceability", function () {
       await addStage(traceability, Stage.Fertilizing, { description: "Bón phân hữu cơ" });
       await addStage(traceability, Stage.Harvesting, { description: "Thu hoạch" });
 
-      await expect(
+      await expectEvent(
         addStage(traceability, Stage.QualityInspection, {
           description: "QualityInspection PASS",
           evidenceHash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           ipfsCid: "bafy-quality-pass",
-        })
-      )
-        .to.emit(traceability, "StageAdded")
-        .withArgs(
-          1,
-          Stage.QualityInspection,
-          "QualityInspection PASS",
-          IMAGE_URL,
-          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "bafy-quality-pass",
-          anyValue
-        );
+        }),
+        traceability,
+        "StageAdded",
+        (args) => {
+          expect(Number(args.batchId)).to.equal(1);
+          expect(Number(args.stage)).to.equal(Stage.QualityInspection);
+          expect(args.description).to.equal("QualityInspection PASS");
+          expect(args.imageUrl).to.equal(IMAGE_URL);
+          expect(args.evidenceHash).to.equal(
+            "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          );
+          expect(args.ipfsCid).to.equal("bafy-quality-pass");
+          expect(Number(args.timestamp)).to.be.greaterThan(0);
+        }
+      );
 
       await addStage(traceability, Stage.WarehouseReceived, {
         description: "WarehouseReceived | Kho TP.HCM | Quantity: 500 kg",
@@ -157,36 +224,42 @@ describe("Traceability", function () {
       });
 
       const batch = await traceability.getBatch(1);
-      expect(batch.currentStage).to.equal(Stage.WarehouseReceived);
+      expect(Number(batch.currentStage)).to.equal(Stage.WarehouseReceived);
 
       const history = await traceability.getStageHistory(1);
       expect(history.length).to.equal(6);
-      expect(history[4].stage).to.equal(Stage.QualityInspection);
+      expect(Number(history[4].stage)).to.equal(Stage.QualityInspection);
       expect(history[4].ipfsCid).to.equal("bafy-quality-pass");
-      expect(history[5].stage).to.equal(Stage.WarehouseReceived);
+      expect(Number(history[5].stage)).to.equal(Stage.WarehouseReceived);
       expect(history[5].evidenceHash).to.equal(
         "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
       );
     });
 
     it("rejects non-owner stage updates", async function () {
-      await expect(
+      await expectCustomError(
         addStage(traceability.connect(otherUser), Stage.Growing, {
           description: "Hack attempt",
-        })
-      ).to.be.revertedWithCustomError(traceability, "NotBatchOwner");
+        }),
+        traceability,
+        "NotBatchOwner"
+      );
     });
 
     it("rejects backward or duplicate progression", async function () {
       await addStage(traceability, Stage.Growing, { description: "Growing" });
 
-      await expect(
-        addStage(traceability, Stage.Seeding, { description: "Go back" })
-      ).to.be.revertedWithCustomError(traceability, "InvalidStageProgression");
+      await expectCustomError(
+        addStage(traceability, Stage.Seeding, { description: "Go back" }),
+        traceability,
+        "InvalidStageProgression"
+      );
 
-      await expect(
-        addStage(traceability, Stage.Growing, { description: "Duplicate" })
-      ).to.be.revertedWithCustomError(traceability, "InvalidStageProgression");
+      await expectCustomError(
+        addStage(traceability, Stage.Growing, { description: "Duplicate" }),
+        traceability,
+        "InvalidStageProgression"
+      );
     });
 
     it("marks the batch inactive when completed and rejects later updates", async function () {
@@ -198,15 +271,17 @@ describe("Traceability", function () {
       await addStage(traceability, Stage.Packaging);
       await addStage(traceability, Stage.Shipping);
 
-      await expect(addStage(traceability, Stage.Completed))
-        .to.emit(traceability, "BatchCompleted")
-        .withArgs(1, anyValue);
+      await expectEvent(addStage(traceability, Stage.Completed), traceability, "BatchCompleted", (args) => {
+        expect(Number(args.batchId)).to.equal(1);
+        expect(Number(args.timestamp)).to.be.greaterThan(0);
+      });
 
       const batch = await traceability.getBatch(1);
-      expect(batch.currentStage).to.equal(Stage.Completed);
+      expect(Number(batch.currentStage)).to.equal(Stage.Completed);
       expect(batch.isActive).to.equal(false);
 
-      await expect(addStage(traceability, Stage.Shipping)).to.be.revertedWithCustomError(
+      await expectCustomError(
+        addStage(traceability, Stage.Shipping),
         traceability,
         "BatchNotActive"
       );
@@ -219,15 +294,13 @@ describe("Traceability", function () {
       await addStage(traceability, Stage.Growing, { description: "Cây phát triển" });
 
       const first = await traceability.getStageAt(1, 0);
-      expect(first.stage).to.equal(Stage.Seeding);
+      expect(Number(first.stage)).to.equal(Stage.Seeding);
 
       const second = await traceability.getStageAt(1, 1);
-      expect(second.stage).to.equal(Stage.Growing);
+      expect(Number(second.stage)).to.equal(Stage.Growing);
       expect(second.description).to.equal("Cây phát triển");
 
-      await expect(traceability.getStageAt(1, 99)).to.be.revertedWith(
-        "Index out of bounds"
-      );
+      await expectRevertMessage(traceability.getStageAt(1, 99), "Index out of bounds");
     });
   });
 });
