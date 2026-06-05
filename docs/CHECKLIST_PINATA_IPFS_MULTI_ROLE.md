@@ -7,28 +7,39 @@ Tai lieu nay tong hop tu 2 file prompt:
 
 Muc tieu: dung nhu checklist ra soat truoc khi demo, deploy, nop bao cao hoac tra loi phan bien. Moi muc nen duoc tick bang chung cu the: file code, endpoint, UI screen, transaction, log deploy, screenshot hoac ket qua test.
 
+## Trang thai cap nhat 2026-06-05
+
+- [x] Da test production read/RBAC: admin login thanh cong, 5 role demo dang nhap duoc, public routes load khong console error.
+- [x] Da deploy contract Traceability schema v2 tren Polygon Amoy: `0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`.
+- [x] Deployment tx: `0x466c89d78d6209eca775c66f695d6f42c9f69143197fbfb055896b193e8e4323`, block `39596189`.
+- [x] Da luu deployment metadata tai `smart-contracts/deployments/amoy-traceability-v2.json`.
+- [x] Da compile `Traceability.sol` bang `solc 0.8.26`, ABI co 23 entries, bytecode khoang 5.5KB.
+- [x] Da test production sau deploy: health DB available, admin login OK, write flow van 409 cho den khi Render env bat schema v2.
+- [ ] Chua cap nhat Render production env trong phien nay: can set `CONTRACT_ADDRESS=0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` va `CONTRACT_STAGE_SCHEMA=v2`, sau do redeploy backend.
+- [ ] Sau khi Render env v2 duoc bat, can tao batch demo moi va test flow ghi that: Producer -> Inspector PASS -> WarehouseReceived -> Distributor Shipping -> Public QR.
+
 ## 1. Nguyen Tac Kien Truc Can Giu
 
-- [ ] Du an dung mo hinh hybrid on-chain/off-chain, khong co gang dua toan bo du lieu len blockchain.
-- [ ] Blockchain luu vong doi batch, stage history, timestamp, actor/service wallet va transaction proof.
-- [ ] PostgreSQL luu metadata nghiep vu: producer, user role, warehouse, inspection, receipt, dashboard, search, transaction metadata.
-- [ ] Pinata/IPFS luu file evidence: anh san xuat, chung nhan, bien nhan nhap kho, dong goi, van chuyen.
-- [ ] Frontend/mobile chi goi backend API, khong giu secret va khong upload truc tiep len Pinata bang JWT.
-- [ ] Backend van la relayer ky transaction bang service wallet.
-- [ ] Smart contract chi can whitelist service wallet/producer theo kien truc hien tai; RBAC nghiep vu xu ly o backend.
-- [ ] Khong xoa hoac lam hong cac luong cu: Batch, Producer, QR, Ledger, Compliance, Public Verification, Mobile Scan.
-- [ ] Neu contract schema moi duoc deploy, chap nhan tao batch demo moi; khong bat buoc migrate old on-chain data.
+- [x] Du an dung mo hinh hybrid on-chain/off-chain, khong co gang dua toan bo du lieu len blockchain.
+- [x] Blockchain luu vong doi batch, stage history, timestamp, actor/service wallet va transaction proof.
+- [x] PostgreSQL luu metadata nghiep vu: producer, user role, warehouse, inspection, receipt, dashboard, search, transaction metadata.
+- [x] Pinata/IPFS luu file evidence: anh san xuat, chung nhan, bien nhan nhap kho, dong goi, van chuyen.
+- [x] Frontend/mobile chi goi backend API, khong giu secret va khong upload truc tiep len Pinata bang JWT.
+- [x] Backend van la relayer ky transaction bang service wallet.
+- [x] Smart contract chi can whitelist service wallet/producer theo kien truc hien tai; RBAC nghiep vu xu ly o backend.
+- [x] Khong xoa hoac lam hong cac luong cu: Batch, Producer, QR, Ledger, Compliance, Public Verification, Mobile Scan.
+- [x] Neu contract schema moi duoc deploy, chap nhan tao batch demo moi; khong bat buoc migrate old on-chain data.
 
 ## 2. Pinata/IPFS Thay Cloudinary
 
-- [ ] Khong dung Cloudinary lam storage chinh trong flow evidence moi.
-- [ ] Khong upload evidence len Cloudinary trong API tao batch, add stage, inspection, warehouse, packaging, shipping.
-- [ ] Neu code cu con Cloudinary, phai danh dau legacy/deprecated va khong goi trong flow moi.
-- [ ] README va docs khong mo ta Cloudinary la storage hien tai.
-- [ ] UI wording khong dung "Cloudinary Image", "Cloudinary URL", "Uploaded to Cloudinary".
-- [ ] UI wording dung "IPFS Evidence", "IPFS CID", "Evidence Hash", "View on IPFS", "Blockchain Proof".
-- [ ] Chay grep sau khi sua va xac nhan khong con Cloudinary trong docs/code chinh, hoac co chu thich legacy ro rang.
-- [ ] Khong commit `PINATA_JWT`, database URL, private key, admin password that, Unsplash secret key.
+- [x] Khong dung Cloudinary lam storage chinh trong flow evidence moi.
+- [x] Khong upload evidence len Cloudinary trong API tao batch, add stage, inspection, warehouse, packaging, shipping.
+- [x] Neu code cu con Cloudinary, phai danh dau legacy/deprecated va khong goi trong flow moi.
+- [x] README va docs khong mo ta Cloudinary la storage hien tai.
+- [x] UI wording khong dung "Cloudinary Image", "Cloudinary URL", "Uploaded to Cloudinary".
+- [x] UI wording dung "IPFS Evidence", "IPFS CID", "Evidence Hash", "View on IPFS", "Blockchain Proof".
+- [x] Chay grep sau khi sua va xac nhan khong con Cloudinary trong docs/code chinh, hoac co chu thich legacy ro rang.
+- [x] Khong commit `PINATA_JWT`, database URL, private key, admin password that, Unsplash secret key.
 
 Lenh ra soat de dung truoc khi commit:
 
@@ -94,34 +105,34 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 
 ## 5. Smart Contract
 
-- [ ] `Traceability.sol` doc code da duoc doc va nang cap co kiem soat.
-- [ ] Stage enum moi co dung thu tu:
-  - [ ] `0: Seeding`
-  - [ ] `1: Growing`
-  - [ ] `2: Fertilizing`
-  - [ ] `3: Harvesting`
-  - [ ] `4: QualityInspection`
-  - [ ] `5: WarehouseReceived`
-  - [ ] `6: Packaging`
-  - [ ] `7: Shipping`
-  - [ ] `8: Completed`
-- [ ] `StageRecord` co `stage`.
-- [ ] `StageRecord` co `description`.
-- [ ] `StageRecord` co `ipfsUrl` hoac `imageUrl` dung nhu IPFS URL.
-- [ ] `StageRecord` co `evidenceHash`.
-- [ ] `StageRecord` co `ipfsCid`.
-- [ ] `StageRecord` co `timestamp`.
-- [ ] `StageRecord` co `updatedBy`.
-- [ ] `createBatch` nhan metadata evidence can thiet.
-- [ ] `addStage` nhan `ipfsUrl`, `evidenceHash`, `ipfsCid`.
-- [ ] Event `BatchCreated` emit evidence metadata neu can.
-- [ ] Event `StageAdded` emit `evidenceHash` va `ipfsCid`.
-- [ ] Non-whitelisted wallet khong duoc ghi neu contract co rule nay.
-- [ ] Khong cho add stage sau `Completed`.
-- [ ] Khong cho stage di lui hoac sai thu tu neu contract/backend enforce.
-- [ ] Hardhat tests cap nhat cho schema moi.
-- [ ] ABI moi duoc cap nhat cho backend/frontend.
-- [ ] Contract moi duoc deploy local/testnet.
+- [x] `Traceability.sol` doc code da duoc doc va nang cap co kiem soat.
+- [x] Stage enum moi co dung thu tu:
+  - [x] `0: Seeding`
+  - [x] `1: Growing`
+  - [x] `2: Fertilizing`
+  - [x] `3: Harvesting`
+  - [x] `4: QualityInspection`
+  - [x] `5: WarehouseReceived`
+  - [x] `6: Packaging`
+  - [x] `7: Shipping`
+  - [x] `8: Completed`
+- [x] `StageRecord` co `stage`.
+- [x] `StageRecord` co `description`.
+- [x] `StageRecord` co `ipfsUrl` hoac `imageUrl` dung nhu IPFS URL.
+- [x] `StageRecord` co `evidenceHash`.
+- [x] `StageRecord` co `ipfsCid`.
+- [x] `StageRecord` co `timestamp`.
+- [x] `StageRecord` co `updatedBy`.
+- [x] `createBatch` nhan metadata evidence can thiet.
+- [x] `addStage` nhan `ipfsUrl`, `evidenceHash`, `ipfsCid`.
+- [x] Event `BatchCreated` emit evidence metadata neu can.
+- [x] Event `StageAdded` emit `evidenceHash` va `ipfsCid`.
+- [x] Non-whitelisted wallet khong duoc ghi neu contract co rule nay.
+- [x] Khong cho add stage sau `Completed`.
+- [x] Khong cho stage di lui hoac sai thu tu neu contract/backend enforce.
+- [x] Hardhat tests cap nhat cho schema moi.
+- [x] ABI moi duoc cap nhat cho backend/frontend.
+- [x] Contract moi duoc deploy local/testnet.
 - [ ] `CONTRACT_ADDRESS` production/testnet duoc cap nhat sau deploy.
 - [ ] `CONTRACT_STAGE_SCHEMA=v2` duoc cau hinh khi dung contract moi.
 - [ ] Source contract duoc verify hoac co link Sourcify/Polygonscan neu can demo.
@@ -202,39 +213,39 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 
 ## 7. Seed Account Va Auth
 
-- [ ] Admin production/demo duoc seed tu `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`.
-- [ ] Khong hard-code admin password production.
-- [ ] Demo account local/dev duoc seed khi khong production hoac `SEED_DEMO_USERS=true`.
-- [ ] Demo Producer: `producer@agritrace.local / Producer@123`.
-- [ ] Demo Quality Inspector: `inspector@agritrace.local / Inspector@123`.
-- [ ] Demo Warehouse Staff: `warehouse@agritrace.local / Warehouse@123`.
-- [ ] Demo Distributor: `distributor@agritrace.local / Distributor@123`.
-- [ ] Neu dung admin demo local: `admin@agritrace.local / Admin@123` chi duoc dung local/dev, khong production.
-- [ ] Login doc tu bang `users`.
-- [ ] Login co fallback env admin neu DB chua san sang neu du an can giu compatibility.
-- [ ] JWT payload co `userId`.
-- [ ] JWT payload co `email`.
-- [ ] JWT payload co `name`.
-- [ ] JWT payload co `role`.
-- [ ] JWT payload co `producerId`.
-- [ ] JWT payload co `warehouseId`.
-- [ ] `POST /api/auth/login` hoat dong.
-- [ ] `GET /api/auth/me` hoat dong cho moi role da login.
+- [x] Admin production/demo duoc seed tu `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`.
+- [x] Khong hard-code admin password production.
+- [x] Demo account local/dev duoc seed khi khong production hoac `SEED_DEMO_USERS=true`.
+- [x] Demo Producer: `producer@agritrace.local / Producer@123`.
+- [x] Demo Quality Inspector: `inspector@agritrace.local / Inspector@123`.
+- [x] Demo Warehouse Staff: `warehouse@agritrace.local / Warehouse@123`.
+- [x] Demo Distributor: `distributor@agritrace.local / Distributor@123`.
+- [x] Neu dung admin demo local: `admin@agritrace.local / Admin@123` chi duoc dung local/dev, khong production.
+- [x] Login doc tu bang `users`.
+- [x] Login co fallback env admin neu DB chua san sang neu du an can giu compatibility.
+- [x] JWT payload co `userId`.
+- [x] JWT payload co `email`.
+- [x] JWT payload co `name`.
+- [x] JWT payload co `role`.
+- [x] JWT payload co `producerId`.
+- [x] JWT payload co `warehouseId`.
+- [x] `POST /api/auth/login` hoat dong.
+- [x] `GET /api/auth/me` hoat dong cho moi role da login.
 - [ ] `POST /api/auth/logout` optional neu frontend can.
 
 ## 8. RBAC Backend
 
-- [ ] Co middleware `requireAuth`.
-- [ ] Co middleware `requireRole([...roles])`.
-- [ ] Co helper/middleware admin.
-- [ ] Co helper/middleware producer neu can.
-- [ ] Co helper/middleware inspector neu can.
-- [ ] Co helper/middleware warehouse staff neu can.
-- [ ] Co helper/middleware distributor neu can.
-- [ ] Role check nam o backend, khong chi an button frontend.
-- [ ] Public endpoint chi read-only.
-- [ ] User chua login goi POST protected tra `401`.
-- [ ] User khong du quyen tra `403`.
+- [x] Co middleware `requireAuth`.
+- [x] Co middleware `requireRole([...roles])`.
+- [x] Co helper/middleware admin.
+- [x] Co helper/middleware producer neu can.
+- [x] Co helper/middleware inspector neu can.
+- [x] Co helper/middleware warehouse staff neu can.
+- [x] Co helper/middleware distributor neu can.
+- [x] Role check nam o backend, khong chi an button frontend.
+- [x] Public endpoint chi read-only.
+- [x] User chua login goi POST protected tra `401`.
+- [x] User khong du quyen tra `403`.
 
 ## 9. Business Rules Bat Buoc
 

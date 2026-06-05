@@ -183,8 +183,9 @@ Create Batch
 - `WarehouseReceived`: nhân viên kho ghi nhận kho nhận hàng, số lượng, vị trí kho, tình trạng và ảnh biên nhận.
 - Evidence upload: backend tính SHA-256, pin file lên Pinata/IPFS, trả `ipfsCid/ipfsUrl`.
 - Contract schema v2: [smart-contracts/contracts/Traceability.sol](smart-contracts/contracts/Traceability.sol) đã có stage `QualityInspection`, `WarehouseReceived`, `evidenceHash`, `ipfsCid`. File [TraceabilityV2.sol](smart-contracts/contracts/TraceabilityV2.sol) được giữ như bản tham chiếu.
+- Polygon Amoy v2 deployment: `0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` ([Polygonscan](https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8)). Deployment metadata: [smart-contracts/deployments/amoy-traceability-v2.json](smart-contracts/deployments/amoy-traceability-v2.json).
 
-Lưu ý triển khai: để dùng flow mới trên testnet/production demo, cần redeploy contract schema v2, verify source, cập nhật `CONTRACT_ADDRESS` và set `CONTRACT_STAGE_SCHEMA=v2` cho backend.
+Lưu ý triển khai: contract schema v2 đã deploy trên testnet. Để production demo ghi được `QualityInspection`, `WarehouseReceived`, `evidenceHash` và `ipfsCid` on-chain, Render backend cần cập nhật `CONTRACT_ADDRESS=0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` và `CONTRACT_STAGE_SCHEMA=v2`, sau đó redeploy.
 
 ## Giới hạn hiện tại và hướng phát triển
 
@@ -205,7 +206,7 @@ Phần này được nêu rõ để phản biện thấy phạm vi dự án minh
 ### Hướng phát triển
 
 - **Neo producer metadata vào blockchain**: Thêm `producerIdHash`, `producerProfileHash` hoặc `metadataHash` vào transaction để chứng minh quan hệ producer-batch không chỉ nằm ở DB.
-- **Deploy contract schema v2 cho IPFS evidence**: `Traceability.sol` đã bổ sung `QualityInspection`, `WarehouseReceived`, `evidenceHash` và `ipfsCid`; bước tiếp theo là deploy v2, verify source và cập nhật backend env `CONTRACT_STAGE_SCHEMA=v2`.
+- **Bật contract schema v2 trên production**: contract v2 đã deploy trên Polygon Amoy tại `0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`; bước tiếp theo là cập nhật Render env `CONTRACT_ADDRESS` và `CONTRACT_STAGE_SCHEMA=v2`, redeploy backend, rồi tạo batch demo mới theo flow multi-role.
 - **Phân quyền nhiều vai trò nâng cao**: Tách ví hoặc tài khoản blockchain cho producer, distributor, inspector thay vì toàn bộ transaction đều do service wallet relayer ký.
 - **Audit trail cho database**: Ghi lịch sử thay đổi producer profile, trạng thái kiểm định và metadata liên kết để truy vết thao tác admin.
 - **Nâng cấp hạ tầng production**: Dùng Redis/shared cache, queue cho transaction, monitoring/logging và chiến lược retry khi RPC hoặc DB lỗi.

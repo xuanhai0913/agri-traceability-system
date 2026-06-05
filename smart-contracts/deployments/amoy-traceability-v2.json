@@ -1,0 +1,19 @@
+{
+  "contractName": "Traceability",
+  "schema": "v2",
+  "network": "Polygon Amoy",
+  "chainId": 80002,
+  "contractAddress": "0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8",
+  "deployer": "0xCBe061edb5159ac5E61Ff3C87e2402e5a4CAac5f",
+  "transactionHash": "0x466c89d78d6209eca775c66f695d6f42c9f69143197fbfb055896b193e8e4323",
+  "blockNumber": 39596189,
+  "compiler": "0.8.26+commit.8a97fa7a.Emscripten.clang",
+  "deployedAt": "2026-06-05T02:17:48.847917+00:00",
+  "explorerUrl": "https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8",
+  "env": {
+    "CONTRACT_ADDRESS": "0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8",
+    "CONTRACT_STAGE_SCHEMA": "v2",
+    "CHAIN_ID": "80002",
+    "NETWORK_NAME": "Polygon Amoy"
+  }
+}

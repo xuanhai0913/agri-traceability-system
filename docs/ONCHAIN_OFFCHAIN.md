@@ -164,7 +164,7 @@ Cách trả lời ngắn khi bị hỏi "dùng DB như vậy có sai đề tài 
 ## 9. Hướng phát triển tiếp theo
 
 - Lưu thêm `producerIdHash` hoặc `producerProfileHash` trong transaction để neo quan hệ producer vào blockchain.
-- Hoàn tất deploy contract schema v2 trên Polygon Amoy, verify source và cập nhật `CONTRACT_STAGE_SCHEMA=v2` cho backend.
+- Contract schema v2 đã deploy trên Polygon Amoy tại `0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` ([Polygonscan](https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8)); bước tiếp theo là cập nhật Render env `CONTRACT_ADDRESS` và `CONTRACT_STAGE_SCHEMA=v2`, redeploy backend, rồi tạo batch demo mới theo flow multi-role.
 - Cho phép nhiều actor ký transaction riêng bằng ví của producer/distributor/inspector hoặc account abstraction.
 - Tách cache đọc blockchain sang Redis nếu cần chạy nhiều backend instance.
 - Bổ sung audit trail cho thay đổi producer profile ở database.
