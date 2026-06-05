@@ -25,47 +25,12 @@ Folder này chứa ảnh evidence đã chuẩn bị sẵn để upload khi demo 
 
 ## Link mở nhanh khi demo
 
-Mở sẵn mục này trong lúc thuyết trình. Tới bước nào thì click đúng link ở bước đó.
+Các link được đặt ngay trong từng bước của kịch bản để khi demo không phải quay lên đầu trang tìm lại.
 
-### Flow app
-
-| Bước | Link |
-| --- | --- |
-| Trang chủ product | [agri.hailamdev.space](https://agri.hailamdev.space/) |
-| Đăng nhập role | [Login](https://agri.hailamdev.space/login) |
-| Producer tạo lô mới | [Producer Create Batch](https://agri.hailamdev.space/producer/batches/new) |
-| Producer xem profile linked producer | [Producer Profile](https://agri.hailamdev.space/producer/profile) |
-| Inspector queue kiểm định | [Inspection Queue](https://agri.hailamdev.space/inspector/queue) |
-| Warehouse nhập kho | [Warehouse Receiving](https://agri.hailamdev.space/warehouse/receiving) |
-| Warehouse tồn kho | [Warehouse Inventory](https://agri.hailamdev.space/warehouse/inventory) |
-| Distributor queue | [Distributor Queue](https://agri.hailamdev.space/distributor/queue) |
-| Compliance evidence | [Compliance](https://agri.hailamdev.space/compliance) |
-| Batch demo hoàn chỉnh | [Public Batch #1](https://agri.hailamdev.space/batches/1) |
-
-### Link blockchain/IPFS cần chỉ rõ
-
-| Nội dung | Link |
-| --- | --- |
-| Contract address | [`0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`](https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8) |
-| Sourcify verified source | [Sourcify source verified](https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8) |
-| Service wallet/relayer | [`0xCBe061edb5159ac5E61Ff3C87e2402e5a4CAac5f`](https://amoy.polygonscan.com/address/0xCBe061edb5159ac5E61Ff3C87e2402e5a4CAac5f) |
-| IPFS evidence mẫu | [Pinata/IPFS CID `QmXWz...Nw1L`](https://scarlet-objective-narwhal-346.mypinata.cloud/ipfs/QmXWzMbQQAnQSAwFrd7PrZkPV7wACc6XdpZVxFUP8hNw1L) |
-
-### Transaction mẫu để click nhanh
-
-Các link này thuộc batch demo `Public Batch #1`, dùng khi testnet chậm hoặc chưa kịp tạo batch mới.
-
-| Stage | Polygonscan tx |
-| --- | --- |
-| Create Batch | [0x4db047...10fcb](https://amoy.polygonscan.com/tx/0x4db047cc1921b372b6960cb0b31790f818053214a41cae6c043a2598bd210fcb) |
-| Growing | [0xc62054...94b2f](https://amoy.polygonscan.com/tx/0xc620547a8de316cf04ebb7b1f24502a015f29aa2cc6adb29d9bb4c61d2694b2f) |
-| Fertilizing | [0x59fdea...f97b2](https://amoy.polygonscan.com/tx/0x59fdea85297f31c1f866eb0cee5d52b4ed9b3863e1d02c1bb20c5fb5d1ef97b2) |
-| Harvesting | [0x21a1a9...09d6](https://amoy.polygonscan.com/tx/0x21a1a9a6f80663e3710f5612f381222dabb0a56fa2bcca3590245b3df70f09d6) |
-| QualityInspection | [0x36aae8...9d7e](https://amoy.polygonscan.com/tx/0x36aae8f5fb35bf825ffbef3dc2915e788c4222f44d4e62393aecd474a0ed9d7e) |
-| WarehouseReceived | [0x94fb89...5849](https://amoy.polygonscan.com/tx/0x94fb898f5e0cd6c0dc5a36e44a21fb319bf19926d71db43e8d98184a32615849) |
-| Packaging | [0x5719a0...36be](https://amoy.polygonscan.com/tx/0x5719a01ea9f374cdba1b72fe96e575ba4d6b4a933c77a094c9e00a0e671336be) |
-| Shipping | [0x8ed588...322d](https://amoy.polygonscan.com/tx/0x8ed588c2f8019d1584d1c373ff3d80c977673088ebe2a2be27f7f7a03a57322d) |
-| Completed | [0xf7b1df...fd6f](https://amoy.polygonscan.com/tx/0xf7b1dfdcbb24d08300307fe56d1ede3eaca9db224861048019bd4dc82b7cfd6f) |
+- **Link app**: mở đúng màn hình cần thao tác cho role đang demo.
+- **Link tx mẫu**: dùng khi testnet chậm hoặc cần chỉ nhanh transaction thật của batch demo có sẵn.
+- **Link contract/source**: dùng ở bước blockchain proof để chỉ contract address, service wallet và source code verified.
+- **Link IPFS**: dùng ở bước consumer/public page để chứng minh evidence được lưu ngoài blockchain.
 
 ## Kịch bản demo đầy đủ
 
@@ -105,6 +70,13 @@ Vào `/login`, đăng nhập Producer, sau đó vào:
 
 `Producer Workspace -> Tạo lô mới`
 
+Link nhanh:
+
+- [Login](https://agri.hailamdev.space/login)
+- [Producer tạo lô mới](https://agri.hailamdev.space/producer/batches/new)
+- [Producer profile linked producer](https://agri.hailamdev.space/producer/profile)
+- Tx mẫu nếu cần chỉ proof nhanh: [Create Batch `0x4db047...10fcb`](https://amoy.polygonscan.com/tx/0x4db047cc1921b372b6960cb0b31790f818053214a41cae6c043a2598bd210fcb)
+
 Tạo batch:
 
 - Tên lô: `Gạo ST25 Demo`
@@ -125,6 +97,13 @@ Sau khi tạo xong, chỉ:
 ### 4. Producer cập nhật stage sản xuất
 
 Trong Batch Detail, thêm lần lượt:
+
+Link nhanh:
+
+- Nếu demo bằng batch có sẵn: [Public Batch #1](https://agri.hailamdev.space/batches/1)
+- Tx mẫu Growing: [0xc62054...94b2f](https://amoy.polygonscan.com/tx/0xc620547a8de316cf04ebb7b1f24502a015f29aa2cc6adb29d9bb4c61d2694b2f)
+- Tx mẫu Fertilizing: [0x59fdea...f97b2](https://amoy.polygonscan.com/tx/0x59fdea85297f31c1f866eb0cee5d52b4ed9b3863e1d02c1bb20c5fb5d1ef97b2)
+- Tx mẫu Harvesting: [0x21a1a9...09d6](https://amoy.polygonscan.com/tx/0x21a1a9a6f80663e3710f5612f381222dabb0a56fa2bcca3590245b3df70f09d6)
 
 | Stage | Mô tả gợi ý | Ảnh upload |
 | --- | --- | --- |
@@ -150,6 +129,12 @@ Chỉ trên màn hình:
 Logout Producer, login Quality Inspector, vào:
 
 `Inspector Workspace -> Queue kiểm định`
+
+Link nhanh:
+
+- [Login](https://agri.hailamdev.space/login)
+- [Inspection Queue](https://agri.hailamdev.space/inspector/queue)
+- Tx mẫu QualityInspection: [0x36aae8...9d7e](https://amoy.polygonscan.com/tx/0x36aae8f5fb35bf825ffbef3dc2915e788c4222f44d4e62393aecd474a0ed9d7e)
 
 Chọn batch vừa thu hoạch.
 
@@ -180,6 +165,13 @@ Logout Inspector, login Warehouse Staff, vào:
 
 `Warehouse Workspace -> Receiving`
 
+Link nhanh:
+
+- [Login](https://agri.hailamdev.space/login)
+- [Warehouse Receiving](https://agri.hailamdev.space/warehouse/receiving)
+- [Warehouse Inventory](https://agri.hailamdev.space/warehouse/inventory)
+- Tx mẫu WarehouseReceived: [0x94fb89...5849](https://amoy.polygonscan.com/tx/0x94fb898f5e0cd6c0dc5a36e44a21fb319bf19926d71db43e8d98184a32615849)
+
 Chọn batch đã kiểm định PASS.
 
 Nhập kho:
@@ -207,6 +199,14 @@ Chỉ:
 Logout Warehouse, login Distributor, vào:
 
 `Distributor Workspace -> Queue`
+
+Link nhanh:
+
+- [Login](https://agri.hailamdev.space/login)
+- [Distributor Queue](https://agri.hailamdev.space/distributor/queue)
+- Tx mẫu Packaging: [0x5719a0...36be](https://amoy.polygonscan.com/tx/0x5719a01ea9f374cdba1b72fe96e575ba4d6b4a933c77a094c9e00a0e671336be)
+- Tx mẫu Shipping: [0x8ed588...322d](https://amoy.polygonscan.com/tx/0x8ed588c2f8019d1584d1c373ff3d80c977673088ebe2a2be27f7f7a03a57322d)
+- Tx mẫu Completed: [0xf7b1df...fd6f](https://amoy.polygonscan.com/tx/0xf7b1dfdcbb24d08300307fe56d1ede3eaca9db224861048019bd4dc82b7cfd6f)
 
 Chọn batch đã nhập kho.
 
@@ -236,6 +236,12 @@ Nói:
 
 Mở public batch page hoặc QR code của batch.
 
+Link nhanh:
+
+- Nếu dùng batch vừa tạo: mở public page từ nút QR/verification link trong Batch Detail.
+- Nếu dùng batch mẫu: [Public Batch #1](https://agri.hailamdev.space/batches/1)
+- IPFS evidence mẫu: [Pinata/IPFS CID `QmXWz...Nw1L`](https://scarlet-objective-narwhal-346.mypinata.cloud/ipfs/QmXWzMbQQAnQSAwFrd7PrZkPV7wACc6XdpZVxFUP8hNw1L)
+
 Nói:
 
 > Đây là giao diện người tiêu dùng. Người tiêu dùng không cần đăng nhập, chỉ cần quét QR hoặc mở link public để xem toàn bộ hành trình.
@@ -264,6 +270,13 @@ Nói:
 
 Mở transaction hash trên Polygonscan.
 
+Link nhanh:
+
+- Contract address: [`0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`](https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8)
+- Service wallet/relayer: [`0xCBe061edb5159ac5E61Ff3C87e2402e5a4CAac5f`](https://amoy.polygonscan.com/address/0xCBe061edb5159ac5E61Ff3C87e2402e5a4CAac5f)
+- Sourcify verified source: [Sourcify `0xA94D...b7ed8`](https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8)
+- Tx mẫu Completed để mở nhanh: [0xf7b1df...fd6f](https://amoy.polygonscan.com/tx/0xf7b1dfdcbb24d08300307fe56d1ede3eaca9db224861048019bd4dc82b7cfd6f)
+
 Nói:
 
 > Đây là transaction thật trên Polygon Amoy testnet. Có block number, transaction hash, contract address và thời điểm ghi nhận.
@@ -275,6 +288,12 @@ Sau đó mở Sourcify contract source:
 ### 10. Demo Compliance Page
 
 Vào `Compliance`.
+
+Link nhanh:
+
+- [Compliance evidence](https://agri.hailamdev.space/compliance)
+- Contract address trong Compliance: [`0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`](https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8)
+- Sourcify source verified: [Sourcify source](https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8)
 
 Chỉ:
 
