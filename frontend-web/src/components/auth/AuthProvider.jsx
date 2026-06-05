@@ -4,6 +4,7 @@ import {
   getCurrentAdmin,
   getStoredAdminSession,
   loginAdmin,
+  logoutAdmin,
   storeAdminSession,
 } from "../../services/api";
 import { AuthContext } from "./authContext";
@@ -54,6 +55,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    logoutAdmin().catch(() => {});
     clearAdminSession();
     setSession(null);
   }

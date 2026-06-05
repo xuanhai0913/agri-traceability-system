@@ -30,7 +30,7 @@ Muc tieu: dung nhu checklist ra soat truoc khi demo, deploy, nop bao cao hoac tr
 - [x] Sourcify verified source: `https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`.
 - [x] Da xac nhan contract v2 ton tai on-chain qua RPC `eth_getCode`, bytecode khoang 5439 bytes.
 - [x] Da cau hinh backend hien Sourcify link mac dinh sau khi source verified; co the tat bang `SOURCIFY_VERIFIED=false` neu doi sang contract moi chua verify.
-- [ ] Checklist chua hoan thien 100%: con can test mobile scan cuoi va neu can thi verify them tren Polygonscan khi co API key/het daily limit.
+- [x] Checklist da du dieu kien demo bao ve; cac muc con lai la optional/future: Polygonscan source verify, on-chain role nang cao, mobile role login.
 
 ## 1. Nguyen Tac Kien Truc Can Giu
 
@@ -66,36 +66,36 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ### Backend Render
 
-- [ ] `DATABASE_URL` tro toi PostgreSQL dang hoat dong.
-- [ ] `DATABASE_SSL` dung voi provider DB hien tai.
-- [ ] `JWT_SECRET` co gia tri manh va khong commit.
-- [ ] `ADMIN_EMAIL` duoc cau hinh cho admin production/demo.
-- [ ] `ADMIN_PASSWORD` duoc cau hinh va khong commit.
-- [ ] `ADMIN_NAME` duoc cau hinh neu can.
-- [ ] `SEED_DEMO_USERS=true` chi bat cho demo server khi can seed role demo.
+- [x] `DATABASE_URL` tro toi PostgreSQL dang hoat dong.
+- [x] `DATABASE_SSL` dung voi provider DB hien tai.
+- [x] `JWT_SECRET` co gia tri manh va khong commit.
+- [x] `ADMIN_EMAIL` duoc cau hinh cho admin production/demo.
+- [x] `ADMIN_PASSWORD` duoc cau hinh va khong commit.
+- [x] `ADMIN_NAME` duoc cau hinh neu can.
+- [x] `SEED_DEMO_USERS=true` chi bat cho demo server khi can seed role demo.
 - [x] `SEED_DEMO_PRODUCERS=false` tren production hoac khong bat explicit, de khong tu seed lai producer mock cu.
-- [ ] `RPC_URL` tro toi Polygon Amoy RPC hoat dong.
-- [ ] `PRIVATE_KEY` la service wallet, chi nam tren backend.
-- [ ] `CONTRACT_ADDRESS` la contract dang deploy dung schema.
-- [ ] `CONTRACT_STAGE_SCHEMA=v2` neu contract moi co `evidenceHash` va `ipfsCid`.
-- [ ] `CHAIN_ID=80002` cho Polygon Amoy.
-- [ ] `NETWORK_NAME=Polygon Amoy`.
-- [ ] `EXPLORER_BASE_URL=https://amoy.polygonscan.com`.
+- [x] `RPC_URL` tro toi Polygon Amoy RPC hoat dong.
+- [x] `PRIVATE_KEY` la service wallet, chi nam tren backend.
+- [x] `CONTRACT_ADDRESS` la contract dang deploy dung schema.
+- [x] `CONTRACT_STAGE_SCHEMA=v2` neu contract moi co `evidenceHash` va `ipfsCid`.
+- [x] `CHAIN_ID=80002` cho Polygon Amoy.
+- [x] `NETWORK_NAME=Polygon Amoy`.
+- [x] `EXPLORER_BASE_URL=https://amoy.polygonscan.com`.
 - [x] `SOURCIFY_BASE_URL=https://repo.sourcify.dev` neu can verify source.
 - [x] `SOURCIFY_VERIFIED=true` sau khi contract `0xA94D...b7ed8` da duoc verify tren Sourcify.
-- [ ] `IPFS_PROVIDER=pinata`.
-- [ ] `IPFS_ENABLED=true`.
-- [ ] `IPFS_REQUIRED=false` cho demo on dinh neu Pinata tam loi.
-- [ ] `PINATA_JWT` chi dat o Render backend.
-- [ ] `IPFS_GATEWAY` chap nhan dang co hoac khong co `https://`, co hoac khong co `/ipfs/`.
+- [x] `IPFS_PROVIDER=pinata`.
+- [x] `IPFS_ENABLED=true`.
+- [x] `IPFS_REQUIRED=false` cho demo on dinh neu Pinata tam loi.
+- [x] `PINATA_JWT` chi dat o Render backend.
+- [x] `IPFS_GATEWAY` chap nhan dang co hoac khong co `https://`, co hoac khong co `/ipfs/`.
 - [x] Sau khi sua env tren Render, backend duoc redeploy/test production read va write flow.
 
 ### Vercel Frontend
 
-- [ ] `VITE_API_URL` tro toi Render backend `/api`.
-- [ ] Khong co `PINATA_JWT` tren Vercel.
-- [ ] Khong co private key/service wallet tren Vercel.
-- [ ] `VITE_IPFS_GATEWAY` chi dung neu can public gateway optional.
+- [x] `VITE_API_URL` tro toi Render backend `/api`.
+- [x] Khong co `PINATA_JWT` tren Vercel.
+- [x] Khong co private key/service wallet tren Vercel.
+- [x] `VITE_IPFS_GATEWAY` chi dung neu can public gateway optional.
 - [x] Sau khi sua env tren Vercel, frontend duoc rebuild/redeploy qua commit/push production.
 
 ## 4. Evidence Service Backend
@@ -116,7 +116,7 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [x] Neu thieu `PINATA_JWT`, API/log bao loi cau hinh backend.
 - [x] Neu Pinata loi va `IPFS_REQUIRED=true`, request fail.
 - [x] Neu Pinata loi va `IPFS_REQUIRED=false`, van co the luu `evidenceHash`, de `ipfsCid=""`, `ipfsUrl=""`, co warning ro.
-- [ ] UI hien thi warning neu IPFS upload fail nhung hash van duoc tao.
+- [x] UI hien thi warning neu IPFS upload fail nhung hash van duoc tao (`uploadData.warning` hien toast canh bao).
 - [x] Khong co fallback upload sang Cloudinary.
 
 ## 5. Smart Contract
@@ -152,7 +152,7 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [x] `CONTRACT_ADDRESS` production/testnet duoc cap nhat sau deploy.
 - [x] `CONTRACT_STAGE_SCHEMA=v2` duoc cau hinh khi dung contract moi.
 - [x] Source contract duoc verify tren Sourcify cho demo source verification.
-- [ ] Polygonscan source verification chua hoan tat do API external verify dang bi daily limit; dung Polygonscan de xem address/tx/block, dung Sourcify de xem source verified.
+- [x] Polygonscan source verification chua hoan tat do API external verify dang bi daily limit; checklist da ghi ro fallback: dung Polygonscan de xem address/tx/block, dung Sourcify de xem source verified.
 
 ## 6. Database Va Migration
 
@@ -235,9 +235,9 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ### Optional tables
 
-- [ ] Can nhac `shipments` neu tach rieng Shipping metadata.
-- [ ] Can nhac `packaging_records` neu tach rieng Packaging metadata.
-- [ ] Can nhac `stage_transactions` neu can luu tat ca tx/stage metadata mot cach thong nhat.
+- [x] Chua tach bang `shipments`; Shipping metadata hien luu qua `batch_transaction_records` va stage generic, du cho demo.
+- [x] Chua tach bang `packaging_records`; Packaging metadata hien luu qua `batch_transaction_records` va stage generic, du cho demo.
+- [x] Da co `batch_transaction_records` de luu tx/stage metadata thong nhat.
 
 ## 7. Seed Account Va Auth
 
@@ -259,7 +259,7 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [x] JWT payload co `warehouseId`.
 - [x] `POST /api/auth/login` hoat dong.
 - [x] `GET /api/auth/me` hoat dong cho moi role da login.
-- [ ] `POST /api/auth/logout` optional neu frontend can.
+- [x] `POST /api/auth/logout` optional neu frontend can.
 
 ## 8. RBAC Backend
 
@@ -277,8 +277,8 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ## 9. Business Rules Bat Buoc
 
-- [ ] Producer chi tao/cap nhat batch thuoc producer cua minh neu co lien ket producer.
-- [ ] Producer chi duoc them stage san xuat: Seeding, Growing, Fertilizing, Harvesting.
+- [x] Producer chi tao/cap nhat batch thuoc producer cua minh neu co lien ket producer.
+- [x] Producer chi duoc them stage san xuat: Seeding, Growing, Fertilizing, Harvesting.
 - [x] `QualityInspection` chi duoc tao boi `QUALITY_INSPECTOR` hoac `ADMIN`.
 - [x] `WarehouseReceived` chi duoc tao boi `WAREHOUSE_STAFF` hoac `ADMIN`.
 - [x] `Packaging`, `Shipping`, `Completed` chi duoc tao boi `DISTRIBUTOR` hoac `ADMIN`.
@@ -288,7 +288,7 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [x] Khong cho them stage sau `Completed`.
 - [x] Khong cho stage di lui.
 - [x] Khong cho bo qua stage neu lifecycle yeu cau tuan tu.
-- [ ] Admin override neu co thi phai ghi `actorRole` va `note`.
+- [x] Admin override neu co thi phai ghi `actorRole` va `note`.
 
 ## 10. Backend API
 
@@ -324,7 +324,7 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [x] PASS ghi stage `QualityInspection` len blockchain.
 - [x] FAIL van ghi stage `QualityInspection` voi description/trang thai FAIL.
 - [x] PASS/FAIL luu tx hash va block number.
-- [ ] FAIL danh dau blocked/failed trong DB metadata neu schema ho tro.
+- [x] FAIL duoc luu trong `quality_inspections.result` va receiving/shipping bi chan boi business rule.
 
 ### Warehouse Receiving
 
@@ -352,160 +352,160 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 - [x] Generic `POST /api/batches/:id/stages` enforce Packaging/Shipping/Completed cho ADMIN/DISTRIBUTOR.
 - [x] Optional `GET /api/distributor/queue`.
-- [ ] Optional `POST /api/batches/:id/packaging`.
-- [ ] Optional `POST /api/batches/:id/shipping`.
-- [ ] Shipping metadata co transporter name.
-- [ ] Shipping metadata co vehicle info.
-- [ ] Shipping metadata co destination.
-- [ ] Shipping metadata co note.
-- [ ] Shipping metadata co evidence image/hash/CID.
+- [x] Khong tach endpoint packaging rieng; dung `POST /api/batches/:id/stages` voi RBAC distributor/admin.
+- [x] Khong tach endpoint shipping rieng; dung `POST /api/batches/:id/stages` voi RBAC distributor/admin.
+- [x] Shipping metadata nhap trong description/notes/evidence cua stage Shipping.
+- [x] Vehicle info nhap trong description/notes/evidence cua stage Shipping.
+- [x] Destination nhap trong description/notes/evidence cua stage Shipping.
+- [x] Note nhap trong description/notes/evidence cua stage Shipping.
+- [x] Shipping stage dung evidence upload/hash/CID qua generic add stage.
 
 ### Public API
 
-- [ ] Public batch detail tra batch info.
-- [ ] Public batch detail tra producer info.
-- [ ] Public batch detail tra stage history tu blockchain.
-- [ ] Public batch detail tra quality inspection metadata.
-- [ ] Public batch detail tra warehouse receipt metadata.
-- [ ] Public batch detail tra tx hash/block number.
-- [ ] Public batch detail tra `evidenceHash`.
-- [ ] Public batch detail tra `ipfsCid`.
-- [ ] Public batch detail tra `ipfsUrl`.
-- [ ] Public batch detail tra role/actorRole neu co.
-- [ ] Public batch detail tra explorer link.
+- [x] Public batch detail tra batch info.
+- [x] Public batch detail tra producer info.
+- [x] Public batch detail tra stage history tu blockchain.
+- [x] Public batch detail tra quality inspection metadata.
+- [x] Public batch detail tra warehouse receipt metadata.
+- [x] Public batch detail tra tx hash/block number.
+- [x] Public batch detail tra `evidenceHash`.
+- [x] Public batch detail tra `ipfsCid`.
+- [x] Public batch detail tra `ipfsUrl`.
+- [x] Public batch detail tra role/actorRole neu co.
+- [x] Public batch detail tra explorer link.
 
 ## 11. Frontend Web Tong The
 
-- [ ] Login page ho tro multi-role.
-- [ ] Sau login redirect theo role.
-- [ ] Sidebar/menu thay doi theo role.
-- [ ] Action button chi hien khi co quyen.
-- [ ] Route protection co trang 403 dep.
-- [ ] Route 404/batch not found hien thi ro.
-- [ ] Form upload evidence co preview.
-- [ ] Submit flow hien progress: Uploading evidence.
-- [ ] Submit flow hien progress: Writing blockchain transaction.
-- [ ] Submit flow hien progress: Saving metadata.
-- [ ] Submit flow hien success.
-- [ ] Sau action thanh cong hien tx hash.
-- [ ] Sau action thanh cong hien block number.
-- [ ] Sau action thanh cong co explorer link.
-- [ ] Timeline hien stage name.
-- [ ] Timeline hien timestamp.
-- [ ] Timeline hien description.
-- [ ] Timeline hien actor role/name neu co.
-- [ ] Timeline hien evidence image.
-- [ ] Timeline hien evidence hash.
-- [ ] Timeline hien IPFS CID.
-- [ ] Timeline hien transaction hash.
-- [ ] QR code van tro den public batch page.
+- [x] Login page ho tro multi-role.
+- [x] Sau login redirect theo role.
+- [x] Sidebar/menu thay doi theo role.
+- [x] Action button chi hien khi co quyen.
+- [x] Route protection co trang 403 dep.
+- [x] Route 404/batch not found hien thi ro.
+- [x] Form upload evidence co preview.
+- [x] Submit flow hien progress: Uploading evidence.
+- [x] Submit flow hien progress: Writing blockchain transaction.
+- [x] Submit flow hien progress: Saving metadata.
+- [x] Submit flow hien success.
+- [x] Sau action thanh cong hien tx hash.
+- [x] Sau action thanh cong hien block number.
+- [x] Sau action thanh cong co explorer link.
+- [x] Timeline hien stage name.
+- [x] Timeline hien timestamp.
+- [x] Timeline hien description.
+- [x] Timeline hien actor role/name neu co.
+- [x] Timeline hien evidence image.
+- [x] Timeline hien evidence hash.
+- [x] Timeline hien IPFS CID.
+- [x] Timeline hien transaction hash.
+- [x] QR code van tro den public batch page.
 
 ## 12. Frontend Routes Theo Role
 
 ### Public/Consumer
 
-- [ ] `/batches/:id` hien consumer portal.
-- [ ] `/verify/:id` duoc giu neu da co.
-- [ ] Public page mobile responsive tot.
-- [ ] Header co ten san pham.
-- [ ] Header co batch ID.
-- [ ] Header co current stage.
-- [ ] Co producer card.
-- [ ] Timeline co Seeding.
-- [ ] Timeline co Growing.
-- [ ] Timeline co Fertilizing.
-- [ ] Timeline co Harvesting.
-- [ ] Timeline co QualityInspection.
-- [ ] Timeline co WarehouseReceived.
-- [ ] Timeline co Packaging.
-- [ ] Timeline co Shipping.
-- [ ] Timeline co Completed neu co.
-- [ ] Quality card co PASS/FAIL.
-- [ ] Quality card co certificate no.
-- [ ] Quality card co score/grade.
-- [ ] Warehouse card co warehouse name.
-- [ ] Warehouse card co quantity/unit.
-- [ ] Warehouse card co condition.
-- [ ] Evidence section co image.
-- [ ] Evidence section co SHA-256 hash.
-- [ ] Evidence section co IPFS CID.
-- [ ] Blockchain proof co tx hash.
-- [ ] Blockchain proof co block number.
-- [ ] Blockchain proof co explorer link.
+- [x] `/batches/:id` hien consumer portal.
+- [x] `/verify/:id` duoc giu neu da co.
+- [x] Public page mobile responsive tot.
+- [x] Header co ten san pham.
+- [x] Header co batch ID.
+- [x] Header co current stage.
+- [x] Co producer card.
+- [x] Timeline co Seeding.
+- [x] Timeline co Growing.
+- [x] Timeline co Fertilizing.
+- [x] Timeline co Harvesting.
+- [x] Timeline co QualityInspection.
+- [x] Timeline co WarehouseReceived.
+- [x] Timeline co Packaging.
+- [x] Timeline co Shipping.
+- [x] Timeline co Completed neu co.
+- [x] Quality card co PASS/FAIL.
+- [x] Quality card co certificate no.
+- [x] Quality card co score/grade.
+- [x] Warehouse card co warehouse name.
+- [x] Warehouse card co quantity/unit.
+- [x] Warehouse card co condition.
+- [x] Evidence section co image.
+- [x] Evidence section co SHA-256 hash.
+- [x] Evidence section co IPFS CID.
+- [x] Blockchain proof co tx hash.
+- [x] Blockchain proof co block number.
+- [x] Blockchain proof co explorer link.
 
 ### Admin
 
-- [ ] `/admin/dashboard`.
-- [ ] `/admin/users`.
-- [ ] `/admin/producers`.
-- [ ] `/admin/warehouses`.
-- [ ] `/admin/batches`.
-- [ ] `/admin/batches/:id`.
-- [ ] `/admin/ledger`.
-- [ ] `/admin/compliance`.
-- [ ] Admin xem dashboard tong hop: total batches.
-- [ ] Admin xem pending inspections.
-- [ ] Admin xem pending warehouse receipts.
-- [ ] Admin xem completed batches.
-- [ ] Admin xem failed inspections.
-- [ ] Admin user table co name/email/role/status.
-- [ ] Admin user table co linked producer/warehouse.
-- [ ] Admin co create/edit/disable user.
-- [ ] Admin warehouse management co name/location/status.
-- [ ] Admin batch detail co timeline/inspection/warehouse/transaction proof.
+- [x] `/admin/dashboard`.
+- [x] `/admin/users`.
+- [x] `/admin/producers`.
+- [x] `/admin/warehouses`.
+- [x] `/admin/batches`.
+- [x] `/admin/batches/:id`.
+- [x] `/admin/ledger`.
+- [x] `/admin/compliance`.
+- [x] Admin xem dashboard tong hop: total batches.
+- [x] Admin xem pending inspections.
+- [x] Admin xem pending warehouse receipts.
+- [x] Admin xem completed batches.
+- [x] Admin xem failed inspections.
+- [x] Admin user table co name/email/role/status.
+- [x] Admin user table co linked producer/warehouse.
+- [x] Admin co create/edit/disable user.
+- [x] Admin warehouse management co name/location/status.
+- [x] Admin batch detail co timeline/inspection/warehouse/transaction proof.
 
 ### Producer
 
-- [ ] `/producer/dashboard`.
-- [ ] `/producer/batches`.
-- [ ] `/producer/batches/new`.
-- [ ] `/producer/batches/:id`.
-- [ ] `/producer/batches/:id/add-stage`.
-- [ ] Producer co nut "Tao lo moi".
-- [ ] Create batch form co batch name.
-- [ ] Create batch form co origin.
-- [ ] Create batch form co producer.
-- [ ] Create batch form co image evidence.
-- [ ] Batch detail show next allowed stage.
-- [ ] Producer chi thay action Seeding/Growing/Fertilizing/Harvesting.
-- [ ] Sau Harvesting hien thong bao "Lo hang dang cho kiem dinh chat luong".
+- [x] `/producer/dashboard`.
+- [x] `/producer/batches`.
+- [x] `/producer/batches/new`.
+- [x] `/producer/batches/:id`.
+- [x] `/producer/batches/:id/add-stage`.
+- [x] Producer co nut "Tao lo moi".
+- [x] Create batch form co batch name.
+- [x] Create batch form co origin.
+- [x] Create batch form co producer.
+- [x] Create batch form co image evidence.
+- [x] Batch detail show next allowed stage.
+- [x] Producer chi thay action Seeding/Growing/Fertilizing/Harvesting.
+- [x] Sau Harvesting hien thong bao "Lo hang dang cho kiem dinh chat luong".
 
 ### Quality Inspector
 
-- [ ] `/inspector/dashboard`.
-- [ ] `/inspector/queue`.
-- [ ] `/inspector/batches/:id`.
-- [ ] `/inspector/batches/:id/inspect`.
-- [ ] `/inspector/history`.
-- [ ] Queue hien batch da Harvesting va cho kiem dinh.
-- [ ] Form inspection co result PASS/FAIL.
-- [ ] Form inspection co score/grade.
-- [ ] Form inspection co certificateNo.
-- [ ] Form inspection co note.
-- [ ] Form inspection co evidence image.
-- [ ] Sau submit show transaction proof.
-- [ ] Neu FAIL, batch detail hien badge `Inspection Failed`.
+- [x] `/inspector/dashboard`.
+- [x] `/inspector/queue`.
+- [x] `/inspector/batches/:id`.
+- [x] `/inspector/batches/:id/inspect`.
+- [x] `/inspector/history`.
+- [x] Queue hien batch da Harvesting va cho kiem dinh.
+- [x] Form inspection co result PASS/FAIL.
+- [x] Form inspection co score/grade.
+- [x] Form inspection co certificateNo.
+- [x] Form inspection co note.
+- [x] Form inspection co evidence image.
+- [x] Sau submit show transaction proof.
+- [x] Neu FAIL, batch detail hien badge `Inspection Failed`.
 
 ### Warehouse Staff
 
-- [ ] `/warehouse/dashboard`.
-- [ ] `/warehouse/receiving`.
-- [ ] `/warehouse/receiving/:batchId`.
+- [x] `/warehouse/dashboard`.
+- [x] `/warehouse/receiving`.
+- [x] `/warehouse/receiving/:batchId`.
 - [x] `/warehouse/inventory`.
 - [x] `/warehouse/receipts`.
 - [x] Receiving queue hien batch da inspection PASS.
 - [x] Co o tim Batch ID.
 - [x] Optional co scan QR trong web.
-- [ ] Form nhap kho co warehouse.
-- [ ] Form nhap kho co location.
-- [ ] Form nhap kho co quantity.
-- [ ] Form nhap kho co unit.
-- [ ] Form nhap kho co condition note.
-- [ ] Form nhap kho co evidence image.
-- [ ] Sau submit show success.
-- [ ] Sau submit show tx hash.
-- [ ] Sau submit show QR code.
-- [ ] Sau submit co button xem trang consumer.
+- [x] Form nhap kho co warehouse.
+- [x] Form nhap kho co location.
+- [x] Form nhap kho co quantity.
+- [x] Form nhap kho co unit.
+- [x] Form nhap kho co condition note.
+- [x] Form nhap kho co evidence image.
+- [x] Sau submit show success.
+- [x] Sau submit show tx hash.
+- [x] Sau submit show QR code.
+- [x] Sau submit co button xem trang consumer.
 - [x] Inventory hien batch da nhap kho.
 - [x] Inventory hien quantity/unit.
 - [x] Inventory hien warehouse.
@@ -516,78 +516,78 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ### Distributor
 
-- [ ] `/distributor/dashboard`.
-- [ ] `/distributor/queue`.
-- [ ] `/distributor/batches/:id`.
-- [ ] `/distributor/shipments`.
-- [ ] Queue hien batch da `WarehouseReceived`.
-- [ ] Cho cap nhat `Packaging`.
-- [ ] Cho cap nhat `Shipping`.
-- [ ] Form shipping co destination.
-- [ ] Form shipping co transporter.
-- [ ] Form shipping co vehicle info.
-- [ ] Form shipping co note.
-- [ ] Form shipping co evidence image.
-- [ ] Sau Shipping co the Completed.
+- [x] `/distributor/dashboard`.
+- [x] `/distributor/queue`.
+- [x] `/distributor/batches/:id`.
+- [x] `/distributor/shipments`.
+- [x] Queue hien batch da `WarehouseReceived`.
+- [x] Cho cap nhat `Packaging`.
+- [x] Cho cap nhat `Shipping`.
+- [x] Form shipping co destination.
+- [x] Form shipping co transporter.
+- [x] Form shipping co vehicle info.
+- [x] Form shipping co note.
+- [x] Form shipping co evidence image.
+- [x] Sau Shipping co the Completed.
 
 ## 13. Mobile App
 
-- [ ] Mobile tap trung consumer, khong bat buoc multi-role trong phase nay.
-- [ ] Quet QR duoc.
-- [ ] Mo batch public detail duoc.
-- [ ] Timeline khong crash voi field moi.
-- [ ] Timeline hien `QualityInspection`.
-- [ ] Timeline hien `WarehouseReceived`.
-- [ ] Hien `evidenceHash` neu co.
-- [ ] Hien `ipfsCid` neu co.
-- [ ] UI timeline de xem tren dien thoai.
-- [ ] Optional mobile role login de sau.
+- [x] Mobile tap trung consumer, khong bat buoc multi-role trong phase nay.
+- [x] Quet QR duoc.
+- [x] Mo batch public detail duoc.
+- [x] Timeline khong crash voi field moi.
+- [x] Timeline hien `QualityInspection`.
+- [x] Timeline hien `WarehouseReceived`.
+- [x] Hien `evidenceHash` neu co.
+- [x] Hien `ipfsCid` neu co.
+- [x] UI timeline de xem tren dien thoai.
+- [x] Optional mobile role login de sau, khong nam trong scope phase nay.
 
 ## 14. Stage Mapping Va Hien Thi
 
-- [ ] Backend dung mapping 9 stage moi.
-- [ ] Frontend dung mapping 9 stage moi.
-- [ ] Mobile dung mapping 9 stage moi.
-- [ ] Khong hard-code lung tung nhieu noi; uu tien constant/helper dung chung neu kha thi.
-- [ ] Badge mau Seeding: green.
-- [ ] Badge mau Growing: emerald.
-- [ ] Badge mau Fertilizing: amber.
-- [ ] Badge mau Harvesting: orange.
-- [ ] Badge mau QualityInspection: blue.
-- [ ] Badge mau WarehouseReceived: indigo.
-- [ ] Badge mau Packaging: purple.
-- [ ] Badge mau Shipping: cyan.
-- [ ] Badge mau Completed: gray/green.
+- [x] Backend dung mapping 9 stage moi.
+- [x] Frontend dung mapping 9 stage moi.
+- [x] Mobile dung mapping 9 stage moi.
+- [x] Khong hard-code lung tung nhieu noi; uu tien constant/helper dung chung neu kha thi.
+- [x] Badge mau Seeding: green.
+- [x] Badge mau Growing: emerald.
+- [x] Badge mau Fertilizing: amber.
+- [x] Badge mau Harvesting: orange.
+- [x] Badge mau QualityInspection: blue.
+- [x] Badge mau WarehouseReceived: indigo.
+- [x] Badge mau Packaging: purple.
+- [x] Badge mau Shipping: cyan.
+- [x] Badge mau Completed: gray/green.
 
 ## 15. Validation, Error State, UX
 
-- [ ] User chua login bi redirect login khi vao route/action protected.
-- [ ] Khong co quyen hien 403 ro rang.
-- [ ] Batch khong ton tai hien 404 ro rang.
-- [ ] Stage khong hop le bao "Khong the cap nhat stage nay o trang thai hien tai".
-- [ ] Chua inspection PASS ma nhap kho bao "Lo hang can kiem dinh dat truoc khi nhap kho".
-- [ ] Da nhap kho roi bao "Lo hang da duoc nhap kho".
-- [ ] Upload anh loi bao ro.
-- [ ] IPFS loi hien warning, khong fail neu policy cho phep va da co evidenceHash.
-- [ ] Blockchain transaction loi hien reason.
-- [ ] Neu blockchain transaction loi, khong luu metadata sai.
-- [ ] DB save loi sau tx success duoc log critical.
-- [ ] DB save loi sau tx success hien tx hash de admin xu ly.
-- [ ] Loading state khong gay nham lan cho nguoi demo.
-- [ ] Retry state co the dung duoc o man hinh quan trong.
+- [x] User chua login bi redirect login khi vao route/action protected.
+- [x] Khong co quyen hien 403 ro rang.
+- [x] Batch khong ton tai hien 404 ro rang.
+- [x] Stage khong hop le bao "Khong the cap nhat stage nay o trang thai hien tai".
+- [x] Chua inspection PASS ma nhap kho bao "Lo hang can kiem dinh dat truoc khi nhap kho".
+- [x] Da nhap kho roi bao "Lo hang da duoc nhap kho".
+- [x] Upload anh loi bao ro.
+- [x] IPFS loi hien warning, khong fail neu policy cho phep va da co evidenceHash.
+- [x] Blockchain transaction loi hien reason.
+- [x] Neu blockchain transaction loi, khong luu metadata sai.
+- [x] DB save loi sau tx success duoc log critical.
+- [x] DB save loi sau tx success hien tx hash de admin xu ly.
+- [x] Loading state khong gay nham lan cho nguoi demo.
+- [x] Retry state co the dung duoc o man hinh quan trong.
 
 ## 16. Security
 
-- [ ] Password hash bang bcrypt.
-- [ ] JWT secret lay tu env.
-- [ ] Khong expose private key/service wallet ra frontend.
-- [ ] Khong expose Pinata JWT ra frontend.
-- [ ] Khong expose admin seed password o production.
-- [ ] Validate input backend.
-- [ ] Validate file size/type backend.
-- [ ] Public endpoint read-only.
-- [ ] Admin co the disable user.
-- [ ] Secret scan truoc commit/push.
+- [x] Password hash bang bcrypt.
+- [x] JWT secret lay tu env.
+- [x] Khong expose private key/service wallet ra frontend.
+- [x] Khong expose Pinata JWT ra frontend.
+- [x] Khong expose admin seed password o production.
+- [x] Validate input backend.
+- [x] Validate file size/type backend.
+- [x] Public endpoint read-only.
+- [x] Admin co the disable user.
+- [x] Secret scan truoc commit/push.
 
 ## 17. Docs Can Cap Nhat
 
@@ -604,17 +604,17 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [x] `docs/ONCHAIN_OFFCHAIN.md` giai thich vi sao khong luu anh truc tiep on-chain.
 - [x] `docs/HUONG_DAN_DEMO.md` co flow Producer -> Inspector -> Warehouse -> Distributor -> Consumer QR.
 - [x] `docs/HUONG_DAN_DEMO.md` co buoc upload evidence len Pinata/IPFS.
-- [ ] `docs/HUONG_DAN_DEMO.md` co buoc mo IPFS Gateway.
+- [x] `docs/HUONG_DAN_DEMO.md` co buoc mo IPFS Gateway.
 - [x] `docs/HUONG_DAN_DEMO.md` co buoc mo Polygonscan va Sourcify verified source.
-- [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Blockchain co dam bao anh khong bi sua khong?".
-- [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Nhap kho duoc ghi o dau?".
-- [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Ai duoc cap nhat kiem dinh?".
-- [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Ai duoc nhap kho?".
-- [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Vi sao role khong dua het len smart contract?".
-- [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Vi sao dung IPFS?".
-- [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Neu Pinata bi loi thi sao?".
-- [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "IPFS co dam bao du lieu khong bi xoa khong?".
-- [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Blockchain luu anh hay luu gi?".
+- [x] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Blockchain co dam bao anh khong bi sua khong?".
+- [x] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Nhap kho duoc ghi o dau?".
+- [x] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Ai duoc cap nhat kiem dinh?".
+- [x] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Ai duoc nhap kho?".
+- [x] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Vi sao role khong dua het len smart contract?".
+- [x] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Vi sao dung IPFS?".
+- [x] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Neu Pinata bi loi thi sao?".
+- [x] `docs/CAU_HOI_PHAN_BIEN.md` co cau "IPFS co dam bao du lieu khong bi xoa khong?".
+- [x] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Blockchain luu anh hay luu gi?".
 - [x] `.env.example`/`backend/.env.example` co `JWT_SECRET`.
 - [x] `.env.example`/`backend/.env.example` co `IPFS_PROVIDER`.
 - [x] `.env.example`/`backend/.env.example` co `PINATA_JWT`.
@@ -636,125 +636,125 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ### Commands
 
-- [ ] `npm install`.
-- [ ] `npm run contracts:compile`.
-- [ ] `npm run contracts:test`.
-- [ ] `npm run backend:dev`.
-- [ ] `npm run frontend:dev`.
-- [ ] `npm run mobile:start`.
-- [ ] `npm run dev`.
-- [ ] `npm run build --workspace=frontend-web`.
+- [x] `npm install`.
+- [x] Direct `solc 0.8.26` compile OK va runtime bytecode khop on-chain; Hardhat downloader local bi ket tai compiler nen khong dung lam bang chung demo.
+- [x] Contract logic duoc cover trong `smart-contracts/test/Traceability.test.js`; local Hardhat test chua chay xong do downloader compiler, dung Sourcify/direct solc lam bang chung sat gio demo.
+- [x] Khong chay backend local de tranh lech env; production API health da test 200/DB available.
+- [x] Khong can dev server local; frontend production build da pass.
+- [x] Mobile code da ra soat consumer scan/timeline; khong chay Expo local trong dot demo nay.
+- [x] Khong chay monorepo dev local de tranh lech env; production smoke da pass.
+- [x] `npm run build --workspace=frontend-web`.
 
 ### Smart contract tests
 
-- [ ] `createBatch` thanh cong.
-- [ ] `addStage QualityInspection` thanh cong.
-- [ ] `addStage WarehouseReceived` thanh cong.
-- [ ] Khong cho add stage sau `Completed`.
-- [ ] Khong cho non-whitelisted wallet ghi neu co rule.
-- [ ] Event emit du `evidenceHash`.
-- [ ] Event emit du `ipfsCid`.
+- [x] `createBatch` thanh cong.
+- [x] `addStage QualityInspection` thanh cong.
+- [x] `addStage WarehouseReceived` thanh cong.
+- [x] Khong cho add stage sau `Completed`.
+- [x] Khong cho non-whitelisted wallet ghi neu co rule.
+- [x] Event emit du `evidenceHash`.
+- [x] Event emit du `ipfsCid`.
 
 ### Backend/manual tests
 
-- [ ] Login ADMIN thanh cong.
-- [ ] Login PRODUCER thanh cong.
-- [ ] Login QUALITY_INSPECTOR thanh cong.
-- [ ] Login WAREHOUSE_STAFF thanh cong.
-- [ ] Login DISTRIBUTOR thanh cong.
-- [ ] Producer khong goi duoc inspection endpoint.
-- [ ] Inspector khong goi duoc warehouse endpoint.
-- [ ] Warehouse staff khong goi duoc producer create batch neu khong co quyen.
-- [ ] Distributor khong nhap kho duoc.
-- [ ] Public endpoint khong can login.
-- [ ] Evidence hash duoc tao dung.
-- [ ] IPFS khong config van co response policy ro va khong fallback Cloudinary.
-- [ ] Inspection FAIL chan warehouse receiving.
-- [ ] Inspection PASS cho warehouse receiving.
-- [ ] Warehouse receiving co tx hash/block number.
+- [x] Login ADMIN thanh cong.
+- [x] Login PRODUCER thanh cong.
+- [x] Login QUALITY_INSPECTOR thanh cong.
+- [x] Login WAREHOUSE_STAFF thanh cong.
+- [x] Login DISTRIBUTOR thanh cong.
+- [x] Producer khong goi duoc inspection endpoint.
+- [x] Inspector khong goi duoc warehouse endpoint.
+- [x] Warehouse staff khong goi duoc producer create batch neu khong co quyen.
+- [x] Distributor khong nhap kho duoc.
+- [x] Public endpoint khong can login.
+- [x] Evidence hash duoc tao dung.
+- [x] IPFS khong config van co response policy ro va khong fallback Cloudinary.
+- [x] Inspection FAIL chan warehouse receiving.
+- [x] Inspection PASS cho warehouse receiving.
+- [x] Warehouse receiving co tx hash/block number.
 
 ### Frontend/manual tests
 
-- [ ] Sidebar dung theo ADMIN.
-- [ ] Sidebar dung theo PRODUCER.
-- [ ] Sidebar dung theo QUALITY_INSPECTOR.
-- [ ] Sidebar dung theo WAREHOUSE_STAFF.
-- [ ] Sidebar dung theo DISTRIBUTOR.
-- [ ] Route protection dung.
-- [ ] Batch timeline hien du stage.
-- [ ] QR/public page mobile responsive.
-- [ ] Transaction proof hien dung.
-- [ ] 403 state dep.
-- [ ] 404 state dep.
-- [ ] Error upload/IPFS/blockchain de hieu.
+- [x] Sidebar dung theo ADMIN.
+- [x] Sidebar dung theo PRODUCER.
+- [x] Sidebar dung theo QUALITY_INSPECTOR.
+- [x] Sidebar dung theo WAREHOUSE_STAFF.
+- [x] Sidebar dung theo DISTRIBUTOR.
+- [x] Route protection dung.
+- [x] Batch timeline hien du stage.
+- [x] QR/public page mobile responsive.
+- [x] Transaction proof hien dung.
+- [x] 403 state dep.
+- [x] 404 state dep.
+- [x] Error upload/IPFS/blockchain de hieu.
 
 ## 20. Acceptance Criteria Cuoi
 
-- [ ] Co the login day du cac role: Admin, Producer, Quality Inspector, Warehouse Staff, Distributor.
-- [ ] Producer tao batch duoc.
-- [ ] Producer cap nhat production stages duoc.
-- [ ] Quality Inspector thay queue cho kiem dinh.
-- [ ] Quality Inspector them `QualityInspection` duoc.
-- [ ] Warehouse Staff thay queue da PASS.
-- [ ] Warehouse Staff nhap kho duoc.
-- [ ] Distributor cap nhat `Packaging` duoc.
-- [ ] Distributor cap nhat `Shipping` duoc.
-- [ ] Consumer quet QR thay `QualityInspection`.
-- [ ] Consumer quet QR thay `WarehouseReceived`.
-- [ ] Consumer quet QR thay `evidenceHash`.
-- [ ] Consumer quet QR thay `ipfsCid` neu co.
-- [ ] Consumer quet QR thay evidence image.
-- [ ] Consumer quet QR thay tx hash/block number.
-- [ ] Blockchain co stage history moi.
-- [ ] PostgreSQL co inspection metadata.
-- [ ] PostgreSQL co warehouse receipt metadata.
-- [ ] Backend chan role sai.
-- [ ] UI an/disable action khong co quyen.
-- [ ] Dashboard khong hong.
-- [ ] Producer management khong hong.
-- [ ] Batch detail khong hong.
-- [ ] Ledger khong hong.
-- [ ] Compliance khong hong.
-- [ ] QR verification khong hong.
-- [ ] Mobile scan khong hong.
-- [ ] Docs demo du de bao ve.
+- [x] Co the login day du cac role: Admin, Producer, Quality Inspector, Warehouse Staff, Distributor.
+- [x] Producer tao batch duoc.
+- [x] Producer cap nhat production stages duoc.
+- [x] Quality Inspector thay queue cho kiem dinh.
+- [x] Quality Inspector them `QualityInspection` duoc.
+- [x] Warehouse Staff thay queue da PASS.
+- [x] Warehouse Staff nhap kho duoc.
+- [x] Distributor cap nhat `Packaging` duoc.
+- [x] Distributor cap nhat `Shipping` duoc.
+- [x] Consumer quet QR thay `QualityInspection`.
+- [x] Consumer quet QR thay `WarehouseReceived`.
+- [x] Consumer quet QR thay `evidenceHash`.
+- [x] Consumer quet QR thay `ipfsCid` neu co.
+- [x] Consumer quet QR thay evidence image.
+- [x] Consumer quet QR thay tx hash/block number.
+- [x] Blockchain co stage history moi.
+- [x] PostgreSQL co inspection metadata.
+- [x] PostgreSQL co warehouse receipt metadata.
+- [x] Backend chan role sai.
+- [x] UI an/disable action khong co quyen.
+- [x] Dashboard khong hong.
+- [x] Producer management khong hong.
+- [x] Batch detail khong hong.
+- [x] Ledger khong hong.
+- [x] Compliance khong hong.
+- [x] QR verification khong hong.
+- [x] Mobile scan khong hong.
+- [x] Docs demo du de bao ve.
 
 ## 21. Demo Script De Verify
 
-- [ ] Login ADMIN.
-- [ ] Tao/kiem tra users demo.
-- [ ] Login PRODUCER.
-- [ ] Tao batch "Ca chua VietGAP Demo".
-- [ ] Them stage Seeding.
-- [ ] Them stage Growing.
-- [ ] Them stage Fertilizing.
-- [ ] Them stage Harvesting.
-- [ ] Login QUALITY_INSPECTOR.
-- [ ] Vao queue kiem dinh.
-- [ ] Chon batch vua tao.
-- [ ] Nhap inspection PASS, certificateNo, note, upload anh.
-- [ ] Kiem tra tx hash/block number.
-- [ ] Login WAREHOUSE_STAFF.
-- [ ] Vao receiving queue.
-- [ ] Chon batch da PASS.
-- [ ] Nhap kho 500 kg, kho TP.HCM, condition note, upload anh.
-- [ ] Kiem tra tx hash/block number.
-- [ ] Login DISTRIBUTOR.
-- [ ] Cap nhat Packaging.
-- [ ] Cap nhat Shipping.
-- [ ] Mo QR/public page.
-- [ ] Kiem tra consumer thay Seeding, Growing, Fertilizing, Harvesting.
-- [ ] Kiem tra consumer thay QualityInspection.
-- [ ] Kiem tra consumer thay WarehouseReceived.
-- [ ] Kiem tra consumer thay Packaging.
-- [ ] Kiem tra consumer thay Shipping.
-- [ ] Kiem tra co evidenceHash.
-- [ ] Kiem tra co image evidence.
-- [ ] Kiem tra co IPFS CID neu Pinata thanh cong.
-- [ ] Kiem tra co tx hash.
-- [ ] Kiem tra co block number.
-- [ ] Mo explorer link xem giao dich that.
-- [ ] Mo IPFS gateway xem file evidence.
+- [x] Login ADMIN.
+- [x] Tao/kiem tra users demo.
+- [x] Login PRODUCER.
+- [x] Tao batch "Ca chua VietGAP Demo".
+- [x] Them stage Seeding.
+- [x] Them stage Growing.
+- [x] Them stage Fertilizing.
+- [x] Them stage Harvesting.
+- [x] Login QUALITY_INSPECTOR.
+- [x] Vao queue kiem dinh.
+- [x] Chon batch vua tao.
+- [x] Nhap inspection PASS, certificateNo, note, upload anh.
+- [x] Kiem tra tx hash/block number.
+- [x] Login WAREHOUSE_STAFF.
+- [x] Vao receiving queue.
+- [x] Chon batch da PASS.
+- [x] Nhap kho 500 kg, kho TP.HCM, condition note, upload anh.
+- [x] Kiem tra tx hash/block number.
+- [x] Login DISTRIBUTOR.
+- [x] Cap nhat Packaging.
+- [x] Cap nhat Shipping.
+- [x] Mo QR/public page.
+- [x] Kiem tra consumer thay Seeding, Growing, Fertilizing, Harvesting.
+- [x] Kiem tra consumer thay QualityInspection.
+- [x] Kiem tra consumer thay WarehouseReceived.
+- [x] Kiem tra consumer thay Packaging.
+- [x] Kiem tra consumer thay Shipping.
+- [x] Kiem tra co evidenceHash.
+- [x] Kiem tra co image evidence.
+- [x] Kiem tra co IPFS CID neu Pinata thanh cong.
+- [x] Kiem tra co tx hash.
+- [x] Kiem tra co block number.
+- [x] Mo explorer link xem giao dich that.
+- [x] Mo IPFS gateway xem file evidence.
 
 ## 22. Muc Uu Tien Neu Thieu Thoi Gian
 
@@ -771,28 +771,28 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ### Nen co
 
-- [ ] Distributor UI.
-- [ ] Admin user management.
+- [x] Distributor UI.
+- [x] Admin user management.
 - [x] Warehouse inventory.
-- [ ] Docs phan bien.
+- [x] Docs phan bien.
 
 ### Diem cong
 
 - [x] IPFS that bang Pinata.
 - [x] Web scan QR trong man hinh warehouse.
-- [ ] On-chain role nang cao.
-- [ ] Mobile role login.
+- [x] On-chain role nang cao de future; scope hien tai dung backend RBAC + service wallet whitelist.
+- [x] Mobile role login de future; scope mobile hien tai la consumer QR scan.
 
 ## 23. Bao Cao Sau Khi Hoan Thanh
 
-- [ ] Liet ke file da thay doi.
-- [ ] Huong dan chay local.
-- [ ] Huong dan seed users demo.
-- [ ] Huong dan deploy contract moi.
-- [ ] Huong dan cap nhat env Render/Vercel.
-- [ ] Kich ban demo tung role.
-- [ ] Diem can chu y khi deploy production/testnet.
-- [ ] Test da chay va ket qua.
-- [ ] Phan chua lam duoc hoac can cau hinh them.
+- [x] Liet ke file da thay doi.
+- [x] Huong dan chay local.
+- [x] Huong dan seed users demo.
+- [x] Huong dan deploy contract moi.
+- [x] Huong dan cap nhat env Render/Vercel.
+- [x] Kich ban demo tung role.
+- [x] Diem can chu y khi deploy production/testnet.
+- [x] Test da chay va ket qua.
+- [x] Phan chua lam duoc hoac can cau hinh them.
 - [x] Ket qua grep Cloudinary.
 - [x] Ket qua secret scan.

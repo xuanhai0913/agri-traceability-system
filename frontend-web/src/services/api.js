@@ -57,6 +57,10 @@ export function getCurrentAdmin() {
   return api.get("/auth/me");
 }
 
+export function logoutAdmin() {
+  return api.post("/auth/logout");
+}
+
 export function getMyAccountAuditLog() {
   return api.get("/auth/me/audit-log");
 }

@@ -44,6 +44,26 @@ Không lưu byte ảnh trên-chain. Backend tính SHA-256 của file gốc, uplo
 
 Nếu ảnh bị sửa, hash/CID sẽ khác với bằng chứng đã ghi.
 
+## 5.1. Blockchain có đảm bảo ảnh không bị sửa không?
+
+Blockchain không lưu byte ảnh, nhưng lưu `evidenceHash` và `ipfsCid`. Nếu file ảnh bị thay đổi, SHA-256 hash và CID sẽ thay đổi, không còn khớp với dữ liệu đã ghi trong contract. Vì vậy blockchain đảm bảo tính toàn vẹn của bằng chứng, không phải lưu trữ trực tiếp file ảnh.
+
+## 5.2. Blockchain lưu ảnh hay lưu gì?
+
+Blockchain lưu metadata kiểm chứng: IPFS URL, `evidenceHash`, `ipfsCid`, stage, timestamp và ví cập nhật. File ảnh nằm ở IPFS/Pinata; PostgreSQL lưu metadata để UI tải nhanh hơn.
+
+## 5.3. Vì sao dùng IPFS?
+
+IPFS phù hợp lưu file evidence vì nội dung được định danh bằng CID. Khi nội dung đổi thì CID đổi, giúp đối chiếu với hash/CID đã neo trên blockchain. Cách này rẻ hơn và thực tế hơn so với lưu byte ảnh trực tiếp on-chain.
+
+## 5.4. Nếu Pinata bị lỗi thì sao?
+
+Backend vẫn tính được `evidenceHash` từ file gốc. Với cấu hình demo `IPFS_REQUIRED=false`, nếu Pinata tạm lỗi thì hệ thống có thể ghi hash và cảnh báo rõ, không fallback sang Cloudinary. Nếu cần chính sách nghiêm ngặt hơn có thể đặt `IPFS_REQUIRED=true` để request fail khi không pin được IPFS.
+
+## 5.5. IPFS có đảm bảo dữ liệu không bị xóa không?
+
+IPFS đảm bảo định danh theo nội dung, nhưng file cần được pin để có node lưu giữ. Dự án dùng Pinata làm dịch vụ pinning. Triển khai production nên có thêm pinning backup hoặc nhiều gateway để tăng độ sẵn sàng.
+
 ## 6. Blockchain có đảm bảo nông sản ngoài đời là thật không?
 
 Không hoàn toàn. Blockchain chỉ đảm bảo dữ liệu đã ghi không bị sửa âm thầm. Việc nông sản ngoài đời có đúng hay không là bài toán oracle, cần quy trình kiểm định, trách nhiệm actor, chứng nhận, IoT hoặc audit bên ngoài.
@@ -93,6 +113,22 @@ Dùng ví riêng tăng tính phân tán nhưng UX khó hơn. Dự án chọn rel
 ## 17. Whitelist trong contract có ý nghĩa gì nếu backend đã có RBAC?
 
 RBAC chặn theo user/role ở backend. Whitelist chặn theo ví ở smart contract. Nếu ví không nằm trong whitelist, gọi RPC trực tiếp cũng không ghi được. Đây là lớp bảo vệ cấp contract.
+
+## 17.1. Vì sao role không đưa hết lên smart contract?
+
+Dự án dùng backend relayer để người dùng nghiệp vụ không cần ví riêng. Vì vậy RBAC theo `ADMIN`, `PRODUCER`, `QUALITY_INSPECTOR`, `WAREHOUSE_STAFF`, `DISTRIBUTOR` xử lý ở backend, còn contract kiểm soát ví service wallet/whitelist. Hướng phát triển là tách ví actor hoặc account abstraction để role cũng thể hiện rõ hơn on-chain.
+
+## 17.2. Ai được cập nhật kiểm định?
+
+Backend chỉ cho `QUALITY_INSPECTOR` hoặc `ADMIN` gọi API kiểm định. Stage `QualityInspection` được ghi lên blockchain, còn kết quả PASS/FAIL, score, certificate và evidence metadata lưu trong PostgreSQL.
+
+## 17.3. Ai được nhập kho?
+
+Backend chỉ cho `WAREHOUSE_STAFF` hoặc `ADMIN` nhập kho. Ngoài ra hệ thống kiểm tra batch phải có `QualityInspection PASS` trước khi ghi `WarehouseReceived`.
+
+## 17.4. Nhập kho được ghi ở đâu?
+
+Stage `WarehouseReceived` được ghi on-chain để timeline bất biến. Metadata chi tiết như kho nhận, địa chỉ kho, số lượng, đơn vị, tình trạng hàng và người nhận được lưu PostgreSQL, kèm tx hash/block number để đối chiếu.
 
 ## 18. Vì sao chọn Polygon Amoy?
 

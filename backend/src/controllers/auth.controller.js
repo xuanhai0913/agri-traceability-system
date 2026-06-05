@@ -39,6 +39,13 @@ async function getMe(req, res) {
   });
 }
 
+async function postLogout(_req, res) {
+  res.json({
+    success: true,
+    message: "Logged out",
+  });
+}
+
 async function getMyAuditLog(req, res, next) {
   try {
     const logs = await listUserAccountAuditLogs(req.user.id);
@@ -136,5 +143,6 @@ module.exports = {
   patchUserDisable,
   patchUserPassword,
   postLogin,
+  postLogout,
   postUser,
 };

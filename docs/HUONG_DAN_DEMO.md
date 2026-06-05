@@ -88,7 +88,8 @@ Thao tác:
 2. Chỉ producer linked.
 3. Chỉ timeline 9 stage: Seeding tới Completed.
 4. Chỉ evidence hash, IPFS CID/URL.
-5. Chỉ transaction hash/block number.
+5. Mở một link IPFS gateway từ evidence để chứng minh file minh chứng được pin ngoài blockchain.
+6. Chỉ transaction hash/block number.
 
 Nói:
 
