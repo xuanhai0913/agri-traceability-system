@@ -59,7 +59,7 @@
     "soilDesc": "The dashboard only shows backend, database, and Polygon Amoy testnet evidence.",
     "walletActivity": "Service Wallet Transactions",
     "upgradePro": "Compliance Evidence",
-    "upgradeDesc": "Open API, contract, QR, and Sourcify verification.",
+    "upgradeDesc": "Open API, contract, QR, and Polygonscan verification.",
     "upgradeBtn": "Open Evidence"
   },
   "ledger": {

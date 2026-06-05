@@ -26,6 +26,9 @@ Muc tieu: dung nhu checklist ra soat truoc khi demo, deploy, nop bao cao hoac tr
 - [x] Da don production producer mock: chi con `Nha San Xuat Hai Lam Dev` va `Nha Phan Phoi Hai Lam Dev` lien quan demo.
 - [x] Da chan production auto seed/fallback producer mock bang `SEED_DEMO_PRODUCERS=false` mac dinh.
 - [x] Da cap nhat wording UI tu "producer network" sang huong "doi tac chuoi cung ung" de tranh bi hieu la mang luoi NSX ao.
+- [x] Da kiem tra Sourcify 2026-06-05: `https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` tra 404 contract not found.
+- [x] Da xac nhan contract v2 ton tai on-chain qua RPC `eth_getCode`, bytecode khoang 5439 bytes.
+- [x] Da cau hinh backend chi tra Sourcify link khi `SOURCIFY_VERIFIED=true`, mac dinh khong hien link 404.
 - [ ] Checklist chua hoan thien 100%: con can verify source contract tren explorer/Sourcify neu muon diem demo cao hon va tiep tuc test mobile scan cuoi.
 
 ## 1. Nguyen Tac Kien Truc Can Giu
@@ -77,7 +80,8 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [ ] `CHAIN_ID=80002` cho Polygon Amoy.
 - [ ] `NETWORK_NAME=Polygon Amoy`.
 - [ ] `EXPLORER_BASE_URL=https://amoy.polygonscan.com`.
-- [ ] `SOURCIFY_BASE_URL=https://repo.sourcify.dev`.
+- [x] `SOURCIFY_BASE_URL=https://repo.sourcify.dev` neu can verify source.
+- [x] `SOURCIFY_VERIFIED=false` cho production hien tai de khong hien link Sourcify 404.
 - [ ] `IPFS_PROVIDER=pinata`.
 - [ ] `IPFS_ENABLED=true`.
 - [ ] `IPFS_REQUIRED=false` cho demo on dinh neu Pinata tam loi.
@@ -95,24 +99,24 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ## 4. Evidence Service Backend
 
-- [ ] API nhan file bang `multipart/form-data`.
-- [ ] Backend nhan file tu multer memory buffer.
-- [ ] Backend tinh SHA-256 tu file goc, tra ve `evidenceHash`.
-- [ ] Backend upload file len Pinata bang `PINATA_JWT`.
-- [ ] Backend nhan CID tu Pinata va tra ve `ipfsCid`.
-- [ ] Backend build `ipfsUrl` theo dang `https://<gateway>/ipfs/<cid>`.
-- [ ] File evidence ho tro `image/jpeg`.
-- [ ] File evidence ho tro `image/png`.
-- [ ] File evidence ho tro `image/webp`.
-- [ ] File evidence ho tro `application/pdf` neu can upload certificate.
-- [ ] File upload co gioi han size.
-- [ ] File upload co validate MIME/type.
-- [ ] Neu `IPFS_ENABLED=false`, API tra loi ro rang IPFS chua bat va khong fallback Cloudinary.
-- [ ] Neu thieu `PINATA_JWT`, API/log bao loi cau hinh backend.
-- [ ] Neu Pinata loi va `IPFS_REQUIRED=true`, request fail.
-- [ ] Neu Pinata loi va `IPFS_REQUIRED=false`, van co the luu `evidenceHash`, de `ipfsCid=""`, `ipfsUrl=""`, co warning ro.
+- [x] API nhan file bang `multipart/form-data`.
+- [x] Backend nhan file tu multer memory buffer.
+- [x] Backend tinh SHA-256 tu file goc, tra ve `evidenceHash`.
+- [x] Backend upload file len Pinata bang `PINATA_JWT`.
+- [x] Backend nhan CID tu Pinata va tra ve `ipfsCid`.
+- [x] Backend build `ipfsUrl` theo dang `https://<gateway>/ipfs/<cid>`.
+- [x] File evidence ho tro `image/jpeg`.
+- [x] File evidence ho tro `image/png`.
+- [x] File evidence ho tro `image/webp`.
+- [x] File evidence ho tro `application/pdf` neu can upload certificate.
+- [x] File upload co gioi han size.
+- [x] File upload co validate MIME/type.
+- [x] Neu `IPFS_ENABLED=false`, API tra loi ro rang IPFS chua bat va khong fallback Cloudinary.
+- [x] Neu thieu `PINATA_JWT`, API/log bao loi cau hinh backend.
+- [x] Neu Pinata loi va `IPFS_REQUIRED=true`, request fail.
+- [x] Neu Pinata loi va `IPFS_REQUIRED=false`, van co the luu `evidenceHash`, de `ipfsCid=""`, `ipfsUrl=""`, co warning ro.
 - [ ] UI hien thi warning neu IPFS upload fail nhung hash van duoc tao.
-- [ ] Khong co fallback upload sang Cloudinary.
+- [x] Khong co fallback upload sang Cloudinary.
 
 ## 5. Smart Contract
 
@@ -146,7 +150,7 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [x] Contract moi duoc deploy local/testnet.
 - [x] `CONTRACT_ADDRESS` production/testnet duoc cap nhat sau deploy.
 - [x] `CONTRACT_STAGE_SCHEMA=v2` duoc cau hinh khi dung contract moi.
-- [ ] Source contract duoc verify hoac co link Sourcify/Polygonscan neu can demo.
+- [ ] Source contract duoc verify tren Sourcify/Polygonscan neu can demo source verification.
 
 ## 6. Database Va Migration
 
@@ -273,15 +277,15 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 - [ ] Producer chi tao/cap nhat batch thuoc producer cua minh neu co lien ket producer.
 - [ ] Producer chi duoc them stage san xuat: Seeding, Growing, Fertilizing, Harvesting.
-- [ ] `QualityInspection` chi duoc tao boi `QUALITY_INSPECTOR` hoac `ADMIN`.
-- [ ] `WarehouseReceived` chi duoc tao boi `WAREHOUSE_STAFF` hoac `ADMIN`.
-- [ ] `Packaging`, `Shipping`, `Completed` chi duoc tao boi `DISTRIBUTOR` hoac `ADMIN`.
-- [ ] Khong cho nhap kho neu batch chua co `QualityInspection PASS`.
-- [ ] Neu inspection `FAIL`, khong cho `WarehouseReceived`, `Packaging`, `Shipping`.
-- [ ] Khong cho `Shipping` neu chua co `WarehouseReceived`.
-- [ ] Khong cho them stage sau `Completed`.
-- [ ] Khong cho stage di lui.
-- [ ] Khong cho bo qua stage neu lifecycle yeu cau tuan tu.
+- [x] `QualityInspection` chi duoc tao boi `QUALITY_INSPECTOR` hoac `ADMIN`.
+- [x] `WarehouseReceived` chi duoc tao boi `WAREHOUSE_STAFF` hoac `ADMIN`.
+- [x] `Packaging`, `Shipping`, `Completed` chi duoc tao boi `DISTRIBUTOR` hoac `ADMIN`.
+- [x] Khong cho nhap kho neu batch chua co `QualityInspection PASS`.
+- [x] Neu inspection `FAIL`, khong cho `WarehouseReceived`, `Packaging`, `Shipping`.
+- [x] Khong cho `Shipping` neu chua co `WarehouseReceived`.
+- [x] Khong cho them stage sau `Completed`.
+- [x] Khong cho stage di lui.
+- [x] Khong cho bo qua stage neu lifecycle yeu cau tuan tu.
 - [ ] Admin override neu co thi phai ghi `actorRole` va `note`.
 
 ## 10. Backend API
@@ -306,18 +310,18 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ### Quality Inspection
 
-- [ ] `GET /api/inspections/queue` tra batch current stage `Harvesting` va chua inspect.
-- [ ] `POST /api/batches/:id/quality-inspections` chi ADMIN/QUALITY_INSPECTOR.
-- [ ] `GET /api/batches/:id/quality-inspections` public/read-only hoac auth tuy chinh.
-- [ ] Inspection body nhan `result PASS/FAIL`.
-- [ ] Inspection body nhan `score`.
-- [ ] Inspection body nhan `grade`.
-- [ ] Inspection body nhan `certificateNo`.
-- [ ] Inspection body nhan `note`.
-- [ ] Inspection body nhan evidence file/upload metadata.
-- [ ] PASS ghi stage `QualityInspection` len blockchain.
-- [ ] FAIL van ghi stage `QualityInspection` voi description/trang thai FAIL.
-- [ ] PASS/FAIL luu tx hash va block number.
+- [x] `GET /api/inspections/queue` tra batch current stage `Harvesting` va chua inspect.
+- [x] `POST /api/batches/:id/quality-inspections` chi ADMIN/QUALITY_INSPECTOR.
+- [x] `GET /api/batches/:id/quality-inspections` public/read-only hoac auth tuy chinh.
+- [x] Inspection body nhan `result PASS/FAIL`.
+- [x] Inspection body nhan `score`.
+- [x] Inspection body nhan `grade`.
+- [x] Inspection body nhan `certificateNo`.
+- [x] Inspection body nhan `note`.
+- [x] Inspection body nhan evidence file/upload metadata.
+- [x] PASS ghi stage `QualityInspection` len blockchain.
+- [x] FAIL van ghi stage `QualityInspection` voi description/trang thai FAIL.
+- [x] PASS/FAIL luu tx hash va block number.
 - [ ] FAIL danh dau blocked/failed trong DB metadata neu schema ho tro.
 
 ### Warehouse Receiving
@@ -344,8 +348,8 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ### Distributor
 
-- [ ] Generic `POST /api/batches/:id/stages` enforce Packaging/Shipping/Completed cho ADMIN/DISTRIBUTOR.
-- [ ] Optional `GET /api/distributor/queue`.
+- [x] Generic `POST /api/batches/:id/stages` enforce Packaging/Shipping/Completed cho ADMIN/DISTRIBUTOR.
+- [x] Optional `GET /api/distributor/queue`.
 - [ ] Optional `POST /api/batches/:id/packaging`.
 - [ ] Optional `POST /api/batches/:id/shipping`.
 - [ ] Shipping metadata co transporter name.
@@ -585,21 +589,21 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ## 17. Docs Can Cap Nhat
 
-- [ ] README co multi-role.
-- [ ] README co QualityInspection.
-- [ ] README co WarehouseReceived.
-- [ ] README co EvidenceHash/IPFS.
-- [ ] README tech stack dung Pinata/IPFS.
-- [ ] README co production demo link.
-- [ ] README co screenshot neu can thuyet phuc repo.
-- [ ] README co gioi han hien tai va huong phat trien.
-- [ ] `docs/ONCHAIN_OFFCHAIN.md` giai thich on-chain stage history, evidenceHash/ipfsCid, tx proof.
-- [ ] `docs/ONCHAIN_OFFCHAIN.md` giai thich off-chain producer, inspection, warehouse, metadata.
-- [ ] `docs/ONCHAIN_OFFCHAIN.md` giai thich vi sao khong luu anh truc tiep on-chain.
-- [ ] `docs/HUONG_DAN_DEMO.md` co flow Producer -> Inspector -> Warehouse -> Distributor -> Consumer QR.
-- [ ] `docs/HUONG_DAN_DEMO.md` co buoc upload evidence len Pinata/IPFS.
+- [x] README co multi-role.
+- [x] README co QualityInspection.
+- [x] README co WarehouseReceived.
+- [x] README co EvidenceHash/IPFS.
+- [x] README tech stack dung Pinata/IPFS.
+- [x] README co production demo link.
+- [x] README co screenshot neu can thuyet phuc repo.
+- [x] README co gioi han hien tai va huong phat trien.
+- [x] `docs/ONCHAIN_OFFCHAIN.md` giai thich on-chain stage history, evidenceHash/ipfsCid, tx proof.
+- [x] `docs/ONCHAIN_OFFCHAIN.md` giai thich off-chain producer, inspection, warehouse, metadata.
+- [x] `docs/ONCHAIN_OFFCHAIN.md` giai thich vi sao khong luu anh truc tiep on-chain.
+- [x] `docs/HUONG_DAN_DEMO.md` co flow Producer -> Inspector -> Warehouse -> Distributor -> Consumer QR.
+- [x] `docs/HUONG_DAN_DEMO.md` co buoc upload evidence len Pinata/IPFS.
 - [ ] `docs/HUONG_DAN_DEMO.md` co buoc mo IPFS Gateway.
-- [ ] `docs/HUONG_DAN_DEMO.md` co buoc mo Polygonscan/Sourcify.
+- [x] `docs/HUONG_DAN_DEMO.md` co buoc mo Polygonscan va ghi ro Sourcify chua verify.
 - [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Blockchain co dam bao anh khong bi sua khong?".
 - [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Nhap kho duoc ghi o dau?".
 - [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Ai duoc cap nhat kiem dinh?".
@@ -609,22 +613,22 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 - [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Neu Pinata bi loi thi sao?".
 - [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "IPFS co dam bao du lieu khong bi xoa khong?".
 - [ ] `docs/CAU_HOI_PHAN_BIEN.md` co cau "Blockchain luu anh hay luu gi?".
-- [ ] `.env.example`/`backend/.env.example` co `JWT_SECRET`.
-- [ ] `.env.example`/`backend/.env.example` co `IPFS_PROVIDER`.
-- [ ] `.env.example`/`backend/.env.example` co `PINATA_JWT`.
-- [ ] `.env.example`/`backend/.env.example` co `IPFS_GATEWAY`.
-- [ ] `.env.example`/`backend/.env.example` co seed account variables neu can.
-- [ ] Deployment docs ghi Pinata JWT chi nam o Render backend.
-- [ ] Deployment docs ghi khong dua Pinata JWT len Vercel.
+- [x] `.env.example`/`backend/.env.example` co `JWT_SECRET`.
+- [x] `.env.example`/`backend/.env.example` co `IPFS_PROVIDER`.
+- [x] `.env.example`/`backend/.env.example` co `PINATA_JWT`.
+- [x] `.env.example`/`backend/.env.example` co `IPFS_GATEWAY`.
+- [x] `.env.example`/`backend/.env.example` co seed account variables neu can.
+- [x] Deployment docs ghi Pinata JWT chi nam o Render backend.
+- [x] Deployment docs ghi khong dua Pinata JWT len Vercel.
 
 ## 18. API Docs Evidence Fields
 
-- [ ] Docs response stage/evidence co `imageUrl` hoac `ipfsUrl`.
-- [ ] Docs response co `ipfsCid`.
-- [ ] Docs response co `evidenceHash`.
-- [ ] Upload endpoint docs ghi `Content-Type: multipart/form-data`.
-- [ ] Upload endpoint docs ghi file co the la image/certificate/evidence.
-- [ ] Upload endpoint docs co response `ipfsCid`, `ipfsUrl`, `evidenceHash`.
+- [x] Docs response stage/evidence co `imageUrl` hoac `ipfsUrl`.
+- [x] Docs response co `ipfsCid`.
+- [x] Docs response co `evidenceHash`.
+- [x] Upload endpoint docs ghi `Content-Type: multipart/form-data`.
+- [x] Upload endpoint docs ghi file co the la image/certificate/evidence.
+- [x] Upload endpoint docs co response `ipfsCid`, `ipfsUrl`, `evidenceHash`.
 
 ## 19. Testing Checklist
 
@@ -754,14 +758,14 @@ rg -n "PINATA_JWT|postgresql://postgres|PRIVATE_KEY|ADMIN_PASSWORD" -g '!node_mo
 
 ### Bat buoc
 
-- [ ] QualityInspection stage.
-- [ ] WarehouseReceived stage.
-- [ ] imageHash/evidenceHash.
-- [ ] Backend RBAC.
-- [ ] Login multi-role.
-- [ ] UI queue kiem dinh.
-- [ ] UI nhap kho.
-- [ ] Public QR hien timeline moi.
+- [x] QualityInspection stage.
+- [x] WarehouseReceived stage.
+- [x] imageHash/evidenceHash.
+- [x] Backend RBAC.
+- [x] Login multi-role.
+- [x] UI queue kiem dinh.
+- [x] UI nhap kho.
+- [x] Public QR hien timeline moi.
 
 ### Nen co
 

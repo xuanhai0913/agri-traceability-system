@@ -66,6 +66,9 @@ export default function CompliancePage() {
   const network = evidence?.network;
   const contract = evidence?.contract;
   const apiOnline = evidence?.api?.status === "online";
+  const hasSourcifyLink = externalLinks.some((link) =>
+    String(link.label || "").toLowerCase().includes("sourcify")
+  );
 
   const checks = [
     {
@@ -104,8 +107,12 @@ export default function CompliancePage() {
       icon: FileSearch,
       title: isVi ? "Có đường dẫn kiểm chứng bên ngoài" : "External verification links exist",
       body: isVi
-        ? "Trang này dẫn ra Polygonscan/Sourcify để đối chiếu contract và mã nguồn xác minh."
-        : "This page links to Polygonscan/Sourcify for contract and source review.",
+        ? hasSourcifyLink
+          ? "Trang này dẫn ra Polygonscan và Sourcify để đối chiếu contract và source đã verify."
+          : "Trang này dẫn ra Polygonscan để đối chiếu contract. Source chưa verify trên Sourcify nên không hiển thị link 404."
+        : hasSourcifyLink
+          ? "This page links to Polygonscan and Sourcify for contract and verified source review."
+          : "This page links to Polygonscan. Source is not verified on Sourcify yet, so no 404 Sourcify link is shown.",
       status: externalLinks.length > 0,
     },
   ];

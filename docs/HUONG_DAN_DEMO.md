@@ -134,6 +134,10 @@ Nói:
 
 > Compliance gom bằng chứng để phản biện nhanh: API đang chạy, database available, network là Polygon Amoy, contract address public, batch count đọc được và transaction có thể mở trên explorer. Đây là phần giúp chứng minh demo không chỉ là UI tĩnh.
 
+Lưu ý hiện tại:
+
+> Contract tồn tại trên Polygon Amoy và có bytecode thật, nhưng chưa verify source trên Sourcify. Vì vậy khi demo chỉ mở Polygonscan/transaction; phần Sourcify là hướng hoàn thiện thêm, không nói là đã verified.
+
 Nếu Polygonscan load chậm:
 
 > Polygonscan chỉ là công cụ xem. Có thể kiểm transaction bằng JSON-RPC `eth_getTransactionReceipt` với tx hash.
@@ -223,6 +227,7 @@ Nói:
 | --- | --- |
 | Render cold start | Mở API health, chờ 10-30 giây rồi reload app. |
 | Explorer load chậm | Dùng tx hash/block number và nói có thể kiểm bằng JSON-RPC. |
+| Sourcify contract not found | Nói rõ source chưa verify trên Sourcify; contract vẫn tồn tại on-chain và có thể kiểm bằng Polygonscan/RPC. |
 | Live transaction lâu | Chuyển về batch 1 đã có đủ stage và transaction. |
 | QR quét không kịp | Copy verification link và mở URL public trên browser. |
 | Gateway IPFS riêng trả lỗi | Dùng fallback public IPFS gateway theo CID nếu UI có hiển thị. |

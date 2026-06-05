@@ -24,6 +24,7 @@ const DEFAULT_SOURCIFY_BASE_URL = "https://repo.sourcify.dev";
 function getNetworkConfig() {
   const chainId = Number(process.env.CHAIN_ID || DEFAULT_CHAIN_ID);
   const contractAddress = process.env.CONTRACT_ADDRESS || "";
+  const sourcifyVerified = process.env.SOURCIFY_VERIFIED === "true";
   const explorerBaseUrl =
     process.env.EXPLORER_BASE_URL || DEFAULT_EXPLORER_BASE_URL;
   const sourcifyBaseUrl =
@@ -38,9 +39,10 @@ function getNetworkConfig() {
     polygonscanUrl: contractAddress
       ? `${explorerBaseUrl}/address/${contractAddress}`
       : "",
-    sourcifyUrl: contractAddress
+    sourcifyUrl: sourcifyVerified && contractAddress
       ? `${sourcifyBaseUrl}/${chainId}/${contractAddress}`
       : "",
+    sourcifyVerified,
   };
 }
 
@@ -155,7 +157,7 @@ async function loadComplianceEvidence() {
         href: config.polygonscanUrl,
       },
       config.sourcifyUrl && {
-        label: "Sourcify verified source",
+        label: "Sourcify source",
         value: config.contractAddress,
         href: config.sourcifyUrl,
       },
@@ -177,6 +179,7 @@ async function loadComplianceEvidence() {
         address: config.contractAddress,
         explorerUrl: config.polygonscanUrl,
         sourcifyUrl: config.sourcifyUrl,
+        sourceVerified: config.sourcifyVerified,
         available: Boolean(contract),
       },
       externalLinks,

@@ -59,7 +59,7 @@
     "soilDesc": "Dashboard chỉ hiển thị dữ liệu backend, database và Polygon Amoy testnet.",
     "walletActivity": "Giao dịch service wallet",
     "upgradePro": "Compliance Evidence",
-    "upgradeDesc": "Mở trang kiểm chứng API, contract, QR và Sourcify.",
+    "upgradeDesc": "Mở trang kiểm chứng API, contract, QR và Polygonscan.",
     "upgradeBtn": "Mở kiểm chứng"
   },
   "ledger": {

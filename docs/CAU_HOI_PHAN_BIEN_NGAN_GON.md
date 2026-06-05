@@ -78,7 +78,7 @@ QR trỏ tới trang public `/batches/:id`. Người dùng quét QR để xem ng
 
 ### 18. Giao diện web có thể hiển thị sai dữ liệu không?
 
-Về lý thuyết có thể nếu frontend/backend bị sửa. Vì vậy hệ thống cung cấp transaction hash, block number, contract address, Polygonscan/Sourcify để đối chiếu độc lập. Web là giao diện đọc, blockchain là lớp bằng chứng.
+Về lý thuyết có thể nếu frontend/backend bị sửa. Vì vậy hệ thống cung cấp transaction hash, block number, contract address và Polygonscan để đối chiếu độc lập. Source contract nằm trong repo; Sourcify là bước verify thêm nếu cần tăng độ tin cậy.
 
 ## 4. Câu hỏi về smart contract và bảo mật
 
@@ -104,7 +104,7 @@ Vì đối tượng nông nghiệp/chuỗi cung ứng không nhất thiết quen
 
 ### 24. Contract đã verify source chưa?
 
-Contract address có trên Polygonscan và source nằm trong repo. Nếu chưa verify source đầy đủ trên Polygonscan/Sourcify, nói rõ đây là hướng hoàn thiện trước phản biện để tăng độ tin cậy.
+Chưa. Contract address có trên Polygonscan và source nằm trong repo, nhưng link Sourcify hiện trả `contract not found`. Khi demo không nói là đã verify; nói đây là việc cần làm thêm để tăng độ tin cậy.
 
 ## 5. Câu hỏi về mạng blockchain và chi phí
 
