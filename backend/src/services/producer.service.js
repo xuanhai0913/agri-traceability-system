@@ -9,6 +9,16 @@ const { getFallbackProducerLinkCount } = require("./batch-metadata.service");
 const DEFAULT_IMAGE = "/images/farm-highland.png";
 const PRODUCER_STATUSES = new Set(["verified", "audit_pending"]);
 
+function shouldSeedDemoProducers() {
+  if (process.env.SEED_DEMO_PRODUCERS === "true") return true;
+  if (process.env.SEED_DEMO_PRODUCERS === "false") return false;
+  return process.env.NODE_ENV !== "production";
+}
+
+function getFallbackProducers() {
+  return shouldSeedDemoProducers() ? seedProducers : [];
+}
+
 function toArray(value) {
   if (Array.isArray(value)) return value.filter(Boolean);
   if (typeof value === "string") {
@@ -197,13 +207,17 @@ async function initProducerStore() {
 
   const countRes = await query("SELECT COUNT(*)::int AS count FROM producers");
   if (countRes.rows[0].count > 0) {
-    await seedMissingProducers();
+    if (shouldSeedDemoProducers()) {
+      await seedMissingProducers();
+    }
     await syncProducerIdentitySequence();
     return;
   }
 
-  for (const producer of seedProducers) {
-    await insertSeedProducer(producer);
+  if (shouldSeedDemoProducers()) {
+    for (const producer of seedProducers) {
+      await insertSeedProducer(producer);
+    }
   }
 
   await syncProducerIdentitySequence();
@@ -277,7 +291,7 @@ async function syncProducerIdentitySequence() {
 
 async function listProducers() {
   if (!hasDatabase()) {
-    return seedProducers.map(toFallbackProducer);
+    return getFallbackProducers().map(toFallbackProducer);
   }
 
   try {
@@ -296,7 +310,7 @@ async function listProducers() {
     return res.rows.map(toApiProducer);
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
-      return seedProducers.map(toFallbackProducer);
+      return getFallbackProducers().map(toFallbackProducer);
     }
     throw error;
   }
@@ -304,7 +318,7 @@ async function listProducers() {
 
 async function getProducerById(id) {
   if (!hasDatabase()) {
-    const producer = seedProducers.find((item) => item.id === Number(id));
+    const producer = getFallbackProducers().find((item) => item.id === Number(id));
     if (!producer) return null;
     return toFallbackProducer(producer);
   }
@@ -328,7 +342,9 @@ async function getProducerById(id) {
     return res.rows[0] ? toApiProducer(res.rows[0]) : null;
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
-      const producer = seedProducers.find((item) => item.id === Number(id));
+      const producer = getFallbackProducers().find(
+        (item) => item.id === Number(id)
+      );
       return producer ? toFallbackProducer(producer) : null;
     }
     throw error;
