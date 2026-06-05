@@ -415,7 +415,7 @@ export default function CreateBatchPage() {
                                 ? "Đang tải hồ sơ producer..."
                                 : selectedProducer?.name || "Chưa gắn hồ sơ producer"}
                             </p>
-                            <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100">
+                            <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[10px] font-black tracking-[0.08em] text-emerald-700 ring-1 ring-emerald-100">
                               Account-linked producer
                             </span>
                           </div>

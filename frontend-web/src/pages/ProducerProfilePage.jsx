@@ -148,7 +148,7 @@ export default function ProducerProfilePage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/75 via-emerald-950/20 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7 text-white">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] backdrop-blur">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[10px] font-black tracking-[0.08em] backdrop-blur">
               <UserCheck size={13} />
               Account-linked producer
             </div>
