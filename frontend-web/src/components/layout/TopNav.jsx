@@ -289,7 +289,7 @@ export default function TopNav({ onMenuToggle }) {
             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-900 hover:bg-emerald-800 text-xs font-bold text-white transition-colors"
           >
             <LogIn size={14} />
-            <span className="hidden sm:inline">Admin login</span>
+            <span className="hidden sm:inline">Đăng nhập</span>
           </Link>
         )}
 

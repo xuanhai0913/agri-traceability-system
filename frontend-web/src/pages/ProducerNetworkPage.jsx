@@ -23,7 +23,8 @@ export default function ProducerNetworkPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const canManageProducers = isAuthenticated && user?.role === "ADMIN";
   const isVi = i18n.language === "vi";
   const [producers, setProducers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,22 +104,16 @@ export default function ProducerNetworkPage() {
             {t("producers.subtitle")}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() =>
-            isAuthenticated ? setShowAddProducer(true) : navigate("/login")
-          }
-          className="btn-primary-gradient px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
-        >
-          <UserPlus size={18} />
-          {isAuthenticated
-            ? isVi
-              ? "Thêm nhà sản xuất"
-              : "Add Producer"
-            : isVi
-            ? "Đăng nhập để thêm producer"
-            : "Login to add producer"}
-        </button>
+        {canManageProducers && (
+          <button
+            type="button"
+            onClick={() => setShowAddProducer(true)}
+            className="btn-primary-gradient px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
+          >
+            <UserPlus size={18} />
+            {isVi ? "Thêm nhà sản xuất" : "Add Producer"}
+          </button>
+        )}
       </section>
 
       {/* Source-backed summary */}
@@ -308,7 +303,7 @@ export default function ProducerNetworkPage() {
         })}
       </div>
 
-      {showAddProducer && isAuthenticated && (
+      {showAddProducer && canManageProducers && (
         <AddProducerModal
           onClose={() => setShowAddProducer(false)}
           onCreated={handleProducerCreated}

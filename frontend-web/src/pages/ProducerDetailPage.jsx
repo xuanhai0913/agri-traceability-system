@@ -22,7 +22,7 @@ const AUDIT_ICONS = {
 export default function ProducerDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [producer, setProducer] = useState(null);
   const [linkedBatches, setLinkedBatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +92,7 @@ export default function ProducerDetailPage() {
     : "";
   const mapQuery = encodeURIComponent(producer.coordinates || producer.location || "");
   const satelliteUrl = `https://www.google.com/maps?q=${mapQuery}&t=k`;
+  const canManageProducer = isAuthenticated && user?.role === "ADMIN";
 
   function formatDate(timestamp) {
     if (!timestamp) return "—";
@@ -236,7 +237,7 @@ export default function ProducerDetailPage() {
         </section>
       )}
 
-      {isAuthenticated && (
+      {canManageProducer && (
         <section className="mt-6 bg-surface-container-lowest p-5 rounded-2xl shadow-ambient flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-tertiary">
@@ -595,7 +596,7 @@ export default function ProducerDetailPage() {
           )}
         </div>
       </div>
-      {showEditProducer && isAuthenticated && (
+      {showEditProducer && canManageProducer && (
         <AddProducerModal
           producer={producer}
           onClose={() => setShowEditProducer(false)}

@@ -21,6 +21,8 @@ export default function LoginPage() {
         return "/warehouse/receiving";
       case "DISTRIBUTOR":
         return "/distributor/queue";
+      case "ADMIN":
+        return "/admin/dashboard";
       default:
         return "/";
     }

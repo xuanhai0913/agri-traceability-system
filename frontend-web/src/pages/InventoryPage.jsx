@@ -6,6 +6,8 @@ import { getAllBatches } from "../services/api";
 import { InventorySkeleton } from "../components/ui/Skeleton";
 import { EmptyInventoryIllustration } from "../components/ui/EmptyStateIllustrations";
 import SyncStatus from "../components/ui/SyncStatus";
+import AdminRequired from "../components/auth/AdminRequired";
+import { useAuth } from "../components/auth/useAuth";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -35,6 +37,7 @@ const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
 
 export default function InventoryPage() {
   const { t, i18n } = useTranslation();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,10 +48,13 @@ export default function InventoryPage() {
   const filter = ["active", "completed"].includes(statusParam)
     ? statusParam
     : "all";
+  const canAccess = isAuthenticated && ["ADMIN", "WAREHOUSE_STAFF"].includes(user?.role);
+  const canCreateBatch = user?.role === "ADMIN";
 
   useEffect(() => {
-    loadBatches();
-  }, []);
+    if (canAccess) loadBatches();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canAccess]);
 
   async function loadBatches(options = {}) {
     const slowTimer = setTimeout(() => setSlowLoading(true), 1500);
@@ -131,6 +137,19 @@ export default function InventoryPage() {
     document.body.removeChild(link);
   }
 
+  if (authLoading) {
+    return <div className="p-8 text-slate-500">Đang kiểm tra phiên đăng nhập...</div>;
+  }
+
+  if (!canAccess) {
+    return (
+      <AdminRequired
+        title="Cần quyền kho"
+        body="Kho lô hàng là màn hình vận hành nội bộ dành cho ADMIN hoặc WAREHOUSE_STAFF."
+      />
+    );
+  }
+
   return (
     <>
       {/* Header */}
@@ -155,13 +174,15 @@ export default function InventoryPage() {
             <Download size={18} />
             Xuất CSV
           </button>
-          <Link
-            to="/batches/new"
-            className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 justify-center"
-          >
-            <PackagePlus size={18} />
-            Tạo lô hàng
-          </Link>
+          {canCreateBatch && (
+            <Link
+              to="/batches/new"
+              className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 justify-center"
+            >
+              <PackagePlus size={18} />
+              Tạo lô hàng
+            </Link>
+          )}
         </div>
       </div>
 
@@ -228,12 +249,14 @@ export default function InventoryPage() {
         <div className="flex flex-col items-center justify-center py-24 text-slate-400">
           <EmptyInventoryIllustration className="w-32 h-32 mb-4" />
           <p className="text-sm font-medium">{t("common.noData")}</p>
-          <Link
-            to="/batches/new"
-            className="mt-4 text-primary text-sm font-bold hover:underline"
-          >
-            {t("dashboard.createFirst")}
-          </Link>
+          {canCreateBatch && (
+            <Link
+              to="/batches/new"
+              className="mt-4 text-primary text-sm font-bold hover:underline"
+            >
+              {t("dashboard.createFirst")}
+            </Link>
+          )}
         </div>
       ) : (
         /* Card Grid */

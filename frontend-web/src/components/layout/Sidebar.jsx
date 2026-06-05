@@ -6,6 +6,8 @@ import {
   Warehouse,
   Users,
   ShieldCheck,
+  FileText,
+  Package,
   Plus,
   LogIn,
   Truck,
@@ -17,10 +19,18 @@ import { useAuth } from "../auth/useAuth";
 
 const NAV_ICONS = {
   "/": LayoutDashboard,
+  "/admin/dashboard": LayoutDashboard,
   "/batches": GitBranch,
+  "/admin/ledger": GitBranch,
+  "/producer/batches": GitBranch,
+  "/producer/batches/new": Plus,
   "/inventory": Warehouse,
+  "/warehouse/inventory": Warehouse,
+  "/warehouse/receipts": FileText,
   "/producers": Users,
+  "/admin/producers": Users,
   "/compliance": ShieldCheck,
+  "/admin/compliance": ShieldCheck,
   "/inspector/queue": ClipboardCheck,
   "/warehouse/receiving": PackageCheck,
   "/distributor/queue": Truck,
@@ -28,38 +38,73 @@ const NAV_ICONS = {
   "/admin/warehouses": Warehouse,
 };
 
+const ROLE_LABELS = {
+  ADMIN: "Admin workspace",
+  PRODUCER: "Producer workspace",
+  QUALITY_INSPECTOR: "Inspection workspace",
+  WAREHOUSE_STAFF: "Warehouse workspace",
+  DISTRIBUTOR: "Distribution workspace",
+};
+
 export default function Sidebar({ open, onClose }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
-  const baseNavItems = [
-    { to: "/", label: t("nav.dashboard") },
-    { to: "/batches", label: t("nav.ledger") },
-    { to: "/inventory", label: t("nav.inventory") },
-    { to: "/producers", label: t("nav.producers") },
-    { to: "/compliance", label: t("nav.compliance") },
-  ];
-  const roleNavItems = [
-    ...(user?.role === "ADMIN"
-      ? [
+  const navItems = (() => {
+    if (!isAuthenticated) {
+      return [
+        { to: "/", label: t("nav.dashboard") },
+        { to: "/batches", label: t("nav.ledger") },
+        { to: "/producers", label: t("nav.producers") },
+        { to: "/compliance", label: t("nav.compliance") },
+      ];
+    }
+
+    switch (user?.role) {
+      case "ADMIN":
+        return [
+          { to: "/admin/dashboard", label: t("nav.dashboard") },
+          { to: "/admin/ledger", label: t("nav.ledger") },
+          { to: "/admin/producers", label: t("nav.producers") },
           { to: "/admin/users", label: "Tài khoản" },
           { to: "/admin/warehouses", label: "Kho" },
-        ]
-      : []),
-    ...(user?.role === "ADMIN" || user?.role === "QUALITY_INSPECTOR"
-      ? [{ to: "/inspector/queue", label: "Kiểm định" }]
-      : []),
-    ...(user?.role === "ADMIN" || user?.role === "WAREHOUSE_STAFF"
-      ? [{ to: "/warehouse/receiving", label: "Nhập kho" }]
-      : []),
-    ...(user?.role === "ADMIN" || user?.role === "DISTRIBUTOR"
-      ? [{ to: "/distributor/queue", label: "Phân phối" }]
-      : []),
-  ];
-  const navItems = [...baseNavItems, ...roleNavItems];
+          { to: "/inspector/queue", label: "Kiểm định" },
+          { to: "/warehouse/receiving", label: "Nhập kho" },
+          { to: "/warehouse/inventory", label: "Tồn kho" },
+          { to: "/distributor/queue", label: "Phân phối" },
+          { to: "/admin/compliance", label: t("nav.compliance") },
+        ];
+      case "PRODUCER":
+        return [
+          { to: "/producer/batches/new", label: "Tạo lô hàng" },
+          { to: "/producer/batches", label: "Lô sản xuất" },
+        ];
+      case "QUALITY_INSPECTOR":
+        return [{ to: "/inspector/queue", label: "Kiểm định" }];
+      case "WAREHOUSE_STAFF":
+        return [
+          { to: "/warehouse/receiving", label: "Nhập kho" },
+          { to: "/warehouse/inventory", label: "Tồn kho" },
+          { to: "/warehouse/receipts", label: "Biên nhận" },
+        ];
+      case "DISTRIBUTOR":
+        return [{ to: "/distributor/queue", label: "Phân phối" }];
+      default:
+        return [
+          { to: "/batches", label: t("nav.ledger") },
+          { to: "/compliance", label: t("nav.compliance") },
+        ];
+    }
+  })();
   const primaryAction = (() => {
     if (!isAuthenticated) return { to: "/login", label: "Đăng nhập", icon: LogIn };
+    if (user?.role === "ADMIN") {
+      return { to: "/batches/new", label: t("nav.newBatch"), icon: Plus };
+    }
+    if (user?.role === "PRODUCER") {
+      return { to: "/producer/batches/new", label: "Tạo lô hàng", icon: Package };
+    }
     if (user?.role === "QUALITY_INSPECTOR") {
       return { to: "/inspector/queue", label: "Mở kiểm định", icon: ClipboardCheck };
     }
@@ -69,7 +114,7 @@ export default function Sidebar({ open, onClose }) {
     if (user?.role === "DISTRIBUTOR") {
       return { to: "/distributor/queue", label: "Mở phân phối", icon: Truck };
     }
-    return { to: "/batches/new", label: t("nav.newBatch"), icon: Plus };
+    return { to: "/batches", label: t("nav.ledger"), icon: GitBranch };
   })();
   const PrimaryActionIcon = primaryAction.icon;
 
@@ -103,7 +148,7 @@ export default function Sidebar({ open, onClose }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 space-y-1">
+      <nav className="flex-1 px-4 pb-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = NAV_ICONS[item.to];
           return (
@@ -142,6 +187,11 @@ export default function Sidebar({ open, onClose }) {
       </div>
 
       <div className="px-6 py-5 border-t border-emerald-100/30">
+        {isAuthenticated && (
+          <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-emerald-900">
+            {ROLE_LABELS[user?.role] || "Operations workspace"}
+          </p>
+        )}
         <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700/70">
           Product Testnet
         </p>

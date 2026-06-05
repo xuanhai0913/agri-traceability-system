@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Plus, Search, ChevronLeft, ChevronRight, Eye, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2 } from "@icons";
 import { getAllBatches } from "../services/api";
 import { LedgerTableSkeleton } from "../components/ui/Skeleton";
 import { NoResultsIllustration, EmptyBoxIllustration } from "../components/ui/EmptyStateIllustrations";
 import SyncStatus from "../components/ui/SyncStatus";
+import { useAuth } from "../components/auth/useAuth";
 
 const STAGE_NAMES = [
   "Gieo trồng",
@@ -45,6 +46,8 @@ function normalizeSearch(value) {
 
 export default function TraceabilityLedgerPage() {
   const { t, i18n } = useTranslation();
+  const { user, isAuthenticated } = useAuth();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSearch = searchParams.get("search") || "";
   const [batches, setBatches] = useState([]);
@@ -87,7 +90,14 @@ export default function TraceabilityLedgerPage() {
   }
 
   // Filtering
-  const filtered = batches.filter((b) => {
+  const isProducerWorkspace =
+    user?.role === "PRODUCER" && location.pathname.startsWith("/producer/");
+
+  const visibleBatches = isProducerWorkspace
+    ? batches.filter((batch) => Number(batch.primaryProducer?.id) === Number(user?.producerId))
+    : batches;
+
+  const filtered = visibleBatches.filter((b) => {
     const query = search.trim().toLowerCase();
     const normalizedQuery = normalizeSearch(search);
     const batchId = String(b.id);
@@ -119,6 +129,8 @@ export default function TraceabilityLedgerPage() {
       year: "numeric",
     });
   }
+  const canCreateBatch =
+    isAuthenticated && ["ADMIN", "PRODUCER"].includes(user?.role);
 
   return (
     <>
@@ -135,13 +147,15 @@ export default function TraceabilityLedgerPage() {
             {t("ledger.subtitle")}
           </p>
         </div>
-        <Link
-          to="/batches/new"
-          className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0 w-full md:w-auto justify-center"
-        >
-          <Plus size={18} />
-          {t("ledger.newBatch")}
-        </Link>
+        {canCreateBatch && (
+          <Link
+            to={user?.role === "PRODUCER" ? "/producer/batches/new" : "/batches/new"}
+            className="btn-primary-gradient px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shrink-0 w-full md:w-auto justify-center"
+          >
+            <Plus size={18} />
+            {t("ledger.newBatch")}
+          </Link>
+        )}
       </div>
 
       {/* Search + Filter Bar */}
