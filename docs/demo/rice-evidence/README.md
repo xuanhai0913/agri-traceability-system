@@ -23,6 +23,50 @@ Folder này chứa ảnh evidence đã chuẩn bị sẵn để upload khi demo 
 - Khi upload, backend sẽ tính `evidenceHash` từ file và pin IPFS qua Pinata nếu cấu hình đang hoạt động.
 - Nếu bị hỏi nguồn ảnh, mở `manifest.json` để chỉ source page và license.
 
+## Link mở nhanh khi demo
+
+Mở sẵn mục này trong lúc thuyết trình. Tới bước nào thì click đúng link ở bước đó.
+
+### Flow app
+
+| Bước | Link |
+| --- | --- |
+| Trang chủ product | [agri.hailamdev.space](https://agri.hailamdev.space/) |
+| Đăng nhập role | [Login](https://agri.hailamdev.space/login) |
+| Producer tạo lô mới | [Producer Create Batch](https://agri.hailamdev.space/producer/batches/new) |
+| Producer xem profile linked producer | [Producer Profile](https://agri.hailamdev.space/producer/profile) |
+| Inspector queue kiểm định | [Inspection Queue](https://agri.hailamdev.space/inspector/queue) |
+| Warehouse nhập kho | [Warehouse Receiving](https://agri.hailamdev.space/warehouse/receiving) |
+| Warehouse tồn kho | [Warehouse Inventory](https://agri.hailamdev.space/warehouse/inventory) |
+| Distributor queue | [Distributor Queue](https://agri.hailamdev.space/distributor/queue) |
+| Compliance evidence | [Compliance](https://agri.hailamdev.space/compliance) |
+| Batch demo hoàn chỉnh | [Public Batch #1](https://agri.hailamdev.space/batches/1) |
+
+### Link blockchain/IPFS cần chỉ rõ
+
+| Nội dung | Link |
+| --- | --- |
+| Contract address | [`0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`](https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8) |
+| Sourcify verified source | [Sourcify source verified](https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8) |
+| Service wallet/relayer | [`0xCBe061edb5159ac5E61Ff3C87e2402e5a4CAac5f`](https://amoy.polygonscan.com/address/0xCBe061edb5159ac5E61Ff3C87e2402e5a4CAac5f) |
+| IPFS evidence mẫu | [Pinata/IPFS CID `QmXWz...Nw1L`](https://scarlet-objective-narwhal-346.mypinata.cloud/ipfs/QmXWzMbQQAnQSAwFrd7PrZkPV7wACc6XdpZVxFUP8hNw1L) |
+
+### Transaction mẫu để click nhanh
+
+Các link này thuộc batch demo `Public Batch #1`, dùng khi testnet chậm hoặc chưa kịp tạo batch mới.
+
+| Stage | Polygonscan tx |
+| --- | --- |
+| Create Batch | [0x4db047...10fcb](https://amoy.polygonscan.com/tx/0x4db047cc1921b372b6960cb0b31790f818053214a41cae6c043a2598bd210fcb) |
+| Growing | [0xc62054...94b2f](https://amoy.polygonscan.com/tx/0xc620547a8de316cf04ebb7b1f24502a015f29aa2cc6adb29d9bb4c61d2694b2f) |
+| Fertilizing | [0x59fdea...f97b2](https://amoy.polygonscan.com/tx/0x59fdea85297f31c1f866eb0cee5d52b4ed9b3863e1d02c1bb20c5fb5d1ef97b2) |
+| Harvesting | [0x21a1a9...09d6](https://amoy.polygonscan.com/tx/0x21a1a9a6f80663e3710f5612f381222dabb0a56fa2bcca3590245b3df70f09d6) |
+| QualityInspection | [0x36aae8...9d7e](https://amoy.polygonscan.com/tx/0x36aae8f5fb35bf825ffbef3dc2915e788c4222f44d4e62393aecd474a0ed9d7e) |
+| WarehouseReceived | [0x94fb89...5849](https://amoy.polygonscan.com/tx/0x94fb898f5e0cd6c0dc5a36e44a21fb319bf19926d71db43e8d98184a32615849) |
+| Packaging | [0x5719a0...36be](https://amoy.polygonscan.com/tx/0x5719a01ea9f374cdba1b72fe96e575ba4d6b4a933c77a094c9e00a0e671336be) |
+| Shipping | [0x8ed588...322d](https://amoy.polygonscan.com/tx/0x8ed588c2f8019d1584d1c373ff3d80c977673088ebe2a2be27f7f7a03a57322d) |
+| Completed | [0xf7b1df...fd6f](https://amoy.polygonscan.com/tx/0xf7b1dfdcbb24d08300307fe56d1ede3eaca9db224861048019bd4dc82b7cfd6f) |
+
 ## Kịch bản demo đầy đủ
 
 Kịch bản nên đi đúng một mạch: Producer tạo lô -> Inspector kiểm định -> Warehouse nhập kho -> Distributor vận chuyển -> Consumer quét QR -> xem blockchain/IPFS proof.
@@ -31,10 +75,10 @@ Kịch bản nên đi đúng một mạch: Producer tạo lô -> Inspector kiể
 
 Mở sẵn các tab:
 
-- Product: `https://agri.hailamdev.space`
-- Login: `https://agri.hailamdev.space/login`
-- Contract Polygonscan: `https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`
-- Sourcify verified source: `https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`
+- Product: [agri.hailamdev.space](https://agri.hailamdev.space/)
+- Login: [https://agri.hailamdev.space/login](https://agri.hailamdev.space/login)
+- Contract Polygonscan: [`0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8`](https://amoy.polygonscan.com/address/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8)
+- Sourcify verified source: [Sourcify `0xA94D...b7ed8`](https://repo.sourcify.dev/80002/0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8)
 - Folder ảnh: `docs/demo/rice-evidence`
 
 Tài khoản demo dùng các role đã seed/cấu hình:
