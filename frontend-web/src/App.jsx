@@ -16,6 +16,8 @@ const ProducerDetailPage = lazy(() => import("./pages/ProducerDetailPage"));
 const CompliancePage = lazy(() => import("./pages/CompliancePage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const InspectionQueuePage = lazy(() => import("./pages/InspectionQueuePage"));
+const WarehouseReceivingPage = lazy(() => import("./pages/WarehouseReceivingPage"));
 
 /** Route-level loading fallback */
 function RouteFallback() {
@@ -85,6 +87,22 @@ export default function App() {
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <InventoryPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/inspector/queue"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <InspectionQueuePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/warehouse/receiving"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <WarehouseReceivingPage />
                 </Suspense>
               }
             />

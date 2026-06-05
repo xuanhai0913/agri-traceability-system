@@ -9,7 +9,9 @@ import {
   Plus,
   LogIn,
   X,
-} from "lucide-react";
+  ClipboardCheck,
+  PackageCheck,
+} from "@icons";
 import { useAuth } from "../auth/useAuth";
 
 const NAV_ICONS = {
@@ -18,20 +20,45 @@ const NAV_ICONS = {
   "/inventory": Warehouse,
   "/producers": Users,
   "/compliance": ShieldCheck,
+  "/inspector/queue": ClipboardCheck,
+  "/warehouse/receiving": PackageCheck,
 };
 
 export default function Sidebar({ open, onClose }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  const navItems = [
+  const baseNavItems = [
     { to: "/", label: t("nav.dashboard") },
     { to: "/batches", label: t("nav.ledger") },
     { to: "/inventory", label: t("nav.inventory") },
     { to: "/producers", label: t("nav.producers") },
     { to: "/compliance", label: t("nav.compliance") },
   ];
+  const roleNavItems = [
+    ...(user?.role === "ADMIN" || user?.role === "QUALITY_INSPECTOR"
+      ? [{ to: "/inspector/queue", label: "Kiểm định" }]
+      : []),
+    ...(user?.role === "ADMIN" || user?.role === "WAREHOUSE_STAFF"
+      ? [{ to: "/warehouse/receiving", label: "Nhập kho" }]
+      : []),
+  ];
+  const navItems = [...baseNavItems, ...roleNavItems];
+  const primaryAction = (() => {
+    if (!isAuthenticated) return { to: "/login", label: "Đăng nhập", icon: LogIn };
+    if (user?.role === "QUALITY_INSPECTOR") {
+      return { to: "/inspector/queue", label: "Mở kiểm định", icon: ClipboardCheck };
+    }
+    if (user?.role === "WAREHOUSE_STAFF") {
+      return { to: "/warehouse/receiving", label: "Mở nhập kho", icon: PackageCheck };
+    }
+    if (user?.role === "DISTRIBUTOR") {
+      return { to: "/batches", label: "Cập nhật vận chuyển", icon: GitBranch };
+    }
+    return { to: "/batches/new", label: t("nav.newBatch"), icon: Plus };
+  })();
+  const PrimaryActionIcon = primaryAction.icon;
 
   return (
     <aside
@@ -91,17 +118,13 @@ export default function Sidebar({ open, onClose }) {
       <div className="px-4 mb-6">
         <button
           onClick={() => {
-            navigate(isAuthenticated ? "/batches/new" : "/login");
+            navigate(primaryAction.to);
             onClose();
           }}
           className="w-full py-3.5 btn-primary-gradient rounded-xl font-bold text-sm flex items-center justify-center gap-2"
         >
-          {isAuthenticated ? (
-            <Plus size={18} strokeWidth={2.5} />
-          ) : (
-            <LogIn size={18} strokeWidth={2.5} />
-          )}
-          {isAuthenticated ? t("nav.newBatch") : "Đăng nhập admin"}
+          <PrimaryActionIcon size={18} strokeWidth={2.5} />
+          {primaryAction.label}
         </button>
       </div>
 

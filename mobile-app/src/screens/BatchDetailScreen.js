@@ -280,6 +280,11 @@ function StageIcon({ stageInfo, size = 36 }) {
   );
 }
 
+function shortValue(value) {
+  if (!value) return "";
+  return value.length > 24 ? `${value.slice(0, 12)}...${value.slice(-8)}` : value;
+}
+
 // ─── TIMELINE ITEM ───
 function TimelineItem({ item, isLast }) {
   const info = getStageInfo(item.stage);
@@ -301,6 +306,24 @@ function TimelineItem({ item, isLast }) {
             style={styles.stageImage}
             resizeMode="cover"
           />
+        )}
+        {(!!item.evidenceHash || !!item.ipfsCid) && (
+          <View style={styles.evidenceBox}>
+            <View style={styles.metaRow}>
+              <Ionicons name="finger-print-outline" size={13} color="#047857" />
+              <Text style={styles.evidenceText}>
+                Hash: {shortValue(item.evidenceHash)}
+              </Text>
+            </View>
+            {!!item.ipfsCid && (
+              <View style={styles.metaRow}>
+                <Ionicons name="cube-outline" size={13} color="#047857" />
+                <Text style={styles.evidenceText}>
+                  CID: {shortValue(item.ipfsCid)}
+                </Text>
+              </View>
+            )}
+          </View>
         )}
         <View style={styles.metaBox}>
           {!!item.location && (
@@ -829,6 +852,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#e2e8f0",
     marginBottom: 10,
   },
+
+  evidenceBox: {
+    backgroundColor: "#ecfdf5",
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+    padding: 10,
+    borderRadius: 10,
+    gap: 6,
+    marginBottom: 10,
+  },
+  evidenceText: { fontSize: 11, color: "#047857", flex: 1, fontWeight: "600" },
 
   metaBox: {
     backgroundColor: "#f8fafc",

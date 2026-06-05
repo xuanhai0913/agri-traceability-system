@@ -6,7 +6,7 @@ import {
   Users, Globe, Droplets, Scale, ClipboardCheck, Sprout,
   Phone, Mail, ExternalLink, Contact, Satellite, ArrowRight,
   Loader2, Clock3, PencilLine,
-} from "lucide-react";
+} from "@icons";
 import { getProducer, getProducerBatches, updateProducerStatus } from "../services/api";
 import { ImageWithSkeleton } from "../components/ui/ImageWithSkeleton";
 import { useAuth } from "../components/auth/useAuth";

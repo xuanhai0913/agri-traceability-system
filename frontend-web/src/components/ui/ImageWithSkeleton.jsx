@@ -1,5 +1,5 @@
 import { useImagePreloader } from "../../hooks/useImagePreloader";
-import { ImageOff } from "lucide-react";
+import { ImageOff } from "@icons";
 
 export function ImageWithSkeleton({ src, alt, className, wrapperClassName = "" }) {
   const { isLoaded, hasError } = useImagePreloader(src);

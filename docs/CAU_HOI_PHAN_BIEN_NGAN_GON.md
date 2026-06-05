@@ -14,11 +14,11 @@ Không. Blockchain lưu phần cần bất biến như batch, stage, timestamp v
 
 ### 3. Dữ liệu nào thật sự nằm trên blockchain?
 
-Batch ID, tên lô, nguồn gốc, owner/service wallet, current stage, createdAt, isActive và stage history. Stage history gồm stage, description, imageUrl, timestamp, updatedBy. Ngoài ra còn có event và transaction hash trên mạng Polygon Amoy.
+Batch ID, tên lô, nguồn gốc, owner/service wallet, current stage, createdAt, isActive và stage history. Stage history gồm stage, description, imageUrl, timestamp, updatedBy. Với flow IPFS, `imageUrl` là IPFS gateway URL. Ngoài ra còn có event và transaction hash trên mạng Polygon Amoy.
 
 ### 4. Database đang lưu những gì?
 
-Database lưu producer profile, contact, trạng thái kiểm định, quan hệ batch-producer, role của actor, transaction hash, block number và dữ liệu phục vụ dashboard/search. Đây là dữ liệu nghiệp vụ cần cập nhật linh hoạt.
+Database lưu producer profile, contact, trạng thái kiểm định, quan hệ batch-producer, role của actor, transaction hash, block number, evidenceHash, IPFS CID/URL và dữ liệu phục vụ dashboard/search. Đây là dữ liệu nghiệp vụ cần cập nhật linh hoạt.
 
 ### 5. Vì sao không đưa toàn bộ dữ liệu lên blockchain?
 
@@ -62,11 +62,11 @@ Vì đây là product demo/testnet, không phải chứng nhận pháp lý thậ
 
 ### 14. Ảnh minh chứng có lưu trên blockchain không?
 
-Không lưu byte ảnh. Ảnh được lưu ở Cloudinary hoặc nguồn ảnh ngoài; smart contract lưu imageUrl. Hướng phát triển là lưu thêm hash ảnh hoặc IPFS CID để kiểm chứng nội dung ảnh chặt hơn.
+Không lưu byte ảnh trên blockchain. File upload được pin lên Pinata/IPFS, backend tính SHA-256 hash và trả CID. Contract production lưu IPFS URL trong `imageUrl`; database lưu thêm `evidenceHash/ipfsCid`. Contract v2 trong repo đã chuẩn bị field riêng cho hash/CID.
 
 ### 15. Nếu URL ảnh bị đổi nội dung thì sao?
 
-Contract hiện chỉ khóa URL, chưa khóa content hash. Vì vậy đây là giới hạn đã nêu trong README. Cách nâng cấp là lưu SHA-256 hash hoặc IPFS CID của ảnh.
+Với file upload IPFS, nếu đổi nội dung thì CID/hash sẽ thay đổi. Contract schema v2 khóa IPFS URL, `evidenceHash` và `ipfsCid` trực tiếp trong stage record on-chain.
 
 ### 16. QR code có tác dụng gì?
 
@@ -152,7 +152,7 @@ Hệ thống đã deploy được và có đầy đủ demo flow: dashboard, led
 
 ### 35. Giới hạn lớn nhất hiện tại là gì?
 
-Producer metadata và ảnh chưa được neo bằng hash lên blockchain. Auth mới ở mức admin đơn giản. Hướng phát triển là metadataHash/IPFS, multi-role signing, audit trail database và hạ tầng production tốt hơn.
+Repo đã hỗ trợ contract schema v2, Quality Inspection/Warehouse, hash/CID và multi-role JWT. Giới hạn còn lại là cần redeploy contract mới trên testnet/production demo, bổ sung multi-role signing bằng ví riêng, audit trail database và hạ tầng production tốt hơn.
 
 ## 7. Câu kết luận nên nói
 

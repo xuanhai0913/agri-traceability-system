@@ -1,5 +1,6 @@
 const { ethers } = require("ethers");
-const abi = require("./abi.json");
+const abiV1 = require("./abi.json");
+const abiV2 = require("./abi-v2.json");
 
 /**
  * Blockchain Configuration
@@ -13,6 +14,17 @@ const abi = require("./abi.json");
 function getProvider() {
   const rpcUrl = process.env.RPC_URL || "https://rpc-amoy.polygon.technology";
   return new ethers.JsonRpcProvider(rpcUrl);
+}
+
+function getContractSchema() {
+  const value = String(
+    process.env.CONTRACT_STAGE_SCHEMA || process.env.CONTRACT_VERSION || "v1"
+  ).toLowerCase();
+  return value === "v2" ? "v2" : "v1";
+}
+
+function getContractAbi() {
+  return getContractSchema() === "v2" ? abiV2 : abiV1;
 }
 
 // Khởi tạo signer (cần PRIVATE_KEY)
@@ -36,7 +48,7 @@ function getContract() {
   }
 
   const signer = getSigner();
-  return new ethers.Contract(contractAddress, abi, signer);
+  return new ethers.Contract(contractAddress, getContractAbi(), signer);
 }
 
 // Contract instance chỉ đọc (read-only) — không cần PRIVATE_KEY
@@ -46,10 +58,11 @@ function getReadOnlyContract() {
   if (!contractAddress) return null;
 
   const provider = getProvider();
-  return new ethers.Contract(contractAddress, abi, provider);
+  return new ethers.Contract(contractAddress, getContractAbi(), provider);
 }
 
 module.exports = {
+  getContractSchema,
   getProvider,
   getSigner,
   getContract,

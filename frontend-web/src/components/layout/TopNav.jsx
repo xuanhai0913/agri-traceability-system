@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Search, Languages, Menu, Wallet, LogOut, LogIn, Server } from "lucide-react";
+import { Search, Languages, Menu, Wallet, LogOut, LogIn, Server } from "@icons";
 import { useAuth } from "../auth/useAuth";
 import { getAllBatches, getDashboardSummary, getProducers } from "../../services/api";
 

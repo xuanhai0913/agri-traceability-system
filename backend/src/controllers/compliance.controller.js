@@ -10,6 +10,8 @@ const STAGE_NAMES = [
   "Growing",
   "Fertilizing",
   "Harvesting",
+  "QualityInspection",
+  "WarehouseReceived",
   "Packaging",
   "Shipping",
   "Completed",

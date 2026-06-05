@@ -1,4 +1,4 @@
-const { loginAdmin } = require("../services/auth.service");
+const { listUsers, loginUser } = require("../services/auth.service");
 
 async function postLogin(req, res, next) {
   try {
@@ -11,7 +11,7 @@ async function postLogin(req, res, next) {
       });
     }
 
-    const session = loginAdmin({ email, password });
+    const session = await loginUser({ email, password });
     res.json({
       success: true,
       data: session,
@@ -25,12 +25,25 @@ async function getMe(req, res) {
   res.json({
     success: true,
     data: {
-      user: req.admin,
+      user: req.user,
     },
   });
 }
 
+async function getUsers(_req, res, next) {
+  try {
+    const users = await listUsers();
+    res.json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getMe,
+  getUsers,
   postLogin,
 };

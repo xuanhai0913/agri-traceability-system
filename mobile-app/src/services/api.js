@@ -84,7 +84,7 @@ export function getTxExplorerUrl(txHash) {
 
 /** Link mở trang web cho một batch cụ thể — dùng cho nút Share */
 export function getBatchWebUrl(batchId) {
-  return `${WEB_BASE_URL}/batch/${batchId}`;
+  return `${WEB_BASE_URL}/batches/${batchId}`;
 }
 
 // ─── Stage mapping (đồng bộ với web frontend) ───
@@ -93,8 +93,10 @@ export const STAGE_INFO = {
   Growing:     { label: "Phát triển",             icon: "sunny-outline",            color: "#84cc16" },
   Fertilizing: { label: "Bón phân & Chăm sóc",   icon: "water-outline",            color: "#06b6d4" },
   Harvesting:  { label: "Thu hoạch",              icon: "basket-outline",           color: "#f59e0b" },
-  Packaging:   { label: "Đóng gói & Phân phối",  icon: "cube-outline",             color: "#8b5cf6" },
-  Shipping:    { label: "Vận chuyển",             icon: "car-outline",              color: "#3b82f6" },
+  QualityInspection: { label: "Kiểm định chất lượng", icon: "shield-checkmark-outline", color: "#2563eb" },
+  WarehouseReceived: { label: "Nhập kho",         icon: "file-tray-full-outline",   color: "#4f46e5" },
+  Packaging:   { label: "Đóng gói",              icon: "cube-outline",             color: "#8b5cf6" },
+  Shipping:    { label: "Vận chuyển",             icon: "car-outline",              color: "#0891b2" },
   Completed:   { label: "Hoàn thành",             icon: "checkmark-circle-outline", color: "#10b981" },
 };
 

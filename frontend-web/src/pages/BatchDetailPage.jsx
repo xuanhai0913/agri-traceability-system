@@ -8,12 +8,14 @@ import {
   Check, ChevronRight, AlertCircle, X, Leaf, BadgeCheck,
   Printer, PlusCircle, RefreshCw, Shield,
   Loader2, Copy, Share2, Users, ExternalLink,
-} from "lucide-react";
+} from "@icons";
 import {
   getBatch,
   getStageHistory,
   addStage,
   getDashboardSummary,
+  getBatchQualityInspections,
+  getBatchWarehouseReceipts,
   uploadImage,
 } from "../services/api";
 import { BatchDetailSkeleton } from "../components/ui/Skeleton";
@@ -27,6 +29,8 @@ const STAGE_NAMES = [
   "Phát triển",
   "Bón phân",
   "Thu hoạch",
+  "Kiểm định chất lượng",
+  "Nhập kho",
   "Đóng gói",
   "Vận chuyển",
   "Hoàn thành",
@@ -37,6 +41,8 @@ const STAGE_NAMES_EN = [
   "Growth Monitoring",
   "Fertilization Logged",
   "Harvest Processing",
+  "Quality Inspection",
+  "Warehouse Received",
   "Packaging Complete",
   "Shipping & Transit",
   "Chain Completed",
@@ -45,9 +51,11 @@ const STAGE_NAMES_EN = [
 export default function BatchDetailPage() {
   const { t, i18n } = useTranslation();
   const { id } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [batch, setBatch] = useState(null);
   const [stages, setStages] = useState([]);
+  const [qualityInspections, setQualityInspections] = useState([]);
+  const [warehouseReceipts, setWarehouseReceipts] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -84,13 +92,17 @@ export default function BatchDetailPage() {
   async function loadBatchData() {
     try {
       setLoading(true);
-      const [batchRes, historyRes, summaryRes] = await Promise.all([
+      const [batchRes, historyRes, summaryRes, inspectionsRes, receiptsRes] = await Promise.all([
         getBatch(id),
         getStageHistory(id),
         getDashboardSummary().catch(() => null),
+        getBatchQualityInspections(id).catch(() => ({ data: { data: [] } })),
+        getBatchWarehouseReceipts(id).catch(() => ({ data: { data: [] } })),
       ]);
       setBatch(batchRes.data.data);
       setStages(historyRes.data.data.stages);
+      setQualityInspections(inspectionsRes.data.data || []);
+      setWarehouseReceipts(receiptsRes.data.data || []);
       setSummary(summaryRes?.data?.data || null);
     } catch (err) {
       setError(
@@ -108,11 +120,23 @@ export default function BatchDetailPage() {
     try {
       setAddingStage(true);
       let stageImageUrl = newStage.imageUrl.trim();
+      let evidenceMeta = {};
 
       if (stageImageFile) {
         setUploadingStageImage(true);
         const uploadRes = await uploadImage(stageImageFile);
-        stageImageUrl = uploadRes.data.data.imageUrl;
+        const uploadData = uploadRes.data.data || {};
+        stageImageUrl = uploadData.ipfsUrl || uploadData.imageUrl || "";
+        evidenceMeta = {
+          evidenceHash: uploadData.evidenceHash,
+          ipfsCid: uploadData.ipfsCid,
+          ipfsUrl: uploadData.ipfsUrl,
+          evidenceProvider: uploadData.provider,
+          evidenceStatus: uploadData.uploadStatus,
+        };
+        if (uploadData.warning) {
+          toast.error(uploadData.warning, { duration: 6000 });
+        }
       }
 
       await addStage(id, {
@@ -123,6 +147,7 @@ export default function BatchDetailPage() {
           ? Number(newStage.actorProducerId)
           : undefined,
         actorRole: newStage.actorRole,
+        ...evidenceMeta,
       });
       closeAddStageModal();
       toast.success("Đã thêm stage và ảnh minh chứng.");
@@ -164,6 +189,11 @@ export default function BatchDetailPage() {
   function formatTime(timestamp) {
     if (!timestamp) return "";
     return new Date(timestamp * 1000).toLocaleString(i18n.language === "vi" ? "vi-VN" : "en-US");
+  }
+
+  function formatDateTimeValue(value) {
+    if (!value) return "—";
+    return new Date(value).toLocaleString(i18n.language === "vi" ? "vi-VN" : "en-US");
   }
 
   const handlePrint = async () => {
@@ -280,9 +310,25 @@ export default function BatchDetailPage() {
   const contract = summary?.contract;
   const serviceWallet = summary?.serviceWallet;
   const primaryProducer = batch.primaryProducer;
+  const latestInspection = qualityInspections[0] || null;
+  const latestReceipt = warehouseReceipts[0] || null;
   const latestEvidenceImage = [...stages]
     .reverse()
     .find((stage) => stage.imageUrl)?.imageUrl;
+
+  function isStageAllowedForCurrentRole(stageIdx) {
+    if (user?.role === "ADMIN") return ![4, 5].includes(stageIdx);
+    if (user?.role === "PRODUCER") return [1, 2, 3].includes(stageIdx);
+    if (user?.role === "DISTRIBUTOR") return [6, 7, 8].includes(stageIdx);
+    return false;
+  }
+
+  const canUseGenericStageUpdate =
+    isAuthenticated &&
+    ["ADMIN", "PRODUCER", "DISTRIBUTOR"].includes(user?.role) &&
+    STAGE_NAMES.some(
+      (_name, idx) => idx === currentStageIdx + 1 && isStageAllowedForCurrentRole(idx)
+    );
 
   function openAddStageModal() {
     const defaultLink = producerLinks[0];
@@ -550,7 +596,7 @@ export default function BatchDetailPage() {
           </div>
 
           {/* Add Stage button */}
-          {batch.isActive && isAuthenticated && (
+          {batch.isActive && canUseGenericStageUpdate && (
             <div className="mt-6 text-center">
               <button
                 onClick={openAddStageModal}
@@ -702,6 +748,35 @@ export default function BatchDetailPage() {
                             />
                           </div>
                         )}
+
+                        {(stage.evidenceHash || stage.ipfsCid) && (
+                          <div className="mt-2 rounded-lg bg-emerald-50 border border-emerald-100 p-2">
+                            <p className="text-[9px] font-black uppercase tracking-wide text-emerald-700">
+                              IPFS evidence
+                            </p>
+                            {stage.ipfsCid && (
+                              <p className="mt-1 text-[10px] font-mono text-emerald-950 break-all">
+                                CID: {shortHash(stage.ipfsCid)}
+                              </p>
+                            )}
+                            {stage.evidenceHash && (
+                              <p className="mt-1 text-[10px] font-mono text-slate-600 break-all">
+                                {stage.evidenceHash}
+                              </p>
+                            )}
+                            {stage.ipfsUrl && (
+                              <a
+                                href={stage.ipfsUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-primary hover:underline"
+                              >
+                                Open IPFS file
+                                <ExternalLink size={10} />
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -710,10 +785,10 @@ export default function BatchDetailPage() {
                 {/* Future stages (greyed out) */}
                 {batch.isActive &&
                   Array.from(
-                    { length: Math.min(2, 7 - (currentStageIdx + 1)) },
+                    { length: Math.min(2, STAGE_NAMES.length - (currentStageIdx + 1)) },
                     (_, i) => currentStageIdx + 1 + i
                   )
-                    .filter((idx) => idx < 7)
+                    .filter((idx) => idx < STAGE_NAMES.length)
                     .map((stageIdx) => (
                       <div key={`future-${stageIdx}`} className="relative">
                         <div className="absolute -left-[30px] top-0.5 w-6 h-6 bg-surface-container-high rounded-full ring-4 ring-surface-container-low"></div>
@@ -778,6 +853,114 @@ export default function BatchDetailPage() {
           </div>
         </div>
       </div>
+
+      <section className="mt-6 bg-surface-container-lowest rounded-2xl shadow-ambient overflow-hidden">
+        <div className="px-6 py-5 border-b border-emerald-50">
+          <h3 className="font-headline font-bold text-emerald-900">
+            Supply-chain operations
+          </h3>
+          <p className="text-xs text-slate-500 mt-1">
+            Metadata nghiệp vụ lưu ở PostgreSQL, còn hash/CID và stage proof được neo vào blockchain.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-6">
+          <SupplyChainRecordCard
+            title="Quality Inspection"
+            tone="blue"
+            hasRecord={Boolean(latestInspection)}
+            empty="Batch chưa có kết quả kiểm định chất lượng."
+            imageUrl={latestInspection?.evidenceImageUrl || latestInspection?.ipfsUrl}
+            evidenceHash={latestInspection?.evidenceHash}
+            ipfsCid={latestInspection?.ipfsCid}
+            ipfsUrl={latestInspection?.ipfsUrl}
+            transactionHash={latestInspection?.transactionHash}
+            blockNumber={latestInspection?.blockNumber}
+            shortHash={shortHash}
+            onCopy={handleCopyTxHash}
+          >
+            {latestInspection && (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-black ${
+                      latestInspection.result === "PASS"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {latestInspection.result}
+                  </span>
+                  {latestInspection.score !== null && (
+                    <span className="text-xs font-bold text-slate-600">
+                      Score {latestInspection.score}
+                    </span>
+                  )}
+                  {latestInspection.grade && (
+                    <span className="text-xs font-bold text-slate-600">
+                      Grade {latestInspection.grade}
+                    </span>
+                  )}
+                </div>
+                {latestInspection.certificateNo && (
+                  <p className="text-xs text-slate-600 mt-3">
+                    Certificate: <span className="font-bold">{latestInspection.certificateNo}</span>
+                  </p>
+                )}
+                {latestInspection.note && (
+                  <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                    {latestInspection.note}
+                  </p>
+                )}
+                <p className="text-[11px] text-slate-400 mt-3">
+                  Ghi nhận: {formatDateTimeValue(latestInspection.createdAt)}
+                </p>
+              </>
+            )}
+          </SupplyChainRecordCard>
+
+          <SupplyChainRecordCard
+            title="Warehouse Received"
+            tone="indigo"
+            hasRecord={Boolean(latestReceipt)}
+            empty="Batch chưa được nhập kho hoặc đang chờ kiểm định PASS."
+            imageUrl={latestReceipt?.evidenceImageUrl || latestReceipt?.ipfsUrl}
+            evidenceHash={latestReceipt?.evidenceHash}
+            ipfsCid={latestReceipt?.ipfsCid}
+            ipfsUrl={latestReceipt?.ipfsUrl}
+            transactionHash={latestReceipt?.transactionHash}
+            blockNumber={latestReceipt?.blockNumber}
+            shortHash={shortHash}
+            onCopy={handleCopyTxHash}
+          >
+            {latestReceipt && (
+              <>
+                <p className="font-bold text-emerald-950">
+                  {latestReceipt.warehouseName || "Kho chưa cập nhật"}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {latestReceipt.warehouseLocation || "Chưa cập nhật vị trí"}
+                </p>
+                {(latestReceipt.quantity !== null || latestReceipt.unit) && (
+                  <p className="text-xs text-slate-600 mt-3">
+                    Số lượng:{" "}
+                    <span className="font-bold">
+                      {latestReceipt.quantity ?? "—"} {latestReceipt.unit}
+                    </span>
+                  </p>
+                )}
+                {latestReceipt.conditionNote && (
+                  <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                    {latestReceipt.conditionNote}
+                  </p>
+                )}
+                <p className="text-[11px] text-slate-400 mt-3">
+                  Nhận hàng: {formatDateTimeValue(latestReceipt.receivedAt || latestReceipt.createdAt)}
+                </p>
+              </>
+            )}
+          </SupplyChainRecordCard>
+        </div>
+      </section>
 
       <section className="mt-6 bg-surface-container-lowest rounded-2xl shadow-ambient overflow-hidden">
         <div className="px-6 py-5 border-b border-emerald-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
@@ -876,7 +1059,8 @@ export default function BatchDetailPage() {
                 >
                   <option value="">{t("batchDetail.selectStage")}</option>
                   {STAGE_NAMES.map((name, idx) => {
-                    if (idx <= currentStageIdx) return null;
+                    if (idx !== currentStageIdx + 1) return null;
+                    if (!isStageAllowedForCurrentRole(idx)) return null;
                     return (
                       <option key={idx} value={idx}>
                         {name} — {STAGE_NAMES_EN[idx]}
@@ -961,7 +1145,7 @@ export default function BatchDetailPage() {
                   }
                   onError={setError}
                   maxSizeMb={5}
-                  helperText="Ảnh Cloudinary sẽ upload trước, rồi URL ảnh được ghi vào stage trên smart contract."
+                  helperText="Ảnh upload sẽ được hash SHA-256, pin lên Pinata/IPFS rồi lưu CID/hash trong metadata transaction."
                 />
               </div>
 
@@ -974,7 +1158,7 @@ export default function BatchDetailPage() {
                   {addingStage ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      {uploadingStageImage ? "Đang tải ảnh..." : t("common.saving")}
+                      {uploadingStageImage ? "Đang tải ảnh lên IPFS..." : t("common.saving")}
                     </>
                   ) : (
                     <>
@@ -999,6 +1183,106 @@ export default function BatchDetailPage() {
   );
 }
 
+function SupplyChainRecordCard({
+  title,
+  tone,
+  hasRecord,
+  empty,
+  children,
+  imageUrl,
+  evidenceHash,
+  ipfsCid,
+  ipfsUrl,
+  transactionHash,
+  blockNumber,
+  shortHash,
+  onCopy,
+}) {
+  const toneClass =
+    tone === "blue"
+      ? "border-blue-100 bg-blue-50 text-blue-700"
+      : "border-indigo-100 bg-indigo-50 text-indigo-700";
+
+  return (
+    <article className="rounded-2xl bg-surface-container-low border border-emerald-50 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+          {title}
+        </p>
+        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${toneClass}`}>
+          {hasRecord ? "Recorded" : "Pending"}
+        </span>
+      </div>
+
+      {hasRecord ? (
+        <>
+          <div className="mt-4">{children}</div>
+
+          {imageUrl && (
+            <div className="mt-4 h-32">
+              <ImageWithSkeleton
+                src={imageUrl}
+                alt={title}
+                className="rounded-xl"
+                wrapperClassName="w-full h-full rounded-xl"
+              />
+            </div>
+          )}
+
+          {(evidenceHash || ipfsCid || ipfsUrl) && (
+            <div className="mt-4 rounded-xl bg-white/80 border border-emerald-100 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                Evidence integrity
+              </p>
+              {evidenceHash && (
+                <p className="mt-2 font-mono text-[10px] text-slate-600 break-all">
+                  Hash: {evidenceHash}
+                </p>
+              )}
+              {ipfsCid && (
+                <p className="mt-2 font-mono text-[10px] text-emerald-950 break-all">
+                  CID: {ipfsCid}
+                </p>
+              )}
+              {ipfsUrl && (
+                <a
+                  href={ipfsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:underline"
+                >
+                  Open IPFS file
+                  <ExternalLink size={12} />
+                </a>
+              )}
+            </div>
+          )}
+
+          {transactionHash && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs font-bold text-emerald-950">
+                {shortHash(transactionHash)}
+              </span>
+              {blockNumber && (
+                <span className="text-xs text-slate-500">Block #{blockNumber}</span>
+              )}
+              <button
+                type="button"
+                onClick={() => onCopy(transactionHash)}
+                className="px-3 py-1.5 rounded-lg bg-white text-xs font-bold text-slate-600 hover:text-primary focus-visible:ring-2 focus-visible:ring-emerald-600 transition-colors"
+              >
+                Copy Tx Hash
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="mt-4 text-sm text-slate-500">{empty}</p>
+      )}
+    </article>
+  );
+}
+
 function EvidenceItem({ label, tx, empty, onCopy, shortHash }) {
   return (
     <div className="rounded-2xl bg-surface-container-low border border-emerald-50 p-4">
@@ -1017,6 +1301,34 @@ function EvidenceItem({ label, tx, empty, onCopy, shortHash }) {
             <p className="mt-1 text-xs text-slate-500">
               {tx.actorRoleLabel}: {tx.actorProducer.name}
             </p>
+          )}
+          {(tx.ipfsCid || tx.evidenceHash) && (
+            <div className="mt-3 rounded-xl bg-white/70 border border-emerald-100 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                IPFS evidence
+              </p>
+              {tx.ipfsCid && (
+                <p className="mt-1 font-mono text-[11px] text-emerald-950 break-all">
+                  CID: {shortHash(tx.ipfsCid)}
+                </p>
+              )}
+              {tx.evidenceHash && (
+                <p className="mt-1 font-mono text-[10px] text-slate-500 break-all">
+                  {tx.evidenceHash}
+                </p>
+              )}
+              {tx.ipfsUrl && (
+                <a
+                  href={tx.ipfsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:underline"
+                >
+                  Open IPFS file
+                  <ExternalLink size={12} />
+                </a>
+              )}
+            </div>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MapPin, CalendarDays, ArrowRight, PackagePlus, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Download, ExternalLink, ShieldCheck, Users } from "lucide-react";
+import { MapPin, CalendarDays, ArrowRight, PackagePlus, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Download, ExternalLink, ShieldCheck, Users } from "@icons";
 import { getAllBatches } from "../services/api";
 import { InventorySkeleton } from "../components/ui/Skeleton";
 import { EmptyInventoryIllustration } from "../components/ui/EmptyStateIllustrations";
@@ -12,6 +12,8 @@ const STAGE_NAMES = [
   "Đang phát triển",
   "Bón phân",
   "Thu hoạch",
+  "Kiểm định",
+  "Nhập kho",
   "Đóng gói",
   "Vận chuyển",
   "Hoàn thành",
@@ -24,7 +26,9 @@ const STAGE_COLORS = {
   3: { border: "border-l-orange-500", bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500", track: "bg-orange-500" },
   4: { border: "border-l-blue-500", bg: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500", track: "bg-blue-500" },
   5: { border: "border-l-indigo-500", bg: "bg-indigo-100", text: "text-indigo-700", dot: "bg-indigo-500", track: "bg-indigo-500" },
-  6: { border: "border-l-slate-400", bg: "bg-slate-200", text: "text-slate-600", dot: "bg-slate-400", track: "bg-slate-400" },
+  6: { border: "border-l-purple-500", bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500", track: "bg-purple-500" },
+  7: { border: "border-l-cyan-500", bg: "bg-cyan-100", text: "text-cyan-700", dot: "bg-cyan-500", track: "bg-cyan-500" },
+  8: { border: "border-l-slate-400", bg: "bg-slate-200", text: "text-slate-600", dot: "bg-slate-400", track: "bg-slate-400" },
 };
 
 const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];
@@ -238,7 +242,7 @@ export default function InventoryPage() {
             const stageIdx = batch.currentStageIndex ?? 0;
             const colors = STAGE_COLORS[stageIdx] || STAGE_COLORS[0];
             const IconComponent = PRODUCT_ICONS[batch.id % PRODUCT_ICONS.length];
-            const progress = ((stageIdx + 1) / 7) * 100;
+            const progress = ((stageIdx + 1) / STAGE_NAMES.length) * 100;
             const latestTransaction = getLatestTransaction(batch);
 
             return (
@@ -309,7 +313,7 @@ export default function InventoryPage() {
                     <div className="flex justify-between items-center text-[10px] text-slate-400 mb-1.5">
                       <span className="font-bold uppercase">Tiến độ</span>
                       <span className="font-mono">
-                        {stageIdx + 1}/7 stages
+                        {stageIdx + 1}/{STAGE_NAMES.length} stages
                       </span>
                     </div>
                     <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">

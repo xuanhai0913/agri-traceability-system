@@ -49,22 +49,29 @@ Một điểm thường bị hiểu lầm trong thiết kế Web3 là *"Mọi th
 Việc lưu trữ trực tiếp 1 tấm hình chất lượng cao (Vài Megabytes) lên mạng lưới Polygon có thể tốn hàng trăm đô la tiền phí Gas. Đây là điều cấm kị trong thiết kế phi tập trung.
 
 Do đó, AgriTrace sử dụng mô hình **Lưu Trữ Kết Lai (Hybrid Storage)**:
-1. **Phần off-chain:** Hình ảnh minh chứng được upload lên **Cloudinary** hoặc chọn từ thư viện ảnh. Cloudinary trả về một đường link URL tĩnh, ví dụ `https://.../cam-sanh.jpg`.
-2. **Phần on-chain:** Smart contract chỉ lưu chuỗi `imageUrl` đó cùng với stage, mô tả, timestamp và địa chỉ ví ghi transaction. Contract hiện tại không lưu byte ảnh và cũng không tự tạo content hash cho ảnh.
-3. **Phần database:** PostgreSQL lưu hồ sơ producer, trạng thái kiểm định, liên kết producer-batch và transaction metadata để UI có thể tìm kiếm, thống kê và mở Polygonscan nhanh.
+1. **Phần IPFS/off-chain:** Hình ảnh minh chứng upload từ máy người dùng được backend tính SHA-256, sau đó pin lên **Pinata/IPFS**. Pinata trả về `ipfsCid`, backend build `ipfsUrl` từ gateway.
+2. **Phần on-chain:** Smart contract schema v2 lưu chuỗi `imageUrl` là IPFS gateway URL cùng với stage, mô tả, `evidenceHash`, `ipfsCid`, timestamp và địa chỉ ví ghi transaction.
+3. **Phần database:** PostgreSQL lưu hồ sơ producer, trạng thái kiểm định, liên kết producer-batch, transaction metadata, `evidenceHash`, `ipfsCid` và `ipfsUrl` để UI có thể tìm kiếm, thống kê và mở Polygonscan/IPFS nhanh.
 
 Hãy nhìn vào cấu trúc Contract để thấy rõ:
 ```solidity
 struct StageRecord {
     Stage stage;           // (On-chain) Giai đoạn 1/2/3 
     string description;    // (On-chain) Câu mô tả
-    string imageUrl;       // (On-chain) Chỉ lưu đường link text, KHÔNG LƯU MÃ BYTE ẢNH!
+    string imageUrl;       // (On-chain) URL IPFS/gateway, KHÔNG LƯU MÃ BYTE ẢNH!
     uint256 timestamp;     // (On-chain) Thời điểm
 }
 ```
 
+Schema v2 trong `Traceability.sol` bổ sung:
+
+```solidity
+string evidenceHash;  // SHA-256 của file gốc
+string ipfsCid;       // CID do Pinata/IPFS trả về
+```
+
 ### Tại Sao Cách Này Giữ Được Tính Minh Bạch (Transparency)?
-Mặc dù ảnh nằm trên Cloud, nhưng URL ảnh đã được ghi vào transaction của stage. Sau khi transaction được xác nhận, người dùng không thể âm thầm sửa lại lịch sử stage hoặc đổi URL cũ trong smart contract. Nếu cần mức kiểm chứng mạnh hơn, phiên bản sau có thể lưu thêm SHA-256 hash hoặc IPFS CID của ảnh.
+Mặc dù byte ảnh không nằm trực tiếp trên blockchain, nhưng IPFS URL/CID đã được ghi vào transaction của stage. Sau khi transaction được xác nhận, người dùng không thể âm thầm sửa lại lịch sử stage hoặc đổi URL cũ trong smart contract. Nếu file gốc bị thay đổi, SHA-256 hash và CID sẽ thay đổi, giúp tăng khả năng kiểm chứng.
 
 Chi tiết ranh giới dữ liệu on-chain/off-chain được trình bày trong [ONCHAIN_OFFCHAIN.md](ONCHAIN_OFFCHAIN.md).
 

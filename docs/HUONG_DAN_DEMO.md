@@ -5,6 +5,7 @@ Tài liệu này là script nói và thao tác demo AgriTrace trong buổi bảo
 - AgriTrace là hệ thống truy xuất nguồn gốc nông sản bằng blockchain.
 - Blockchain lưu lifecycle bất biến của lô hàng; database lưu metadata vận hành.
 - Product đã deploy có thể kiểm chứng bằng QR, contract, transaction hash, Polygonscan/Sourcify và API evidence.
+- File minh chứng upload qua backend được tính SHA-256 và pin lên Pinata/IPFS; UI hiển thị CID/hash nếu có.
 
 Không đưa tài khoản admin/password vào tài liệu public. Khi demo, dùng tài khoản admin đã cấu hình trong ENV/deploy.
 
@@ -29,7 +30,7 @@ Trước giờ demo khoảng 5-10 phút:
 2. Mở production app và đợi badge `Backend connected`.
 3. Mở Ledger, Compliance, Batch Detail để browser cache sẵn route.
 4. Chuẩn bị điện thoại để quét QR ở Batch Detail.
-5. Chuẩn bị một ảnh nông sản nếu muốn demo tạo batch/thêm stage live.
+5. Chuẩn bị một ảnh nông sản nếu muốn demo tạo batch/thêm stage live để backend upload Pinata/IPFS.
 
 Không nên demo thao tác revoke whitelist trên production, vì có thể làm service wallet mất quyền ghi contract trong lúc bảo vệ.
 
@@ -91,7 +92,7 @@ Nếu bị hỏi "producer có lưu trên chain không?":
 
 > Hiện tại quan hệ producer-batch là metadata off-chain trong PostgreSQL. Dữ liệu lifecycle của batch nằm trên-chain. Đây là lựa chọn thiết kế có chủ đích để không đưa hồ sơ producer, contact và dữ liệu có thể cập nhật lên blockchain.
 
-### 1:50 - 2:50: Batch Detail - QR và on-chain evidence
+### 1:50 - 2:50: Batch Detail - QR, nhập kho và on-chain evidence
 
 Mở batch chính: [https://agri.hailamdev.space/batches/4](https://agri.hailamdev.space/batches/4)
 
@@ -100,12 +101,17 @@ Thao tác:
 1. Chỉ vào mã `BTC-0004`.
 2. Chỉ vào QR.
 3. Chỉ vào timeline stage.
-4. Chỉ vào transaction hash / block number / `View on Polygonscan`.
-5. Dùng điện thoại quét QR nếu có thời gian.
+4. Chỉ vào ảnh minh chứng/IPFS evidence nếu batch có file upload.
+5. Chỉ vào transaction hash / block number / `View on Polygonscan`.
+6. Dùng điện thoại quét QR nếu có thời gian.
 
 Nói:
 
 > Đây là trang chi tiết lô hàng. QR trỏ về URL public `/batches/:id`, nên người tiêu dùng có thể quét để xem nguồn gốc. Timeline là dữ liệu stage đọc từ smart contract. Transaction hash và block number là bằng chứng để đối chiếu trên Polygon Amoy.
+
+Nếu demo theo flow mới, nói thêm:
+
+> Luồng nghiệp vụ mục tiêu là nông sản sau sản xuất sẽ qua kiểm định chất lượng, nhập kho, đóng gói/vận chuyển, sau đó QR được dán lên sản phẩm. Người tiêu dùng quét QR bằng điện thoại để xem toàn bộ hành trình, ảnh minh chứng, IPFS CID/hash và transaction blockchain. Contract schema v2 trong repo đã có `QualityInspection`, `WarehouseReceived`, `evidenceHash` và `ipfsCid`.
 
 Nếu cần chứng minh producer metadata rõ hơn, mở thêm: [https://agri.hailamdev.space/batches/9](https://agri.hailamdev.space/batches/9)
 
@@ -145,7 +151,7 @@ Luồng an toàn nhất:
 4. Nhập tên lô chuyên nghiệp, ví dụ:
    - `Cà phê Arabica Cầu Đất - Lô CD-2606-01`
    - Origin: `Cầu Đất, Đà Lạt, Lâm Đồng`
-5. Chọn ảnh từ URL/Cloudinary/Unsplash.
+5. Chọn ảnh upload Pinata/IPFS hoặc chọn URL/Unsplash.
 6. Submit và chờ transaction.
 7. Khi chuyển sang Batch Detail, chỉ vào tx hash/block.
 
@@ -157,7 +163,7 @@ Nếu chỉ thêm stage:
 
 1. Chọn batch đang active, không chọn batch `Completed`.
 2. Chọn stage kế tiếp hợp lệ.
-3. Nhập mô tả ngắn, chọn ảnh.
+3. Nhập mô tả ngắn, chọn ảnh upload để tạo evidence hash/CID.
 4. Submit, chờ tx.
 
 Không chọn stage lùi lại, vì smart contract chặn progression không hợp lệ.
@@ -195,7 +201,7 @@ Nếu thời gian bị giới hạn, dùng bản này:
 
 ### Dữ liệu nào thật sự nằm trên blockchain?
 
-> Batch ID, tên lô, nguồn gốc, owner/service wallet, current stage, createdAt, isActive, stage history gồm stage, description, imageUrl, timestamp, updatedBy, cùng các event và transaction proof.
+> Batch ID, tên lô, nguồn gốc, owner/service wallet, current stage, createdAt, isActive, stage history gồm stage, description, imageUrl, timestamp, updatedBy, cùng các event và transaction proof. Với flow IPFS, `imageUrl` là IPFS gateway URL; metadata transaction có thêm `evidenceHash` và `ipfsCid`.
 
 ### Producer có nằm trên smart contract không?
 
@@ -203,7 +209,7 @@ Nếu thời gian bị giới hạn, dùng bản này:
 
 ### Ảnh minh chứng có nằm trên blockchain không?
 
-> Không lưu byte ảnh trên blockchain vì rất tốn gas. Contract lưu `imageUrl`. Hướng phát triển tiếp theo là lưu thêm hash ảnh hoặc IPFS CID để tăng độ kiểm chứng.
+> Không lưu byte ảnh trên blockchain vì rất tốn gas. File upload được pin lên Pinata/IPFS, backend tính SHA-256 và contract schema v2 lưu IPFS URL, `evidenceHash` và `ipfsCid` trong stage record.
 
 ### Nếu Polygonscan không mở được thì kiểm chứng thế nào?
 
@@ -223,11 +229,12 @@ Nếu thời gian bị giới hạn, dùng bản này:
 | Transaction live lâu xác nhận | Không chờ live write; dùng batch #4 hoặc #9 đã có tx hash/block. |
 | QR quét không kịp | Bấm `Copy link`, mở link public `/batches/:id` trên browser. |
 | Bị hỏi dữ liệu demo | Nói rõ phần chứng nhận/audit là testnet record, không phải chứng nhận pháp lý thật. |
+| Bị hỏi vì sao production chưa thấy Quality/Warehouse | Nói rõ cần redeploy contract schema v2 và set `CONTRACT_STAGE_SCHEMA=v2`; repo đã có code contract/backend/frontend cho flow này. |
 
 ## 6. Những điều không nên làm khi demo
 
 - Không revoke whitelist service wallet trên production.
 - Không tạo batch với tên quá test như "abc", "test", "Muối của Hải" trong lúc bảo vệ.
 - Không nói "phi tập trung tuyệt đối"; nên nói "có lớp bằng chứng blockchain độc lập".
-- Không khẳng định ảnh nằm trên blockchain; chỉ nói URL hoặc hash/CID trong hướng phát triển.
+- Không khẳng định byte ảnh nằm trên blockchain; nói file nằm ở IPFS, blockchain/metadata giữ URL/CID/hash tùy phiên bản contract.
 - Không mở code quá lâu nếu hội đồng đang muốn xem sản phẩm; chỉ mở contract/source khi được hỏi.

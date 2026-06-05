@@ -20,7 +20,7 @@ const errorHandler = (err, req, res, _next) => {
   if (err.code === "LIMIT_FILE_SIZE") {
     return res.status(413).json({
       success: false,
-      message: "File quá lớn. Giới hạn 5MB",
+      message: "File quá lớn. Giới hạn 10MB",
     });
   }
 
@@ -31,12 +31,12 @@ const errorHandler = (err, req, res, _next) => {
     });
   }
 
-  // Lỗi Cloudinary
-  if (err.http_code) {
-    return res.status(err.http_code).json({
+  // Lỗi upload/IPFS provider
+  if (err.http_code || err.type === "IPFS_UPLOAD_ERROR") {
+    return res.status(err.http_code || err.status || 502).json({
       success: false,
       message: "Lỗi upload ảnh: " + err.message,
-      type: "CLOUDINARY_ERROR",
+      type: "UPLOAD_ERROR",
     });
   }
 

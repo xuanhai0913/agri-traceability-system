@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { Lock, LogIn } from "lucide-react";
+import { Lock, LogIn } from "@icons";
 
 export default function AdminRequired({
-  title = "Cần đăng nhập admin",
-  body = "Chức năng ghi dữ liệu chỉ dành cho tài khoản vận hành AgriTrace.",
+  title = "Cần đăng nhập",
+  body = "Chức năng ghi dữ liệu chỉ dành cho tài khoản có quyền vận hành AgriTrace.",
 }) {
   return (
     <div className="max-w-2xl mx-auto bg-surface-container-lowest rounded-2xl shadow-ambient p-8 md:p-10 text-center">

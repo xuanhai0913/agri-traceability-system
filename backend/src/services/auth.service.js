@@ -1,6 +1,49 @@
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+const {
+  hasDatabase,
+  isDatabaseConnectionError,
+  query,
+} = require("../config/database");
 
 const TOKEN_EXPIRES_IN = "8h";
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 10);
+const ROLES = new Set([
+  "ADMIN",
+  "PRODUCER",
+  "QUALITY_INSPECTOR",
+  "WAREHOUSE_STAFF",
+  "DISTRIBUTOR",
+]);
+
+const DEMO_USERS = [
+  {
+    email: "producer@agritrace.local",
+    password: "Producer@123",
+    name: "Producer Demo",
+    role: "PRODUCER",
+    producerId: 1,
+  },
+  {
+    email: "inspector@agritrace.local",
+    password: "Inspector@123",
+    name: "Quality Inspector Demo",
+    role: "QUALITY_INSPECTOR",
+  },
+  {
+    email: "warehouse@agritrace.local",
+    password: "Warehouse@123",
+    name: "Warehouse Staff Demo",
+    role: "WAREHOUSE_STAFF",
+  },
+  {
+    email: "distributor@agritrace.local",
+    password: "Distributor@123",
+    name: "Distributor Demo",
+    role: "DISTRIBUTOR",
+  },
+];
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -24,21 +67,227 @@ function getAdminConfig() {
   }
 
   return {
-    id: "admin",
+    id: "00000000-0000-0000-0000-000000000001",
     email,
     name,
-    role: "admin",
+    role: "ADMIN",
     password,
   };
 }
 
-function publicAdmin(admin) {
+function normalizeRole(role) {
+  const normalized = String(role || "").trim().toUpperCase();
+  return ROLES.has(normalized) ? normalized : "ADMIN";
+}
+
+function publicUser(user) {
   return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: normalizeRole(user.role),
+    status: user.status || "ACTIVE",
+    producerId: user.producer_id || user.producerId || null,
+    warehouseId: user.warehouse_id || user.warehouseId || null,
+  };
+}
+
+function publicAdmin(admin) {
+  return publicUser({ ...admin, status: "ACTIVE" });
+}
+
+async function initAuthStore() {
+  if (!hasDatabase()) return;
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL
+        CHECK (role IN ('ADMIN', 'PRODUCER', 'QUALITY_INSPECTOR', 'WAREHOUSE_STAFF', 'DISTRIBUTOR')),
+      status TEXT NOT NULL DEFAULT 'ACTIVE'
+        CHECK (status IN ('ACTIVE', 'DISABLED')),
+      producer_id BIGINT REFERENCES producers(id) ON DELETE SET NULL,
+      warehouse_id UUID,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS users_role_idx ON users (role);
+  `);
+
+  await seedAdminFromEnv();
+
+  const seedDemo =
+    process.env.SEED_DEMO_USERS === "true" ||
+    (process.env.SEED_DEMO_USERS !== "false" &&
+      process.env.NODE_ENV !== "production");
+
+  if (seedDemo) {
+    for (const demoUser of DEMO_USERS) {
+      await upsertUser({ ...demoUser, updatePassword: false });
+    }
+  }
+}
+
+async function seedAdminFromEnv() {
+  if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+    console.warn(
+      "[WARN] ADMIN_EMAIL/ADMIN_PASSWORD are not configured; skipping admin seed."
+    );
+    return;
+  }
+
+  const admin = getAdminConfig();
+  await upsertUser({
     id: admin.id,
     email: admin.email,
+    password: admin.password,
     name: admin.name,
-    role: admin.role,
-  };
+    role: "ADMIN",
+    updatePassword: true,
+  });
+}
+
+async function upsertUser({
+  id = crypto.randomUUID(),
+  email,
+  password,
+  passwordHash,
+  name,
+  role,
+  status = "ACTIVE",
+  producerId = null,
+  warehouseId = null,
+  updatePassword = true,
+}) {
+  if (!hasDatabase()) {
+    const err = new Error("DATABASE_URL is required for user management");
+    err.status = 503;
+    throw err;
+  }
+
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedRole = normalizeRole(role);
+
+  if (!normalizedEmail || !name || (!password && !passwordHash)) {
+    const err = new Error("Email, name and password are required");
+    err.status = 400;
+    throw err;
+  }
+
+  const hash = passwordHash || (await bcrypt.hash(password, BCRYPT_ROUNDS));
+  const res = await query(
+    `
+    INSERT INTO users (
+      id, email, password_hash, name, role, status, producer_id, warehouse_id
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    ON CONFLICT (email)
+    DO UPDATE SET
+      name = EXCLUDED.name,
+      role = EXCLUDED.role,
+      status = EXCLUDED.status,
+      producer_id = EXCLUDED.producer_id,
+      warehouse_id = EXCLUDED.warehouse_id,
+      password_hash = CASE
+        WHEN $9::boolean THEN EXCLUDED.password_hash
+        ELSE users.password_hash
+      END,
+      updated_at = now()
+    RETURNING id, email, name, role, status, producer_id, warehouse_id, created_at, updated_at
+    `,
+    [
+      id,
+      normalizedEmail,
+      hash,
+      String(name).trim(),
+      normalizedRole,
+      status === "DISABLED" ? "DISABLED" : "ACTIVE",
+      producerId ? Number(producerId) : null,
+      warehouseId || null,
+      Boolean(updatePassword),
+    ]
+  );
+
+  return publicUser(res.rows[0]);
+}
+
+async function findUserByEmail(email) {
+  if (!hasDatabase()) return null;
+
+  const res = await query(
+    `
+    SELECT *
+    FROM users
+    WHERE email = $1
+    LIMIT 1
+    `,
+    [String(email || "").trim().toLowerCase()]
+  );
+
+  return res.rows[0] || null;
+}
+
+async function listUsers() {
+  if (!hasDatabase()) return [];
+
+  const res = await query(`
+    SELECT id, email, name, role, status, producer_id, warehouse_id, created_at, updated_at
+    FROM users
+    ORDER BY
+      CASE role
+        WHEN 'ADMIN' THEN 1
+        WHEN 'PRODUCER' THEN 2
+        WHEN 'QUALITY_INSPECTOR' THEN 3
+        WHEN 'WAREHOUSE_STAFF' THEN 4
+        WHEN 'DISTRIBUTOR' THEN 5
+        ELSE 6
+      END,
+      created_at ASC
+  `);
+
+  return res.rows.map(publicUser);
+}
+
+async function loginUser({ email, password }) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+
+  if (hasDatabase()) {
+    try {
+      const dbUser = await findUserByEmail(normalizedEmail);
+      if (dbUser) {
+        if (dbUser.status !== "ACTIVE") {
+          const err = new Error("Tài khoản đã bị vô hiệu hóa");
+          err.status = 403;
+          throw err;
+        }
+
+        const valid = await bcrypt.compare(password || "", dbUser.password_hash);
+        if (!valid) {
+          const err = new Error("Email hoặc mật khẩu không đúng");
+          err.status = 401;
+          throw err;
+        }
+
+        const user = publicUser(dbUser);
+        const token = jwt.sign(user, getJwtSecret(), {
+          expiresIn: TOKEN_EXPIRES_IN,
+        });
+
+        return { token, user, expiresIn: TOKEN_EXPIRES_IN };
+      }
+    } catch (error) {
+      if (!isDatabaseConnectionError(error)) throw error;
+      // Fall through to env admin if DB is temporarily unavailable.
+    }
+  }
+
+  return loginAdmin({ email, password });
 }
 
 function loginAdmin({ email, password }) {
@@ -62,6 +311,16 @@ function loginAdmin({ email, password }) {
 }
 
 function verifyAdminToken(token) {
+  const user = verifyToken(token);
+  if (user.role !== "ADMIN") {
+    const err = new Error("Admin permission is required");
+    err.status = 403;
+    throw err;
+  }
+  return user;
+}
+
+function verifyToken(token) {
   if (!token) {
     const err = new Error("Authorization token is required");
     err.status = 401;
@@ -70,18 +329,16 @@ function verifyAdminToken(token) {
 
   try {
     const decoded = jwt.verify(token, getJwtSecret());
-    if (decoded.role !== "admin") {
-      const err = new Error("Admin permission is required");
-      err.status = 403;
-      throw err;
-    }
-
-    return {
+    const role = normalizeRole(decoded.role);
+    return publicUser({
       id: decoded.id,
       email: decoded.email,
       name: decoded.name,
-      role: decoded.role,
-    };
+      role,
+      status: decoded.status || "ACTIVE",
+      producerId: decoded.producerId,
+      warehouseId: decoded.warehouseId,
+    });
   } catch (error) {
     if (error.status) throw error;
     const err = new Error("Authorization token is invalid or expired");
@@ -91,6 +348,14 @@ function verifyAdminToken(token) {
 }
 
 module.exports = {
+  initAuthStore,
+  listUsers,
   loginAdmin,
+  loginUser,
+  normalizeRole,
+  publicUser,
+  ROLES,
+  upsertUser,
   verifyAdminToken,
+  verifyToken,
 };

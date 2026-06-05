@@ -88,6 +88,11 @@ export function createBatch({
   producerId,
   producerRole,
   producerNotes,
+  evidenceHash,
+  ipfsCid,
+  ipfsUrl,
+  evidenceProvider,
+  evidenceStatus,
 }) {
   return api.post("/batches", {
     name,
@@ -96,6 +101,11 @@ export function createBatch({
     producerId,
     producerRole,
     producerNotes,
+    evidenceHash,
+    ipfsCid,
+    ipfsUrl,
+    evidenceProvider,
+    evidenceStatus,
   });
 }
 
@@ -106,6 +116,11 @@ export function addStage(batchId, {
   actorProducerId,
   actorRole,
   actorNotes,
+  evidenceHash,
+  ipfsCid,
+  ipfsUrl,
+  evidenceProvider,
+  evidenceStatus,
 }) {
   return api.post(`/batches/${batchId}/stages`, {
     stage,
@@ -114,6 +129,11 @@ export function addStage(batchId, {
     actorProducerId,
     actorRole,
     actorNotes,
+    evidenceHash,
+    ipfsCid,
+    ipfsUrl,
+    evidenceProvider,
+    evidenceStatus,
   });
 }
 
@@ -177,6 +197,40 @@ export function updateProducer(producerId, payload) {
 
 export function updateProducerStatus(producerId, payload) {
   return api.patch(`/producers/${producerId}/status`, payload);
+}
+
+// ── Multi-role supply-chain endpoints ───────────────
+
+export function getUsers() {
+  return api.get("/users");
+}
+
+export function getWarehouses() {
+  return api.get("/warehouses");
+}
+
+export function getInspectionQueue() {
+  return api.get("/inspections/queue");
+}
+
+export function createQualityInspection(batchId, payload) {
+  return api.post(`/batches/${batchId}/quality-inspections`, payload);
+}
+
+export function getBatchQualityInspections(batchId) {
+  return api.get(`/batches/${batchId}/quality-inspections`);
+}
+
+export function getReceivingQueue() {
+  return api.get("/warehouse/receiving-queue");
+}
+
+export function createWarehouseReceipt(batchId, payload) {
+  return api.post(`/batches/${batchId}/warehouse-receipts`, payload);
+}
+
+export function getBatchWarehouseReceipts(batchId) {
+  return api.get(`/batches/${batchId}/warehouse-receipts`);
 }
 
 // ── Compliance evidence endpoint ─────────────────────

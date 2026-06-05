@@ -29,9 +29,11 @@ contract Traceability {
         Growing,     // 1 - Đang phát triển
         Fertilizing, // 2 - Bón phân / Chăm sóc
         Harvesting,  // 3 - Thu hoạch
-        Packaging,   // 4 - Đóng gói
-        Shipping,    // 5 - Vận chuyển
-        Completed    // 6 - Hoàn thành chuỗi
+        QualityInspection, // 4 - Kiểm định chất lượng
+        WarehouseReceived, // 5 - Nhập kho
+        Packaging,   // 6 - Đóng gói
+        Shipping,    // 7 - Vận chuyển
+        Completed    // 8 - Hoàn thành chuỗi
     }
 
     // ================================================================
@@ -43,7 +45,9 @@ contract Traceability {
      * @dev Mỗi lần cập nhật giai đoạn tạo ra một StageRecord mới
      * @param stage Giai đoạn (enum)
      * @param description Mô tả chi tiết hoạt động
-     * @param imageUrl URL ảnh minh chứng (từ Cloudinary)
+     * @param imageUrl URL ảnh minh chứng, ưu tiên IPFS gateway URL
+     * @param evidenceHash SHA-256 hash của file minh chứng
+     * @param ipfsCid CID của file trên IPFS/Pinata
      * @param timestamp Thời điểm ghi nhận (block.timestamp)
      * @param updatedBy Địa chỉ người cập nhật
      */
@@ -51,6 +55,8 @@ contract Traceability {
         Stage stage;
         string description;
         string imageUrl;
+        string evidenceHash;
+        string ipfsCid;
         uint256 timestamp;
         address updatedBy;
     }
@@ -132,6 +138,8 @@ contract Traceability {
      * @param batchId ID của lô hàng (indexed cho filter)
      * @param name Tên lô hàng
      * @param owner Địa chỉ nông dân tạo (indexed cho filter)
+     * @param evidenceHash SHA-256 hash của file minh chứng
+     * @param ipfsCid CID của file trên IPFS/Pinata
      * @param timestamp Thời điểm tạo
      */
     event BatchCreated(
@@ -139,6 +147,8 @@ contract Traceability {
         string name,
         string origin,
         address indexed owner,
+        string evidenceHash,
+        string ipfsCid,
         uint256 timestamp
     );
 
@@ -148,6 +158,8 @@ contract Traceability {
      * @param stage Giai đoạn mới
      * @param description Mô tả chi tiết
      * @param imageUrl URL ảnh minh chứng
+     * @param evidenceHash SHA-256 hash của file minh chứng
+     * @param ipfsCid CID của file trên IPFS/Pinata
      * @param timestamp Thời điểm cập nhật
      */
     event StageAdded(
@@ -155,6 +167,8 @@ contract Traceability {
         Stage stage,
         string description,
         string imageUrl,
+        string evidenceHash,
+        string ipfsCid,
         uint256 timestamp
     );
 
@@ -264,13 +278,17 @@ contract Traceability {
      *      Tạo StageRecord đầu tiên luôn (giai đoạn gieo trồng).
      * @param _name Tên lô hàng (VD: "Gạo ST25 - Lô 001")
      * @param _origin Nguồn gốc / vùng trồng (VD: "Sóc Trăng")
-     * @param _imageUrl URL ảnh mô tả ban đầu (từ Cloudinary)
+     * @param _imageUrl URL ảnh mô tả ban đầu, ưu tiên IPFS gateway URL
+     * @param _evidenceHash SHA-256 hash của file minh chứng
+     * @param _ipfsCid CID của file trên IPFS/Pinata
      * @return batchId ID của lô hàng vừa tạo
      */
     function createBatch(
         string calldata _name,
         string calldata _origin,
-        string calldata _imageUrl
+        string calldata _imageUrl,
+        string calldata _evidenceHash,
+        string calldata _ipfsCid
     ) external onlyProducer returns (uint256 batchId) {
         // Validate: tên không được rỗng
         if (bytes(_name).length == 0) {
@@ -298,12 +316,22 @@ contract Traceability {
                 stage: Stage.Seeding,
                 description: "Batch created - Seeding stage",
                 imageUrl: _imageUrl,
+                evidenceHash: _evidenceHash,
+                ipfsCid: _ipfsCid,
                 timestamp: block.timestamp,
                 updatedBy: msg.sender
             })
         );
 
-        emit BatchCreated(batchId, _name, _origin, msg.sender, block.timestamp);
+        emit BatchCreated(
+            batchId,
+            _name,
+            _origin,
+            msg.sender,
+            _evidenceHash,
+            _ipfsCid,
+            block.timestamp
+        );
 
         return batchId;
     }
@@ -315,13 +343,17 @@ contract Traceability {
      * @param _batchId ID lô hàng cần cập nhật
      * @param _stage Giai đoạn mới (phải > currentStage)
      * @param _description Mô tả hoạt động (VD: "Bón phân NPK lần 2")
-     * @param _imageUrl URL ảnh minh chứng từ Cloudinary
+     * @param _imageUrl URL ảnh minh chứng, ưu tiên IPFS gateway URL
+     * @param _evidenceHash SHA-256 hash của file minh chứng
+     * @param _ipfsCid CID của file trên IPFS/Pinata
      */
     function addStage(
         uint256 _batchId,
         Stage _stage,
         string calldata _description,
-        string calldata _imageUrl
+        string calldata _imageUrl,
+        string calldata _evidenceHash,
+        string calldata _ipfsCid
     )
         external
         batchExists(_batchId)
@@ -344,12 +376,22 @@ contract Traceability {
                 stage: _stage,
                 description: _description,
                 imageUrl: _imageUrl,
+                evidenceHash: _evidenceHash,
+                ipfsCid: _ipfsCid,
                 timestamp: block.timestamp,
                 updatedBy: msg.sender
             })
         );
 
-        emit StageAdded(_batchId, _stage, _description, _imageUrl, block.timestamp);
+        emit StageAdded(
+            _batchId,
+            _stage,
+            _description,
+            _imageUrl,
+            _evidenceHash,
+            _ipfsCid,
+            block.timestamp
+        );
 
         // Nếu hoàn thành → đánh dấu batch inactive
         if (_stage == Stage.Completed) {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AlertCircle, ArrowLeft, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Lock, ShieldCheck } from "@icons";
 import { useAuth } from "../components/auth/useAuth";
 
 export default function LoginPage() {
@@ -11,16 +11,31 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  function getRoleHome(role) {
+    switch (role) {
+      case "PRODUCER":
+        return "/batches/new";
+      case "QUALITY_INSPECTOR":
+        return "/inspector/queue";
+      case "WAREHOUSE_STAFF":
+        return "/warehouse/receiving";
+      case "DISTRIBUTOR":
+        return "/batches";
+      default:
+        return "/";
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
     try {
       setSubmitting(true);
-      await login(form);
-      navigate(location.state?.from || "/", { replace: true });
+      const session = await login(form);
+      navigate(location.state?.from || getRoleHome(session.user?.role), { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || "Không thể đăng nhập admin.");
+      setError(err.response?.data?.message || "Không thể đăng nhập.");
     } finally {
       setSubmitting(false);
     }
@@ -50,14 +65,14 @@ export default function LoginPage() {
               <ShieldCheck size={26} />
             </div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">
-              AgriTrace Admin
+              AgriTrace Operations
             </p>
             <h1 className="text-3xl md:text-5xl font-black font-headline mt-3 leading-tight">
               Vận hành chuỗi truy xuất trên testnet.
             </h1>
             <p className="text-emerald-50/80 text-sm leading-relaxed mt-4">
-              Tài khoản này dùng để tạo producer, ghi lô hàng, cập nhật stage và
-              tạo bằng chứng giao dịch phục vụ báo cáo.
+              Tài khoản vận hành theo role: producer tạo lô, inspector kiểm định,
+              warehouse nhập kho và distributor cập nhật vận chuyển.
             </p>
           </div>
         </section>
@@ -68,10 +83,10 @@ export default function LoginPage() {
               <Lock size={22} />
             </div>
             <h2 className="text-2xl font-black text-emerald-900 font-headline">
-              Đăng nhập admin
+              Đăng nhập vận hành
             </h2>
             <p className="text-sm text-slate-500 mt-2">
-              Thông tin đăng nhập được cấu hình bằng ENV trên backend.
+              Backend xác thực bằng JWT và phân quyền theo role.
             </p>
           </div>
 
@@ -92,7 +107,7 @@ export default function LoginPage() {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="input-ledger"
-                placeholder="admin@example.com"
+                placeholder="producer@agritrace.local"
                 autoComplete="username"
                 required
               />
@@ -106,7 +121,7 @@ export default function LoginPage() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="input-ledger"
-                placeholder="Nhập mật khẩu admin"
+                placeholder="Nhập mật khẩu"
                 autoComplete="current-password"
                 required
               />

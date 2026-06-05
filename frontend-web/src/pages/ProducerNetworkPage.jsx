@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MapPin, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Filter, Shield, Clock, ChevronRight, UserPlus } from "lucide-react";
+import { MapPin, Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2, Filter, Shield, Clock, ChevronRight, UserPlus } from "@icons";
 import { getProducers } from "../services/api";
 import AddProducerModal from "../components/producers/AddProducerModal";
 import { useAuth } from "../components/auth/useAuth";

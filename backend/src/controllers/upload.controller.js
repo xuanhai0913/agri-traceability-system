@@ -1,8 +1,9 @@
-const cloudinary = require("../config/cloudinary");
+const { uploadEvidenceToIpfs } = require("../services/ipfs.service");
 
 /**
  * Upload Controller
- * Xử lý upload ảnh lên Cloudinary
+ * Xử lý upload ảnh/evidence lên Pinata/IPFS.
+ * Giữ response `imageUrl` để tương thích contract/UI hiện tại.
  */
 
 // POST /api/upload
@@ -15,35 +16,15 @@ const uploadImage = async (req, res, next) => {
       });
     }
 
-    // Upload lên Cloudinary từ buffer (multer memoryStorage)
-    const result = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: "agri-traceability",
-          resource_type: "image",
-          allowed_formats: ["jpg", "jpeg", "png", "webp"],
-          transformation: [
-            { width: 1200, height: 1200, crop: "limit" }, // Giới hạn kích thước
-            { quality: "auto:good" }, // Tự động tối ưu chất lượng
-          ],
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-
-      uploadStream.end(req.file.buffer);
+    const result = await uploadEvidenceToIpfs({
+      buffer: req.file.buffer,
+      filename: req.file.originalname,
+      mimetype: req.file.mimetype,
     });
 
     res.status(200).json({
       success: true,
-      data: {
-        imageUrl: result.secure_url,
-        publicId: result.public_id,
-        width: result.width,
-        height: result.height,
-      },
+      data: result,
     });
   } catch (error) {
     next(error);

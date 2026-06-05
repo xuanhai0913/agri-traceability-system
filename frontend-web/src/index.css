@@ -1,4 +1,12 @@
 @import "tailwindcss";
+@source "./**/*.{js,jsx,json}";
+@source "../index.html";
+@source not "../../.codex-doc-assets";
+@source not "../../.codex-doc-build";
+@source not "../../.codex-doc-render";
+@source not "../../smart-contracts/artifacts";
+@source not "../../smart-contracts/cache";
+@source not "../../output";
 
 /* ================================================================
    TerraLedger Design System — "The Transparent Harvest"

@@ -5,7 +5,7 @@ import {
   ChevronRight, AlertCircle, X, FileText,
   MapPin, Lock, Loader2, Wallet,
   Save, Trash2, UserCheck,
-} from "lucide-react";
+} from "@icons";
 import { createBatch, getProducers, uploadImage } from "../services/api";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../components/auth/useAuth";
@@ -17,7 +17,7 @@ const DRAFT_KEY = "agritrace:create-batch-draft";
 export default function CreateBatchPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
@@ -131,12 +131,24 @@ export default function CreateBatchPage() {
     try {
       setSubmitting(true);
       let imageUrl = form.imageUrl.trim();
+      let evidenceMeta = {};
 
       // Step 1: Upload image if exists
       if (imageFile) {
         setUploading(true);
         const uploadRes = await uploadImage(imageFile);
-        imageUrl = uploadRes.data.data.imageUrl;
+        const uploadData = uploadRes.data.data || {};
+        imageUrl = uploadData.ipfsUrl || uploadData.imageUrl || "";
+        evidenceMeta = {
+          evidenceHash: uploadData.evidenceHash,
+          ipfsCid: uploadData.ipfsCid,
+          ipfsUrl: uploadData.ipfsUrl,
+          evidenceProvider: uploadData.provider,
+          evidenceStatus: uploadData.uploadStatus,
+        };
+        if (uploadData.warning) {
+          toast.error(uploadData.warning, { duration: 6000 });
+        }
         setUploading(false);
       }
 
@@ -148,6 +160,7 @@ export default function CreateBatchPage() {
         producerId: form.producerId ? Number(form.producerId) : undefined,
         producerRole: form.producerRole,
         producerNotes: "Linked from AgriTrace Create Batch form",
+        ...evidenceMeta,
       });
 
       const batchId = res.data.data.batchId;
@@ -237,7 +250,16 @@ export default function CreateBatchPage() {
     return (
       <AdminRequired
         title="Đăng nhập để tạo lô hàng"
-        body="Tạo lô hàng sẽ ghi giao dịch lên smart contract bằng service wallet, nên chỉ tài khoản admin vận hành mới được thao tác."
+        body="Tạo lô hàng sẽ ghi giao dịch lên smart contract bằng service wallet, nên chỉ tài khoản ADMIN hoặc PRODUCER mới được thao tác."
+      />
+    );
+  }
+
+  if (!["ADMIN", "PRODUCER"].includes(user?.role)) {
+    return (
+      <AdminRequired
+        title="Không có quyền tạo lô hàng"
+        body="Role hiện tại chỉ được xem dữ liệu. Tạo batch mới dành cho ADMIN hoặc PRODUCER."
       />
     );
   }
@@ -496,7 +518,7 @@ export default function CreateBatchPage() {
                 }
                 onError={setError}
                 maxSizeMb={10}
-                helperText="Ảnh URL/Unsplash được ghi trực tiếp; ảnh Cloudinary sẽ upload trước khi tạo lô."
+                helperText="Ảnh upload sẽ được hash SHA-256 và pin lên Pinata/IPFS; URL/Unsplash được dùng như nguồn ảnh ngoài."
               />
             </div>
 
@@ -518,7 +540,7 @@ export default function CreateBatchPage() {
                   <>
                     <Loader2 size={22} className="animate-spin" />
                     {uploading
-                      ? "Đang tải ảnh lên..."
+                      ? "Đang tải ảnh lên IPFS..."
                       : "Đang ghi lên Blockchain..."}
                   </>
                 ) : (

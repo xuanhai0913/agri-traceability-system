@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Package, Sprout, Truck, ChevronRight, Eye, ShieldCheck, Leaf, Coffee, TreePine, TreeDeciduous, Flower2, Server, Database, Wallet, ExternalLink } from "lucide-react";
+import { Package, Sprout, Truck, ChevronRight, Eye, ShieldCheck, Leaf, Coffee, TreePine, TreeDeciduous, Flower2, Server, Database, Wallet, ExternalLink } from "@icons";
 import { getDashboardSummary } from "../services/api";
 import { DashboardSkeleton } from "../components/ui/Skeleton";
 import { SeedlingIllustration } from "../components/ui/EmptyStateIllustrations";
@@ -12,6 +12,8 @@ const STAGE_NAMES = [
   "Đang phát triển",
   "Bón phân",
   "Thu hoạch",
+  "Kiểm định",
+  "Nhập kho",
   "Đóng gói",
   "Vận chuyển",
   "Hoàn thành",
@@ -24,7 +26,9 @@ const STAGE_COLORS = {
   3: { bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500" },
   4: { bg: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500" },
   5: { bg: "bg-indigo-100", text: "text-indigo-700", dot: "bg-indigo-500" },
-  6: { bg: "bg-slate-200", text: "text-slate-600", dot: "bg-slate-400" },
+  6: { bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500" },
+  7: { bg: "bg-cyan-100", text: "text-cyan-700", dot: "bg-cyan-500" },
+  8: { bg: "bg-slate-200", text: "text-slate-600", dot: "bg-slate-400" },
 };
 
 const PRODUCT_ICONS = [Leaf, Sprout, Coffee, TreePine, TreeDeciduous, Flower2];

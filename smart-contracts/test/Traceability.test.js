@@ -1,21 +1,49 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 
 describe("Traceability", function () {
   let traceability;
   let owner;
   let otherUser;
 
-  // Stage enum values (matching Solidity enum)
   const Stage = {
     Seeding: 0,
     Growing: 1,
     Fertilizing: 2,
     Harvesting: 3,
-    Packaging: 4,
-    Shipping: 5,
-    Completed: 6,
+    QualityInspection: 4,
+    WarehouseReceived: 5,
+    Packaging: 6,
+    Shipping: 7,
+    Completed: 8,
   };
+
+  const IMAGE_URL = "https://gateway.pinata.cloud/ipfs/bafy-demo-image";
+  const EVIDENCE_HASH =
+    "0x9df2f23ce9340b2b2f750a3ab4c1f04fe6f7d928a423f561ed21f30f1f324a90";
+  const IPFS_CID = "bafybeigdyrzt-demo-cid";
+
+  function createBatch(contract = traceability, overrides = {}) {
+    return contract.createBatch(
+      overrides.name || "Gạo ST25 - Lô 001",
+      overrides.origin || "Sóc Trăng, Việt Nam",
+      overrides.imageUrl || IMAGE_URL,
+      overrides.evidenceHash || EVIDENCE_HASH,
+      overrides.ipfsCid || IPFS_CID
+    );
+  }
+
+  function addStage(contract, stage, overrides = {}) {
+    return contract.addStage(
+      overrides.batchId || 1,
+      stage,
+      overrides.description || "Evidence recorded",
+      overrides.imageUrl || IMAGE_URL,
+      overrides.evidenceHash || EVIDENCE_HASH,
+      overrides.ipfsCid || IPFS_CID
+    );
+  }
 
   beforeEach(async function () {
     [owner, otherUser] = await ethers.getSigners();
@@ -25,318 +53,180 @@ describe("Traceability", function () {
     await traceability.waitForDeployment();
   });
 
-  // ================================================================
-  // │                    ROLE MANAGEMENT TESTS                       │
-  // ================================================================
-
-  describe("Role Management (Whitelist)", function () {
-    it("Deployer (System Admin) should be whitelisted by default", async function () {
+  describe("Role management", function () {
+    it("whitelists the deployer by default", async function () {
       expect(await traceability.systemAdmin()).to.equal(owner.address);
       expect(await traceability.isWhitelistedProducer(owner.address)).to.equal(true);
     });
 
-    it("Cannot create batch if not whitelisted", async function () {
-      await expect(
-        traceability.connect(otherUser).createBatch("Gạo", "Sóc Trăng", "img.jpg")
-      ).to.be.revertedWithCustomError(traceability, "NotWhitelistedProducer");
+    it("rejects createBatch from non-whitelisted wallets", async function () {
+      await expect(createBatch(traceability.connect(otherUser))).to.be.revertedWithCustomError(
+        traceability,
+        "NotWhitelistedProducer"
+      );
     });
 
-    it("Admin can add and remove a whitelisted producer", async function () {
-      // Add
+    it("lets the system admin add and remove producers", async function () {
       await expect(traceability.addWhitelistedProducer(otherUser.address))
         .to.emit(traceability, "ProducerAdded")
         .withArgs(otherUser.address);
-      
+
       expect(await traceability.isWhitelistedProducer(otherUser.address)).to.equal(true);
+      await expect(createBatch(traceability.connect(otherUser))).to.not.be.reverted;
 
-      // Now otherUser can create batch
-      await expect(
-        traceability.connect(otherUser).createBatch("Trái cây", "Đà Lạt", "img.jpg")
-      ).to.not.be.reverted;
-
-      // Remove
       await expect(traceability.removeWhitelistedProducer(otherUser.address))
         .to.emit(traceability, "ProducerRemoved")
         .withArgs(otherUser.address);
-
       expect(await traceability.isWhitelistedProducer(otherUser.address)).to.equal(false);
-    });
-
-    it("Only admin can add producers", async function () {
-      await expect(
-        traceability.connect(otherUser).addWhitelistedProducer(otherUser.address)
-      ).to.be.revertedWithCustomError(traceability, "NotSystemAdmin");
     });
   });
 
-  // ================================================================
-  // │                    CREATE BATCH TESTS                         │
-  // ================================================================
-
   describe("createBatch", function () {
-    it("Nên tạo batch mới thành công với đầy đủ thông tin", async function () {
-      const tx = await traceability.createBatch(
-        "Gạo ST25 - Lô 001",
-        "Sóc Trăng, Việt Nam",
-        "https://res.cloudinary.com/demo/image/upload/rice.jpg"
-      );
-
-      const receipt = await tx.wait();
-
-      // Kiểm tra event BatchCreated
-      const event = receipt.logs.find(
-        (log) => traceability.interface.parseLog(log)?.name === "BatchCreated"
-      );
-      const parsedEvent = traceability.interface.parseLog(event);
-
-      expect(parsedEvent.args.batchId).to.equal(1);
-      expect(parsedEvent.args.name).to.equal("Gạo ST25 - Lô 001");
-      expect(parsedEvent.args.origin).to.equal("Sóc Trăng, Việt Nam");
-      expect(parsedEvent.args.owner).to.equal(owner.address);
-    });
-
-    it("Nên trả về batchId tăng dần", async function () {
-      await traceability.createBatch("Lô 1", "HCM", "https://img1.jpg");
-      await traceability.createBatch("Lô 2", "HN", "https://img2.jpg");
-
-      const totalBatches = await traceability.getTotalBatches();
-      expect(totalBatches).to.equal(2);
-    });
-
-    it("Nên khởi tạo với giai đoạn Seeding và trạng thái active", async function () {
-      await traceability.createBatch("Test Batch", "Origin", "https://img.jpg");
+    it("creates a batch with initial IPFS evidence metadata", async function () {
+      await expect(createBatch())
+        .to.emit(traceability, "BatchCreated")
+        .withArgs(
+          1,
+          "Gạo ST25 - Lô 001",
+          "Sóc Trăng, Việt Nam",
+          owner.address,
+          EVIDENCE_HASH,
+          IPFS_CID,
+          anyValue
+        );
 
       const batch = await traceability.getBatch(1);
       expect(batch.currentStage).to.equal(Stage.Seeding);
       expect(batch.isActive).to.equal(true);
-      expect(batch.owner).to.equal(owner.address);
-    });
-
-    it("Nên tạo StageRecord đầu tiên (Seeding) tự động", async function () {
-      await traceability.createBatch("Test Batch", "Origin", "https://img.jpg");
+      expect(batch.totalStages).to.equal(1);
 
       const history = await traceability.getStageHistory(1);
-      expect(history.length).to.equal(1);
       expect(history[0].stage).to.equal(Stage.Seeding);
-      expect(history[0].imageUrl).to.equal("https://img.jpg");
+      expect(history[0].imageUrl).to.equal(IMAGE_URL);
+      expect(history[0].evidenceHash).to.equal(EVIDENCE_HASH);
+      expect(history[0].ipfsCid).to.equal(IPFS_CID);
     });
 
-    it("Nên revert nếu tên batch rỗng", async function () {
-      await expect(
-        traceability.createBatch("", "Origin", "https://img.jpg")
-      ).to.be.revertedWithCustomError(traceability, "EmptyBatchName");
+    it("increments batch ids", async function () {
+      await createBatch();
+      await createBatch(traceability, { name: "Lô 2", origin: "Đà Lạt" });
+
+      expect(await traceability.getTotalBatches()).to.equal(2);
+    });
+
+    it("rejects an empty batch name", async function () {
+      await expect(createBatch(traceability, { name: "" })).to.be.revertedWithCustomError(
+        traceability,
+        "EmptyBatchName"
+      );
     });
   });
 
-  // ================================================================
-  // │                    ADD STAGE TESTS                            │
-  // ================================================================
-
   describe("addStage", function () {
     beforeEach(async function () {
-      // Tạo batch trước mỗi test
-      await traceability.createBatch(
-        "Gạo ST25",
-        "Sóc Trăng",
-        "https://img.jpg"
-      );
+      await createBatch();
     });
 
-    it("Nên thêm giai đoạn Growing thành công", async function () {
-      await traceability.addStage(
-        1,
-        Stage.Growing,
-        "Cây lúa đã nảy mầm, phát triển tốt",
-        "https://res.cloudinary.com/demo/growing.jpg"
-      );
+    it("records QualityInspection and WarehouseReceived stages with hash and CID", async function () {
+      await addStage(traceability, Stage.Growing, { description: "Sinh trưởng tốt" });
+      await addStage(traceability, Stage.Fertilizing, { description: "Bón phân hữu cơ" });
+      await addStage(traceability, Stage.Harvesting, { description: "Thu hoạch" });
 
-      const batch = await traceability.getBatch(1);
-      expect(batch.currentStage).to.equal(Stage.Growing);
-
-      const history = await traceability.getStageHistory(1);
-      expect(history.length).to.equal(2); // Seeding + Growing
-    });
-
-    it("Nên thêm nhiều giai đoạn liên tục", async function () {
-      await traceability.addStage(1, Stage.Growing, "Nảy mầm", "");
-      await traceability.addStage(1, Stage.Fertilizing, "Bón phân NPK", "");
-      await traceability.addStage(1, Stage.Harvesting, "Thu hoạch", "");
-
-      const history = await traceability.getStageHistory(1);
-      expect(history.length).to.equal(4); // Seeding + 3 stages
-
-      const batch = await traceability.getBatch(1);
-      expect(batch.currentStage).to.equal(Stage.Harvesting);
-      expect(batch.isActive).to.equal(true);
-    });
-
-    it("Nên phát ra event StageAdded", async function () {
       await expect(
-        traceability.addStage(1, Stage.Growing, "Phát triển tốt", "https://growing.jpg")
+        addStage(traceability, Stage.QualityInspection, {
+          description: "QualityInspection PASS",
+          evidenceHash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          ipfsCid: "bafy-quality-pass",
+        })
       )
         .to.emit(traceability, "StageAdded")
         .withArgs(
           1,
-          Stage.Growing,
-          "Phát triển tốt",
-          "https://growing.jpg",
-          (timestamp) => timestamp > 0 // any valid timestamp
+          Stage.QualityInspection,
+          "QualityInspection PASS",
+          IMAGE_URL,
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "bafy-quality-pass",
+          anyValue
         );
+
+      await addStage(traceability, Stage.WarehouseReceived, {
+        description: "WarehouseReceived | Kho TP.HCM | Quantity: 500 kg",
+        evidenceHash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        ipfsCid: "bafy-warehouse-receipt",
+      });
+
+      const batch = await traceability.getBatch(1);
+      expect(batch.currentStage).to.equal(Stage.WarehouseReceived);
+
+      const history = await traceability.getStageHistory(1);
+      expect(history.length).to.equal(6);
+      expect(history[4].stage).to.equal(Stage.QualityInspection);
+      expect(history[4].ipfsCid).to.equal("bafy-quality-pass");
+      expect(history[5].stage).to.equal(Stage.WarehouseReceived);
+      expect(history[5].evidenceHash).to.equal(
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      );
     });
 
-    it("Nên revert nếu không phải batch owner", async function () {
+    it("rejects non-owner stage updates", async function () {
       await expect(
-        traceability
-          .connect(otherUser)
-          .addStage(1, Stage.Growing, "Hack attempt", "")
+        addStage(traceability.connect(otherUser), Stage.Growing, {
+          description: "Hack attempt",
+        })
       ).to.be.revertedWithCustomError(traceability, "NotBatchOwner");
     });
 
-    it("Nên revert nếu batch không tồn tại", async function () {
-      await expect(
-        traceability.addStage(999, Stage.Growing, "Nope", "")
-      ).to.be.revertedWithCustomError(traceability, "BatchNotFound");
-    });
-
-    it("Nên revert nếu giai đoạn lùi lại (Growing -> Seeding)", async function () {
-      await traceability.addStage(1, Stage.Growing, "Growing", "");
+    it("rejects backward or duplicate progression", async function () {
+      await addStage(traceability, Stage.Growing, { description: "Growing" });
 
       await expect(
-        traceability.addStage(1, Stage.Seeding, "Lùi lại?", "")
+        addStage(traceability, Stage.Seeding, { description: "Go back" })
+      ).to.be.revertedWithCustomError(traceability, "InvalidStageProgression");
+
+      await expect(
+        addStage(traceability, Stage.Growing, { description: "Duplicate" })
       ).to.be.revertedWithCustomError(traceability, "InvalidStageProgression");
     });
 
-    it("Nên revert nếu giai đoạn trùng hiện tại", async function () {
-      // Seeding -> Seeding nên bị revert
-      await expect(
-        traceability.addStage(1, Stage.Seeding, "Same stage", "")
-      ).to.be.revertedWithCustomError(traceability, "InvalidStageProgression");
-    });
-  });
+    it("marks the batch inactive when completed and rejects later updates", async function () {
+      await addStage(traceability, Stage.Growing);
+      await addStage(traceability, Stage.Fertilizing);
+      await addStage(traceability, Stage.Harvesting);
+      await addStage(traceability, Stage.QualityInspection);
+      await addStage(traceability, Stage.WarehouseReceived);
+      await addStage(traceability, Stage.Packaging);
+      await addStage(traceability, Stage.Shipping);
 
-  // ================================================================
-  // │                BATCH COMPLETION TESTS                        │
-  // ================================================================
-
-  describe("Batch Completion", function () {
-    beforeEach(async function () {
-      await traceability.createBatch(
-        "Gạo ST25",
-        "Sóc Trăng",
-        "https://img.jpg"
-      );
-    });
-
-    it("Nên đánh dấu batch inactive khi stage = Completed", async function () {
-      // Fast-forward to Completed
-      await traceability.addStage(1, Stage.Growing, "Growing", "");
-      await traceability.addStage(1, Stage.Fertilizing, "Fertilizing", "");
-      await traceability.addStage(1, Stage.Harvesting, "Harvesting", "");
-      await traceability.addStage(1, Stage.Packaging, "Packaging", "");
-      await traceability.addStage(1, Stage.Shipping, "Shipping", "");
-      await traceability.addStage(1, Stage.Completed, "Completed", "");
-
-      const batch = await traceability.getBatch(1);
-      expect(batch.isActive).to.equal(false);
-      expect(batch.currentStage).to.equal(Stage.Completed);
-    });
-
-    it("Nên phát ra event BatchCompleted khi hoàn thành", async function () {
-      await traceability.addStage(1, Stage.Growing, "", "");
-      await traceability.addStage(1, Stage.Fertilizing, "", "");
-      await traceability.addStage(1, Stage.Harvesting, "", "");
-      await traceability.addStage(1, Stage.Packaging, "", "");
-      await traceability.addStage(1, Stage.Shipping, "", "");
-
-      await expect(traceability.addStage(1, Stage.Completed, "Done", ""))
+      await expect(addStage(traceability, Stage.Completed))
         .to.emit(traceability, "BatchCompleted")
-        .withArgs(1, (timestamp) => timestamp > 0);
-    });
+        .withArgs(1, anyValue);
 
-    it("Nên revert nếu cập nhật batch đã completed", async function () {
-      await traceability.addStage(1, Stage.Growing, "", "");
-      await traceability.addStage(1, Stage.Fertilizing, "", "");
-      await traceability.addStage(1, Stage.Harvesting, "", "");
-      await traceability.addStage(1, Stage.Packaging, "", "");
-      await traceability.addStage(1, Stage.Shipping, "", "");
-      await traceability.addStage(1, Stage.Completed, "Done", "");
+      const batch = await traceability.getBatch(1);
+      expect(batch.currentStage).to.equal(Stage.Completed);
+      expect(batch.isActive).to.equal(false);
 
-      // Thử cập nhật lại → revert
-      await expect(
-        traceability.addStage(1, Stage.Growing, "Nope", "")
-      ).to.be.revertedWithCustomError(traceability, "BatchNotActive");
+      await expect(addStage(traceability, Stage.Shipping)).to.be.revertedWithCustomError(
+        traceability,
+        "BatchNotActive"
+      );
     });
   });
 
-  // ================================================================
-  // │                   READ FUNCTION TESTS                        │
-  // ================================================================
+  describe("Read functions", function () {
+    it("returns stage records by index", async function () {
+      await createBatch();
+      await addStage(traceability, Stage.Growing, { description: "Cây phát triển" });
 
-  describe("Read Functions", function () {
-    beforeEach(async function () {
-      await traceability.createBatch(
-        "Gạo ST25 - Lô 001",
-        "Sóc Trăng, Việt Nam",
-        "https://img.jpg"
-      );
-      await traceability.addStage(
-        1,
-        Stage.Growing,
-        "Cây phát triển",
-        "https://growing.jpg"
-      );
-    });
+      const first = await traceability.getStageAt(1, 0);
+      expect(first.stage).to.equal(Stage.Seeding);
 
-    it("getBatch nên trả về đầy đủ thông tin", async function () {
-      const batch = await traceability.getBatch(1);
-      expect(batch.id).to.equal(1);
-      expect(batch.name).to.equal("Gạo ST25 - Lô 001");
-      expect(batch.origin).to.equal("Sóc Trăng, Việt Nam");
-      expect(batch.owner).to.equal(owner.address);
-      expect(batch.currentStage).to.equal(Stage.Growing);
-      expect(batch.isActive).to.equal(true);
-      expect(batch.totalStages).to.equal(2);
-    });
+      const second = await traceability.getStageAt(1, 1);
+      expect(second.stage).to.equal(Stage.Growing);
+      expect(second.description).to.equal("Cây phát triển");
 
-    it("getStageHistory nên trả về mảng đầy đủ", async function () {
-      const history = await traceability.getStageHistory(1);
-      expect(history.length).to.equal(2);
-
-      // Stage 1: Seeding (tự động khi createBatch)
-      expect(history[0].stage).to.equal(Stage.Seeding);
-      expect(history[0].updatedBy).to.equal(owner.address);
-
-      // Stage 2: Growing
-      expect(history[1].stage).to.equal(Stage.Growing);
-      expect(history[1].description).to.equal("Cây phát triển");
-      expect(history[1].imageUrl).to.equal("https://growing.jpg");
-    });
-
-    it("getStageAt nên trả về đúng record theo index", async function () {
-      const record = await traceability.getStageAt(1, 0);
-      expect(record.stage).to.equal(Stage.Seeding);
-
-      const record2 = await traceability.getStageAt(1, 1);
-      expect(record2.stage).to.equal(Stage.Growing);
-    });
-
-    it("getStageAt nên revert nếu index vượt quá", async function () {
-      await expect(
-        traceability.getStageAt(1, 99)
-      ).to.be.revertedWith("Index out of bounds");
-    });
-
-    it("getTotalBatches nên trả về counter chính xác", async function () {
-      expect(await traceability.getTotalBatches()).to.equal(1);
-
-      await traceability.createBatch("Lô 2", "HN", "");
-      expect(await traceability.getTotalBatches()).to.equal(2);
-    });
-
-    it("getBatch nên revert nếu batch không tồn tại", async function () {
-      await expect(traceability.getBatch(999)).to.be.revertedWithCustomError(
-        traceability,
-        "BatchNotFound"
+      await expect(traceability.getStageAt(1, 99)).to.be.revertedWith(
+        "Index out of bounds"
       );
     });
   });

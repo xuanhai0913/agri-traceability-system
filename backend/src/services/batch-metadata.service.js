@@ -10,6 +10,8 @@ const PRODUCER_ROLES = new Set([
   "distributor",
   "processor",
   "inspector",
+  "quality_inspector",
+  "warehouse_staff",
 ]);
 
 const ROLE_LABELS = {
@@ -17,6 +19,8 @@ const ROLE_LABELS = {
   distributor: "Nhà phân phối",
   processor: "Đơn vị xử lý",
   inspector: "Đơn vị kiểm định",
+  quality_inspector: "Kiểm định chất lượng",
+  warehouse_staff: "Nhân viên kho",
 };
 
 const TRANSACTION_ACTION_LABELS = {
@@ -157,6 +161,11 @@ function toApiTransaction(row) {
     actorRole,
     actorRoleLabel: ROLE_LABELS[actorRole],
     notes: sanitizeEvidenceText(row.notes || ""),
+    evidenceHash: row.evidence_hash || "",
+    ipfsCid: row.ipfs_cid || "",
+    ipfsUrl: row.ipfs_url || "",
+    evidenceProvider: row.evidence_provider || "",
+    evidenceStatus: row.evidence_status || "",
     createdAt: row.created_at,
     actorProducer: toProducer({
       producer_id: row.producer_id,
@@ -177,7 +186,7 @@ async function initBatchMetadataStore() {
       batch_id BIGINT NOT NULL,
       producer_id BIGINT NOT NULL REFERENCES producers(id) ON DELETE CASCADE,
       producer_role TEXT NOT NULL DEFAULT 'primary_producer'
-        CHECK (producer_role IN ('primary_producer', 'distributor', 'processor', 'inspector')),
+        CHECK (producer_role IN ('primary_producer', 'distributor', 'processor', 'inspector', 'quality_inspector', 'warehouse_staff')),
       notes TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -196,6 +205,17 @@ async function initBatchMetadataStore() {
   `);
 
   await query(`
+    ALTER TABLE batch_producer_links
+      DROP CONSTRAINT IF EXISTS batch_producer_links_producer_role_check;
+  `);
+
+  await query(`
+    ALTER TABLE batch_producer_links
+      ADD CONSTRAINT batch_producer_links_producer_role_check
+      CHECK (producer_role IN ('primary_producer', 'distributor', 'processor', 'inspector', 'quality_inspector', 'warehouse_staff'));
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS batch_transaction_records (
       id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
       batch_id BIGINT NOT NULL,
@@ -207,11 +227,20 @@ async function initBatchMetadataStore() {
       actor_address TEXT,
       actor_producer_id BIGINT REFERENCES producers(id) ON DELETE SET NULL,
       actor_role TEXT NOT NULL DEFAULT 'primary_producer'
-        CHECK (actor_role IN ('primary_producer', 'distributor', 'processor', 'inspector')),
+        CHECK (actor_role IN ('primary_producer', 'distributor', 'processor', 'inspector', 'quality_inspector', 'warehouse_staff')),
       notes TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+  `);
+
+  await query(`
+    ALTER TABLE batch_transaction_records
+      ADD COLUMN IF NOT EXISTS evidence_hash TEXT,
+      ADD COLUMN IF NOT EXISTS ipfs_cid TEXT,
+      ADD COLUMN IF NOT EXISTS ipfs_url TEXT,
+      ADD COLUMN IF NOT EXISTS evidence_provider TEXT,
+      ADD COLUMN IF NOT EXISTS evidence_status TEXT;
   `);
 
   await query(`
@@ -222,6 +251,22 @@ async function initBatchMetadataStore() {
   await query(`
     CREATE INDEX IF NOT EXISTS batch_transaction_records_tx_idx
     ON batch_transaction_records (tx_hash);
+  `);
+
+  await query(`
+    ALTER TABLE batch_transaction_records
+      DROP CONSTRAINT IF EXISTS batch_transaction_records_actor_role_check;
+  `);
+
+  await query(`
+    ALTER TABLE batch_transaction_records
+      ADD CONSTRAINT batch_transaction_records_actor_role_check
+      CHECK (actor_role IN ('primary_producer', 'distributor', 'processor', 'inspector', 'quality_inspector', 'warehouse_staff'));
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS batch_transaction_records_ipfs_cid_idx
+    ON batch_transaction_records (ipfs_cid);
   `);
 
   await seedDefaultBatchLinks();
@@ -458,6 +503,11 @@ async function recordBatchTransaction({
   actorProducerId,
   actorRole,
   notes,
+  evidenceHash,
+  ipfsCid,
+  ipfsUrl,
+  evidenceProvider,
+  evidenceStatus,
 }) {
   if (!hasDatabase() || !transactionHash) return null;
 
@@ -466,9 +516,10 @@ async function recordBatchTransaction({
     `
     INSERT INTO batch_transaction_records (
       batch_id, action, stage_index, tx_hash, block_number,
-      actor_address, actor_producer_id, actor_role, notes
+      actor_address, actor_producer_id, actor_role, notes,
+      evidence_hash, ipfs_cid, ipfs_url, evidence_provider, evidence_status
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
     RETURNING *
     `,
     [
@@ -481,6 +532,11 @@ async function recordBatchTransaction({
       actorProducerId ? Number(actorProducerId) : null,
       normalizedRole,
       notes || "",
+      evidenceHash || "",
+      ipfsCid || "",
+      ipfsUrl || "",
+      evidenceProvider || "",
+      evidenceStatus || "",
     ]
   );
 

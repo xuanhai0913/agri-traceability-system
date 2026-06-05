@@ -9,6 +9,8 @@ const complianceRoutes = require("./routes/compliance.routes");
 const authRoutes = require("./routes/auth.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const mediaRoutes = require("./routes/media.routes");
+const supplyChainRoutes = require("./routes/supply-chain.routes");
+const userRoutes = require("./routes/user.routes");
 const { getDatabaseStatus, pingDatabase } = require("./config/database");
 
 const app = express();
@@ -59,6 +61,8 @@ app.use("/api/compliance", complianceRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/media", mediaRoutes);
+app.use("/api", supplyChainRoutes);
+app.use("/api/users", userRoutes);
 
 // 404
 app.use((_req, res) => {

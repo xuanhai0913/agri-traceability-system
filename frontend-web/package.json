@@ -10,8 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.15.0",
-    "framer-motion": "^12.38.0",
+    "@babel/runtime": "^7.29.7",
+    "axios": "^1.7.9",
+    "core-js": "^3.49.0",
     "html2canvas": "^1.4.1",
     "i18next": "^26.0.4",
     "jspdf": "^4.2.1",

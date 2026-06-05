@@ -3,12 +3,12 @@ import {
   CloudUpload,
   ExternalLink,
   Image,
-  Link as LinkIcon,
+  LinkIcon,
   Loader2,
   Search,
   Sparkles,
   Trash2,
-} from "lucide-react";
+} from "@icons";
 import { searchUnsplashPhotos, trackUnsplashDownload } from "../../services/api";
 
 const UNSPLASH_CATEGORIES = [
@@ -22,7 +22,7 @@ const UNSPLASH_CATEGORIES = [
 
 const MODES = [
   { key: "url", label: "URL", icon: LinkIcon },
-  { key: "cloudinary", label: "Cloudinary", icon: CloudUpload },
+  { key: "ipfs", label: "Pinata/IPFS", icon: CloudUpload },
   { key: "unsplash", label: "Unsplash", icon: Sparkles },
 ];
 
@@ -37,11 +37,11 @@ export default function ImageSourcePicker({
   onUnsplashSelect,
   onError,
   maxSizeMb = 5,
-  urlPlaceholder = "https://res.cloudinary.com/.../image.jpg",
-  helperText = "Chọn một nguồn ảnh: dán URL, upload lên Cloudinary hoặc chọn nhanh từ Unsplash.",
+  urlPlaceholder = "https://.../ipfs/bafy... hoặc URL ảnh công khai",
+  helperText = "Chọn một nguồn ảnh: dán URL, upload lên Pinata/IPFS hoặc chọn nhanh từ Unsplash.",
 }) {
   const inputRef = useRef(null);
-  const [mode, setMode] = useState(file ? "cloudinary" : urlValue ? "url" : "cloudinary");
+  const [mode, setMode] = useState(file ? "ipfs" : urlValue ? "url" : "ipfs");
   const [unsplashQuery, setUnsplashQuery] = useState(UNSPLASH_CATEGORIES[0].key);
   const [unsplashPhotos, setUnsplashPhotos] = useState([]);
   const [unsplashMeta, setUnsplashMeta] = useState(null);
@@ -68,7 +68,7 @@ export default function ImageSourcePicker({
   function handleFile(selectedFile) {
     if (!validateFile(selectedFile)) return;
     onFileSelect?.(selectedFile);
-    setMode("cloudinary");
+    setMode("ipfs");
   }
 
   function handleDrop(e) {
@@ -178,11 +178,11 @@ export default function ImageSourcePicker({
         </div>
       )}
 
-      {mode === "cloudinary" && (
+      {mode === "ipfs" && (
         <div
           role="button"
           tabIndex={0}
-          aria-label="Tải ảnh lên Cloudinary"
+          aria-label="Tải ảnh lên Pinata/IPFS"
           onClick={() => inputRef.current?.click()}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -235,10 +235,10 @@ export default function ImageSourcePicker({
                 <CloudUpload size={24} />
               </div>
               <p className="text-sm font-bold text-emerald-900">
-                Upload lên Cloudinary
+                Upload lên Pinata/IPFS
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                Kéo thả hoặc click để upload JPG, PNG, WEBP. Tối đa {maxSizeMb}MB.
+                Kéo thả hoặc click để upload JPG, PNG, WEBP. Backend sẽ tính SHA-256 và pin file lên IPFS. Tối đa {maxSizeMb}MB.
               </p>
             </>
           )}

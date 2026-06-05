@@ -2,6 +2,8 @@ require("dotenv").config();
 const app = require("./src/app");
 const { initProducerStore } = require("./src/services/producer.service");
 const { initBatchMetadataStore } = require("./src/services/batch-metadata.service");
+const { initAuthStore } = require("./src/services/auth.service");
+const { initSupplyChainStore } = require("./src/services/supply-chain.service");
 const {
   disableDatabase,
   getDatabaseStatus,
@@ -16,6 +18,8 @@ async function initializeDatabaseStore({ retry = true } = {}) {
 
   try {
     await initProducerStore();
+    await initSupplyChainStore();
+    await initAuthStore();
     await initBatchMetadataStore();
     console.log("Database store initialized.");
     return true;

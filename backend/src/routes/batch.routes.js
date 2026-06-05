@@ -7,7 +7,7 @@ const {
   getTotalBatches,
   getAllBatches,
 } = require("../controllers/batch.controller");
-const { requireAdminAuth } = require("../middleware/auth.middleware");
+const { requireRole } = require("../middleware/auth.middleware");
 
 const router = express.Router();
 
@@ -28,9 +28,9 @@ router.get("/", getAllBatches);
 /**
  * POST /api/batches
  * Tạo lô hàng mới
- * Body: { name, origin, imageUrl, producerId, producerRole }
+ * Body: { name, origin, imageUrl, producerId, producerRole, evidenceHash, ipfsCid, ipfsUrl }
  */
-router.post("/", requireAdminAuth, createBatch);
+router.post("/", requireRole(["ADMIN", "PRODUCER"]), createBatch);
 
 /**
  * GET /api/batches/:id
@@ -47,8 +47,12 @@ router.get("/:id/history", getStageHistory);
 /**
  * POST /api/batches/:id/stages
  * Thêm giai đoạn mới cho lô hàng
- * Body: { stage, description, imageUrl }
+ * Body: { stage, description, imageUrl, evidenceHash, ipfsCid, ipfsUrl }
  */
-router.post("/:id/stages", requireAdminAuth, addStage);
+router.post(
+  "/:id/stages",
+  requireRole(["ADMIN", "PRODUCER", "DISTRIBUTOR"]),
+  addStage
+);
 
 module.exports = router;

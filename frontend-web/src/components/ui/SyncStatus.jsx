@@ -1,4 +1,4 @@
-import { AlertTriangle, RefreshCw, Server } from "lucide-react";
+import { AlertTriangle, RefreshCw, Server } from "@icons";
 
 export default function SyncStatus({ slow, error, cache, onRetry, className = "" }) {
   if (!slow && !error && !cache?.stale) return null;

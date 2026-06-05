@@ -12,7 +12,7 @@ import {
   QrCode,
   Server,
   ShieldCheck,
-} from "lucide-react";
+} from "@icons";
 import { getComplianceEvidence } from "../services/api";
 import SyncStatus from "../components/ui/SyncStatus";
 
@@ -21,6 +21,8 @@ const STAGE_NAMES = [
   "Đang phát triển",
   "Bón phân",
   "Thu hoạch",
+  "Kiểm định",
+  "Nhập kho",
   "Đóng gói",
   "Vận chuyển",
   "Hoàn thành",

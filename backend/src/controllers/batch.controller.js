@@ -1,4 +1,8 @@
-const { getContract, getReadOnlyContract } = require("../config/blockchain");
+const {
+  getContract,
+  getContractSchema,
+  getReadOnlyContract,
+} = require("../config/blockchain");
 const { hasDatabase, pingDatabase } = require("../config/database");
 const {
   attachProducerLinksToBatch,
@@ -29,10 +33,16 @@ const STAGE_NAMES = [
   "Growing",      // 1
   "Fertilizing",  // 2
   "Harvesting",   // 3
-  "Packaging",    // 4
-  "Shipping",     // 5
-  "Completed",    // 6
+  "QualityInspection", // 4
+  "WarehouseReceived", // 5
+  "Packaging",    // 6
+  "Shipping",     // 7
+  "Completed",    // 8
 ];
+
+function usesV2Contract() {
+  return getContractSchema() === "v2";
+}
 
 function formatBatch(batch) {
   return {
@@ -117,8 +127,40 @@ async function loadBatchPage({ contract, page, limit }) {
  */
 const createBatch = async (req, res, next) => {
   try {
-    const { name, origin, imageUrl, producerRole, producerNotes } = req.body;
-    const producerId = parseProducerId(req.body.producerId);
+    const {
+      name,
+      origin,
+      imageUrl,
+      producerRole,
+      producerNotes,
+      evidenceHash,
+      ipfsCid,
+      ipfsUrl,
+      evidenceProvider,
+      evidenceStatus,
+    } = req.body;
+    let producerId = parseProducerId(req.body.producerId);
+    const userRole = req.user?.role || "ADMIN";
+
+    if (userRole === "PRODUCER") {
+      if (!producerId && req.user?.producerId) {
+        producerId = Number(req.user.producerId);
+      }
+
+      if (!producerId) {
+        return res.status(403).json({
+          success: false,
+          message: "Tài khoản Producer cần liên kết producer_id để tạo lô",
+        });
+      }
+
+      if (Number(req.user.producerId) !== Number(producerId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Producer chỉ được tạo lô cho hồ sơ của mình",
+        });
+      }
+    }
 
     if (!name) {
       return res.status(400).json({
@@ -147,11 +189,19 @@ const createBatch = async (req, res, next) => {
     }
 
     const contract = getContract();
-    const tx = await contract.createBatch(
-      name,
-      origin || "",
-      imageUrl || ""
-    );
+    const tx = usesV2Contract()
+      ? await contract.createBatch(
+          name,
+          origin || "",
+          imageUrl || ipfsUrl || "",
+          evidenceHash || "",
+          ipfsCid || ""
+        )
+      : await contract.createBatch(
+          name,
+          origin || "",
+          imageUrl || ipfsUrl || ""
+        );
 
     const receipt = await tx.wait();
 
@@ -196,6 +246,11 @@ const createBatch = async (req, res, next) => {
         actorProducerId: producerId,
         actorRole: producerRole || "primary_producer",
         notes: "Batch created by AgriTrace admin service wallet",
+        evidenceHash,
+        ipfsCid,
+        ipfsUrl,
+        evidenceProvider,
+        evidenceStatus,
       });
     }
     invalidateTraceabilityReadCaches();
@@ -224,13 +279,80 @@ const createBatch = async (req, res, next) => {
 const addStage = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { stage, description, imageUrl, actorRole, actorNotes } = req.body;
+    const {
+      stage,
+      description,
+      imageUrl,
+      actorRole,
+      actorNotes,
+      evidenceHash,
+      ipfsCid,
+      ipfsUrl,
+      evidenceProvider,
+      evidenceStatus,
+    } = req.body;
     const actorProducerId = parseProducerId(req.body.actorProducerId);
+    const stageIndex = Number(stage);
+    const userRole = req.user?.role || "ADMIN";
+    const maxStage = usesV2Contract() ? 8 : 6;
 
-    if (stage === undefined || stage === null) {
+    if (
+      stage === undefined ||
+      stage === null ||
+      !Number.isInteger(stageIndex) ||
+      stageIndex < 0 ||
+      stageIndex > maxStage
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Giai đoạn (stage) là bắt buộc (0-6)",
+        message: usesV2Contract()
+          ? "Giai đoạn (stage) là bắt buộc (0-8)"
+          : "Giai đoạn (stage) là bắt buộc (0-6)",
+      });
+    }
+
+    if (usesV2Contract() && [4, 5].includes(stageIndex)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "QualityInspection và WarehouseReceived cần dùng form/API chuyên biệt để lưu đủ metadata kiểm định/nhập kho.",
+      });
+    }
+
+    if (userRole === "PRODUCER" && ![1, 2, 3].includes(stageIndex)) {
+      return res.status(403).json({
+        success: false,
+        message: "Producer chỉ được cập nhật Growing, Fertilizing hoặc Harvesting",
+      });
+    }
+
+    if (userRole === "DISTRIBUTOR" && ![6, 7, 8].includes(stageIndex)) {
+      return res.status(403).json({
+        success: false,
+        message: "Distributor chỉ được cập nhật Packaging, Shipping hoặc Completed",
+      });
+    }
+
+    if (["QUALITY_INSPECTOR", "WAREHOUSE_STAFF"].includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: "Kiểm định và nhập kho cần dùng endpoint chuyên biệt",
+      });
+    }
+
+    const contract = getContract();
+    const batch = formatBatch(await contract.getBatch(Number(id)));
+    if (!batch.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: "Lô hàng đã hoàn tất, không thể cập nhật thêm stage",
+      });
+    }
+
+    if (stageIndex !== batch.currentStageIndex + 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Stage phải được cập nhật theo đúng thứ tự lifecycle, không được đi lùi hoặc nhảy bước.",
       });
     }
 
@@ -253,25 +375,38 @@ const addStage = async (req, res, next) => {
       assertVerifiedProducer(producer);
     }
 
-    const contract = getContract();
-    const tx = await contract.addStage(
-      Number(id),
-      Number(stage),
-      description || "",
-      imageUrl || ""
-    );
+    const tx = usesV2Contract()
+      ? await contract.addStage(
+          Number(id),
+          stageIndex,
+          description || "",
+          imageUrl || ipfsUrl || "",
+          evidenceHash || "",
+          ipfsCid || ""
+        )
+      : await contract.addStage(
+          Number(id),
+          stageIndex,
+          description || "",
+          imageUrl || ipfsUrl || ""
+        );
 
     const receipt = await tx.wait();
     const transactionRecord = await recordBatchTransaction({
       batchId: Number(id),
       action: "add_stage",
-      stageIndex: Number(stage),
+      stageIndex,
       transactionHash: receipt.hash,
       blockNumber: receipt.blockNumber,
       actorAddress: contract.runner?.address || "",
       actorProducerId,
       actorRole: actorRole || "primary_producer",
       notes: actorNotes || description || "Stage updated by AgriTrace admin service wallet",
+      evidenceHash,
+      ipfsCid,
+      ipfsUrl,
+      evidenceProvider,
+      evidenceStatus,
     });
     invalidateTraceabilityReadCaches();
 
@@ -279,7 +414,7 @@ const addStage = async (req, res, next) => {
       success: true,
       data: {
         batchId: Number(id),
-        stage: STAGE_NAMES[stage] || `Unknown(${stage})`,
+        stage: STAGE_NAMES[stageIndex] || `Unknown(${stageIndex})`,
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
         transactionRecord,
@@ -343,18 +478,30 @@ const getStageHistory = async (req, res, next) => {
     const history = await contract.getStageHistory(Number(id));
     const transactionRecords = await getBatchTransactionRecords(Number(id));
 
-    const formattedHistory = history.map((record) => ({
-      stage: STAGE_NAMES[Number(record.stage)],
-      stageIndex: Number(record.stage),
-      description: record.description,
-      imageUrl: record.imageUrl,
-      timestamp: Number(record.timestamp),
-      updatedBy: record.updatedBy,
-      transaction:
+    const formattedHistory = history.map((record) => {
+      const transaction =
         transactionRecords.find(
           (tx) => tx.stageIndex === Number(record.stage)
-        ) || null,
-    }));
+        ) || null;
+
+      return {
+        stage: STAGE_NAMES[Number(record.stage)],
+        stageIndex: Number(record.stage),
+        description: record.description,
+        imageUrl: transaction?.ipfsUrl || record.imageUrl,
+        evidenceHash: record.evidenceHash || transaction?.evidenceHash || "",
+        ipfsCid: record.ipfsCid || transaction?.ipfsCid || "",
+        ipfsUrl:
+          transaction?.ipfsUrl ||
+          (record.ipfsCid ? record.imageUrl : "") ||
+          "",
+        evidenceProvider: transaction?.evidenceProvider || "",
+        evidenceStatus: transaction?.evidenceStatus || "",
+        timestamp: Number(record.timestamp),
+        updatedBy: record.updatedBy,
+        transaction,
+      };
+    });
 
     res.status(200).json({
       success: true,

@@ -37,8 +37,8 @@ Tuy nhiên, hệ thống của em giải quyết vấn đề rác đầu vào th
 
 **💡 Trả lời:** 
 *"Hệ thống của em KHÔNG LƯU MÃ BYTE ẢNH lên Blockchain. Khắc phục nhược điểm chi phí cao, em đã sử dụng **Kiến trúc Lưu Trữ Kết Lai (Hybrid Storage)**. 
-- Ảnh nặng được chuyển lên nền tảng Cloudinary (Web2). 
-- Chỉ độc nhất **Đường Link (URL)** của ảnh đó được lưu vào cấu trúc (Struct) trong Smart Contract (Web3). Khi lưu xong, đường link này vô tình bị khóa cứng, tạo thành bằng chứng điện tử nối thẳng tới tấm ảnh gốc mà không làm đội chi phí của hệ thống."*
+- Ảnh nặng được backend tính SHA-256 rồi pin lên Pinata/IPFS.
+- Smart contract schema v2 lưu **IPFS URL**, `evidenceHash` và `ipfsCid` trong stage record; PostgreSQL lưu thêm metadata để UI truy vấn nhanh. Nhờ vậy hệ thống không lưu byte ảnh trên-chain nhưng vẫn có CID/hash để kiểm chứng file."*
 
 ---
 
@@ -89,6 +89,6 @@ Nếu Thầy/Cô hỏi các khái niệm nền tảng để xem sinh viên có d
 
 5. **Off-chain vs On-chain (Trong và Ngoài chuỗi):**
    - On-chain: Chữ viết, con số ID (nằm trong lõi Blockchain, bất biến cục bộ).
-   - Off-chain: Server của chúng ta, Cảnh quan UI, Hình ảnh dung lượng lớn (Nằm trên máy chủ bình thường hoặc nền tảng lưu trữ ngoại vi như Cloudinary/IPFS).
+   - Off-chain/IPFS: Server của chúng ta, giao diện UI, hình ảnh dung lượng lớn hoặc file minh chứng nằm trên Pinata/IPFS và được tham chiếu bằng CID/hash.
 
 *(💡 Lời khuyên: Đừng cố giải thích dài dòng về cấu trúc Mã băm (Hash/Cryptography) của Blockchain nếu thầy cô không gặng hỏi. Hãy tập trung đánh mạnh vào Giá trị Kinh doanh và Triết lý Ứng dụng B2B của nền tảng vào Nông nghiệp).*

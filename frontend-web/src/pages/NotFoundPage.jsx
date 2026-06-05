@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Compass, LayoutDashboard, SearchCheck } from "lucide-react";
+import { Compass, LayoutDashboard, SearchCheck } from "@icons";
 
 export default function NotFoundPage() {
   return (

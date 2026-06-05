@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Loader2, Shield, UserPlus, ClipboardCheck, Save } from "lucide-react";
+import { X, Loader2, Shield, UserPlus, ClipboardCheck, Save } from "@icons";
 import { toast } from "react-hot-toast";
 import { createProducer, updateProducer, uploadImage } from "../../services/api";
 import ImageSourcePicker from "../ui/ImageSourcePicker";
@@ -302,7 +302,7 @@ export default function AddProducerModal({ producer, onClose, onCreated, onSaved
               onError={setError}
               maxSizeMb={5}
               urlPlaceholder="/images/farm-highland.png"
-              helperText="Ảnh Cloudinary sẽ upload khi lưu hồ sơ; ảnh Unsplash/URL được lưu trực tiếp vào producer profile."
+              helperText="Ảnh upload sẽ được pin lên Pinata/IPFS khi lưu hồ sơ; ảnh Unsplash/URL được lưu trực tiếp vào producer profile."
             />
 
             <TextArea
