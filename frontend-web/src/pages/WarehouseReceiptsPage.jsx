@@ -14,6 +14,7 @@ import {
 import { getWarehouseReceipts } from "../services/api";
 import { useAuth } from "../components/auth/useAuth";
 import AdminRequired from "../components/auth/AdminRequired";
+import { resolveIpfsAssetUrl } from "../utils/ipfs";
 
 const ALLOWED_ROLES = new Set(["ADMIN", "WAREHOUSE_STAFF"]);
 const AMOY_TX_BASE_URL = "https://amoy.polygonscan.com/tx/";
@@ -218,16 +219,22 @@ export default function WarehouseReceiptsPage() {
         </div>
       ) : (
         <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          {receipts.map((receipt) => (
-            <article
-              key={receipt.id}
-              className="rounded-2xl bg-surface-container-lowest p-5 shadow-ambient border border-emerald-50"
-            >
+          {receipts.map((receipt) => {
+            const evidenceUrl = resolveIpfsAssetUrl(
+              receipt.ipfsUrl || receipt.evidenceImageUrl,
+              receipt.ipfsCid
+            );
+
+            return (
+              <article
+                key={receipt.id}
+                className="rounded-2xl bg-surface-container-lowest p-5 shadow-ambient border border-emerald-50"
+              >
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="h-20 w-24 rounded-xl bg-indigo-50 overflow-hidden shrink-0 flex items-center justify-center text-indigo-700">
-                  {receipt.evidenceImageUrl || receipt.ipfsUrl ? (
+                  {evidenceUrl ? (
                     <img
-                      src={receipt.ipfsUrl || receipt.evidenceImageUrl}
+                      src={evidenceUrl}
                       alt={`Evidence nhập kho BTC-${String(receipt.batchId).padStart(4, "0")}`}
                       loading="lazy"
                       decoding="async"
@@ -318,8 +325,9 @@ export default function WarehouseReceiptsPage() {
                   </a>
                 )}
               </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </section>
       )}
     </div>
