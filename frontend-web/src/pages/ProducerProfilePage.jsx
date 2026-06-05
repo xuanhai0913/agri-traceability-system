@@ -4,6 +4,7 @@ import {
   AlertCircle,
   ArrowRight,
   BadgeCheck,
+  Clock3,
   ExternalLink,
   Globe,
   Loader2,
@@ -15,7 +16,11 @@ import {
   ShieldCheck,
   UserCheck,
 } from "@icons";
-import { getProducer, getProducerBatches } from "../services/api";
+import {
+  getMyAccountAuditLog,
+  getProducer,
+  getProducerBatches,
+} from "../services/api";
 import AdminRequired from "../components/auth/AdminRequired";
 import { useAuth } from "../components/auth/useAuth";
 
@@ -41,6 +46,7 @@ export default function ProducerProfilePage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [producer, setProducer] = useState(null);
   const [batches, setBatches] = useState([]);
+  const [accountAuditLogs, setAccountAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -57,12 +63,14 @@ export default function ProducerProfilePage() {
     try {
       setLoading(true);
       setError("");
-      const [producerRes, batchesRes] = await Promise.all([
+      const [producerRes, batchesRes, auditRes] = await Promise.all([
         getProducer(producerId),
         getProducerBatches(producerId).catch(() => ({ data: { data: { batches: [] } } })),
+        getMyAccountAuditLog().catch(() => ({ data: { data: [] } })),
       ]);
       setProducer(producerRes.data.data);
       setBatches(batchesRes.data.data.batches || []);
+      setAccountAuditLogs(auditRes.data.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Không thể tải hồ sơ producer đã liên kết.");
     } finally {
@@ -233,6 +241,56 @@ export default function ProducerProfilePage() {
               <ExternalLink size={17} />
               Xem public profile
             </Link>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-surface-container-high p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+                  Mini audit log
+                </p>
+                <h3 className="mt-1 text-sm font-black text-emerald-950">
+                  Lịch sử gắn producer_id cho tài khoản
+                </h3>
+              </div>
+              <Clock3 size={18} className="text-emerald-700" />
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {accountAuditLogs.length > 0 ? (
+                accountAuditLogs.slice(0, 3).map((log) => (
+                  <div
+                    key={log.id || `${log.action}-${log.createdAt}`}
+                    className="rounded-xl bg-surface-container-low p-4"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-black text-emerald-950">
+                          {log.action || "ACCOUNT_LINK_ACTIVE"}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Actor: {log.actorName || log.actorEmail || "System/Admin"}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-slate-500">
+                        {formatDate(log.createdAt)}
+                      </span>
+                    </div>
+                    <p className="mt-2 font-mono text-xs text-slate-500">
+                      producer_id: {log.previousProducerId || "none"} →{" "}
+                      {log.nextProducerId || "none"}
+                    </p>
+                    {log.note && (
+                      <p className="mt-2 text-xs text-slate-500">{log.note}</p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-xl bg-surface-container-low p-4 text-sm text-slate-500">
+                  Chưa có log thay đổi liên kết tài khoản.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

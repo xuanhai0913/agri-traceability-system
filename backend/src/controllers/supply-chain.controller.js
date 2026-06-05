@@ -10,6 +10,7 @@ const {
   createWarehouse,
   createQualityInspection,
   createWarehouseReceipt,
+  createWarehouseStockMovement,
   getQualityInspection,
   getWarehouseById,
   getWarehouseReceipt,
@@ -188,6 +189,59 @@ async function getWarehouseInventory(req, res, next) {
       warehouseId: req.params.id || req.query.warehouseId || null,
     });
     res.json({ success: true, data: inventory });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function postWarehouseInventoryMovement(req, res, next) {
+  try {
+    const {
+      batchId,
+      warehouseId,
+      warehouseName,
+      warehouseLocation,
+      movementType,
+      quantity,
+      unit,
+      note,
+      imageUrl,
+      evidenceHash,
+      ipfsCid,
+      ipfsUrl,
+      transactionHash,
+      blockNumber,
+    } = req.body;
+
+    const movement = await createWarehouseStockMovement({
+      batchId,
+      warehouseId,
+      warehouseName,
+      warehouseLocation,
+      movementType,
+      quantity,
+      unit,
+      note,
+      evidenceImageUrl: imageUrl || ipfsUrl || "",
+      evidenceHash,
+      ipfsCid,
+      ipfsUrl,
+      transactionHash,
+      blockNumber,
+      createdByUserId: req.user?.id,
+    });
+
+    const inventory = await listWarehouseInventory({
+      warehouseId: movement.warehouseId || null,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        movement,
+        inventory,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -453,6 +507,7 @@ module.exports = {
   getWarehouseReceipts,
   getWarehouses,
   patchWarehouse,
+  postWarehouseInventoryMovement,
   postWarehouse,
   postQualityInspection,
   postWarehouseReceipt,

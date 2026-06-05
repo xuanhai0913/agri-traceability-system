@@ -11,6 +11,7 @@ const {
   getWarehouses,
   patchWarehouse,
   postWarehouse,
+  postWarehouseInventoryMovement,
   postQualityInspection,
   postWarehouseReceipt,
 } = require("../controllers/supply-chain.controller");
@@ -44,6 +45,11 @@ router.get(
   "/warehouse/inventory",
   requireRole(["ADMIN", "WAREHOUSE_STAFF"]),
   getWarehouseInventory
+);
+router.post(
+  "/warehouse/inventory/movements",
+  requireRole(["ADMIN", "WAREHOUSE_STAFF"]),
+  postWarehouseInventoryMovement
 );
 
 router.get(

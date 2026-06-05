@@ -91,6 +91,32 @@ function publicUser(user) {
     status: user.status || "ACTIVE",
     producerId: user.producer_id || user.producerId || null,
     warehouseId: user.warehouse_id || user.warehouseId || null,
+    createdAt: user.created_at || user.createdAt || null,
+    updatedAt: user.updated_at || user.updatedAt || null,
+  };
+}
+
+function publicAccountAuditLog(row) {
+  return {
+    id: row.id,
+    userId: row.user_id || row.userId,
+    action: row.action,
+    actorUserId: row.actor_user_id || row.actorUserId || null,
+    actorName: row.actor_name || row.actorName || "",
+    actorEmail: row.actor_email || row.actorEmail || "",
+    previousProducerId:
+      row.previous_producer_id === null || row.previous_producer_id === undefined
+        ? null
+        : Number(row.previous_producer_id),
+    nextProducerId:
+      row.next_producer_id === null || row.next_producer_id === undefined
+        ? null
+        : Number(row.next_producer_id),
+    previousWarehouseId:
+      row.previous_warehouse_id || row.previousWarehouseId || null,
+    nextWarehouseId: row.next_warehouse_id || row.nextWarehouseId || null,
+    note: row.note || "",
+    createdAt: row.created_at || row.createdAt || null,
   };
 }
 
@@ -120,6 +146,28 @@ async function initAuthStore() {
 
   await query(`
     CREATE INDEX IF NOT EXISTS users_role_idx ON users (role);
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS user_account_audit_logs (
+      id UUID PRIMARY KEY,
+      user_id UUID NOT NULL,
+      action TEXT NOT NULL,
+      actor_user_id UUID,
+      actor_email TEXT,
+      actor_name TEXT,
+      previous_producer_id BIGINT,
+      next_producer_id BIGINT,
+      previous_warehouse_id UUID,
+      next_warehouse_id UUID,
+      note TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS user_account_audit_logs_user_idx
+    ON user_account_audit_logs (user_id, created_at DESC);
   `);
 
   await seedAdminFromEnv();
@@ -282,15 +330,58 @@ async function getUserById(id) {
   return publicUser(res.rows[0]);
 }
 
-async function createUser({
-  email,
-  password,
-  name,
-  role,
-  status = "ACTIVE",
-  producerId = null,
-  warehouseId = null,
+async function recordUserAccountAuditLog({
+  userId,
+  action,
+  actorUser = null,
+  previousProducerId = null,
+  nextProducerId = null,
+  previousWarehouseId = null,
+  nextWarehouseId = null,
+  note = "",
 }) {
+  if (!hasDatabase() || !userId || !action) return null;
+
+  const res = await query(
+    `
+    INSERT INTO user_account_audit_logs (
+      id, user_id, action, actor_user_id, actor_email, actor_name,
+      previous_producer_id, next_producer_id,
+      previous_warehouse_id, next_warehouse_id, note
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    RETURNING *
+    `,
+    [
+      crypto.randomUUID(),
+      userId,
+      action,
+      actorUser?.id || null,
+      actorUser?.email || "",
+      actorUser?.name || "",
+      previousProducerId ? Number(previousProducerId) : null,
+      nextProducerId ? Number(nextProducerId) : null,
+      previousWarehouseId || null,
+      nextWarehouseId || null,
+      note,
+    ]
+  );
+
+  return publicAccountAuditLog(res.rows[0]);
+}
+
+async function createUser(
+  {
+    email,
+    password,
+    name,
+    role,
+    status = "ACTIVE",
+    producerId = null,
+    warehouseId = null,
+  },
+  actorUser = null
+) {
   if (!email || !password || !name) {
     const err = new Error("Email, tên và mật khẩu là bắt buộc");
     err.status = 400;
@@ -306,7 +397,7 @@ async function createUser({
 
   const normalizedRole = normalizeRole(role);
 
-  return upsertUser({
+  const user = await upsertUser({
     email,
     password,
     name,
@@ -316,9 +407,22 @@ async function createUser({
     warehouseId: normalizedRole === "WAREHOUSE_STAFF" ? warehouseId : null,
     updatePassword: true,
   });
+
+  if (user.producerId || user.warehouseId) {
+    await recordUserAccountAuditLog({
+      userId: user.id,
+      action: "ACCOUNT_LINK_CREATED",
+      actorUser,
+      nextProducerId: user.producerId,
+      nextWarehouseId: user.warehouseId,
+      note: "Admin created account link",
+    });
+  }
+
+  return user;
 }
 
-async function updateUser(id, payload) {
+async function updateUser(id, payload, actorUser = null) {
   if (!hasDatabase()) {
     const err = new Error("DATABASE_URL is required for user management");
     err.status = 503;
@@ -370,7 +474,66 @@ async function updateUser(id, payload) {
     ]
   );
 
-  return publicUser(res.rows[0]);
+  const user = publicUser(res.rows[0]);
+  const producerChanged =
+    String(current.producerId || "") !== String(user.producerId || "");
+  const warehouseChanged =
+    String(current.warehouseId || "") !== String(user.warehouseId || "");
+
+  if (producerChanged || warehouseChanged) {
+    await recordUserAccountAuditLog({
+      userId: user.id,
+      action: producerChanged
+        ? "PRODUCER_LINK_UPDATED"
+        : "WAREHOUSE_LINK_UPDATED",
+      actorUser,
+      previousProducerId: current.producerId,
+      nextProducerId: user.producerId,
+      previousWarehouseId: current.warehouseId,
+      nextWarehouseId: user.warehouseId,
+      note: "Admin updated account binding",
+    });
+  }
+
+  return user;
+}
+
+async function listUserAccountAuditLogs(userId) {
+  if (!hasDatabase()) return [];
+
+  const res = await query(
+    `
+    SELECT *
+    FROM user_account_audit_logs
+    WHERE user_id = $1
+    ORDER BY created_at DESC
+    LIMIT 20
+    `,
+    [userId]
+  );
+
+  if (res.rows.length > 0) {
+    return res.rows.map(publicAccountAuditLog);
+  }
+
+  const user = await getUserById(userId);
+  if (!user.producerId && !user.warehouseId) return [];
+
+  return [
+    publicAccountAuditLog({
+      id: "synthetic-active-link",
+      user_id: user.id,
+      action: "ACCOUNT_LINK_ACTIVE",
+      actor_email: "system",
+      actor_name: "System/Admin seed",
+      previous_producer_id: null,
+      next_producer_id: user.producerId,
+      previous_warehouse_id: null,
+      next_warehouse_id: user.warehouseId,
+      note: "Active account binding from current users table",
+      created_at: user.updatedAt || user.createdAt,
+    }),
+  ];
 }
 
 async function disableUser(id) {
@@ -530,6 +693,7 @@ module.exports = {
   disableUser,
   getUserById,
   initAuthStore,
+  listUserAccountAuditLogs,
   listUsers,
   loginAdmin,
   loginUser,

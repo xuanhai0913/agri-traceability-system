@@ -57,6 +57,10 @@ export function getCurrentAdmin() {
   return api.get("/auth/me");
 }
 
+export function getMyAccountAuditLog() {
+  return api.get("/auth/me/audit-log");
+}
+
 // ── Batch endpoints ──────────────────────────────────
 
 export function getTotalBatches() {
@@ -255,6 +259,10 @@ export function getWarehouseReceipts(params = {}) {
 
 export function getWarehouseInventory(params = {}) {
   return api.get("/warehouse/inventory", { params });
+}
+
+export function createWarehouseInventoryMovement(payload) {
+  return api.post("/warehouse/inventory/movements", payload);
 }
 
 export function createWarehouseReceipt(batchId, payload) {

@@ -2,6 +2,7 @@ const {
   createUser,
   disableUser,
   getUserById,
+  listUserAccountAuditLogs,
   listUsers,
   loginUser,
   updateUser,
@@ -38,6 +39,18 @@ async function getMe(req, res) {
   });
 }
 
+async function getMyAuditLog(req, res, next) {
+  try {
+    const logs = await listUserAccountAuditLogs(req.user.id);
+    res.json({
+      success: true,
+      data: logs,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function getUsers(_req, res, next) {
   try {
     const users = await listUsers();
@@ -64,7 +77,7 @@ async function getUser(req, res, next) {
 
 async function postUser(req, res, next) {
   try {
-    const user = await createUser(req.body);
+    const user = await createUser(req.body, req.user);
     res.status(201).json({
       success: true,
       data: user,
@@ -76,7 +89,7 @@ async function postUser(req, res, next) {
 
 async function patchUser(req, res, next) {
   try {
-    const user = await updateUser(req.params.id, req.body);
+    const user = await updateUser(req.params.id, req.body, req.user);
     res.json({
       success: true,
       data: user,
@@ -116,6 +129,7 @@ async function patchUserPassword(req, res, next) {
 
 module.exports = {
   getMe,
+  getMyAuditLog,
   getUser,
   getUsers,
   patchUser,

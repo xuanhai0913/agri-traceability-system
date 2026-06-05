@@ -18,6 +18,12 @@ Muc tieu: dung nhu checklist ra soat truoc khi demo, deploy, nop bao cao hoac tr
 - [x] Render production env da duoc bat boi user: `CONTRACT_ADDRESS=0xA94D8877f8d85Aa1c6f3280989172600EACb7ed8` va `CONTRACT_STAGE_SCHEMA=v2`.
 - [x] Da tao batch demo moi tren production va test flow ghi that: Producer -> Inspector PASS -> WarehouseReceived -> Distributor Shipping -> Completed -> Public QR.
 - [x] Da xac nhan Pinata upload `pinned`, CID/hash duoc ghi du 9 stage. Gateway custom `mypinata.cloud` tra 401 tren browser, frontend da them fallback public gateway theo CID.
+- [x] Da tach `/warehouse/inventory` thanh ton kho van hanh: filter theo kho, inbound/outbound/reserved/available, status `LOW_STOCK`, `RESERVED`, `SHIPPED`, `IN_STOCK`.
+- [x] Da them `warehouse_stock_movements` de ghi xuat kho/giu hang/da van chuyen off-chain, khong lam sai scope blockchain.
+- [x] Da them tra nhanh QR trong Warehouse Inventory: quet camera neu Chrome ho tro `BarcodeDetector`, fallback dan QR URL/BTC code.
+- [x] Da them mini audit log trong `/producer/profile` de thay lich su gan `producer_id` cho user.
+- [ ] Can test production lai sau deploy moi: inventory filter, movement submit, QR scan/fallback, producer profile audit log.
+- [ ] Checklist chua hoan thien 100%: con can verify source contract tren explorer/Sourcify neu muon diem demo cao hon va tiep tuc test mobile scan cuoi.
 
 ## 1. Nguyen Tac Kien Truc Can Giu
 
@@ -140,71 +146,82 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 
 ## 6. Database Va Migration
 
-- [ ] Kiem tra schema PostgreSQL hien tai truoc khi sua.
-- [ ] Migration/auto-init an toan, khong lam mat du lieu cu.
-- [ ] Neu chua co migration system, co SQL/init logic ro trong backend hoac docs setup.
+- [x] Kiem tra schema PostgreSQL hien tai truoc khi sua.
+- [x] Migration/auto-init an toan, khong lam mat du lieu cu.
+- [x] Neu chua co migration system, co SQL/init logic ro trong backend hoac docs setup.
 
 ### users
 
-- [ ] Bang `users` co `id UUID primary key`.
-- [ ] `email` unique not null.
-- [ ] `password_hash` not null.
-- [ ] `name` not null.
-- [ ] `role` not null.
-- [ ] `status` default `ACTIVE`.
-- [ ] `producer_id` nullable.
-- [ ] `warehouse_id` nullable.
-- [ ] `created_at`.
-- [ ] `updated_at`.
-- [ ] Role values gom `ADMIN`, `PRODUCER`, `QUALITY_INSPECTOR`, `WAREHOUSE_STAFF`, `DISTRIBUTOR`.
-- [ ] Password duoc hash bang bcrypt.
-- [ ] Khong luu plain password.
+- [x] Bang `users` co `id UUID primary key`.
+- [x] `email` unique not null.
+- [x] `password_hash` not null.
+- [x] `name` not null.
+- [x] `role` not null.
+- [x] `status` default `ACTIVE`.
+- [x] `producer_id` nullable.
+- [x] `warehouse_id` nullable.
+- [x] `created_at`.
+- [x] `updated_at`.
+- [x] Role values gom `ADMIN`, `PRODUCER`, `QUALITY_INSPECTOR`, `WAREHOUSE_STAFF`, `DISTRIBUTOR`.
+- [x] Password duoc hash bang bcrypt.
+- [x] Khong luu plain password.
 
 ### warehouses
 
-- [ ] Bang `warehouses` co `id UUID primary key`.
-- [ ] Co `name`.
-- [ ] Co `location`.
-- [ ] Co `manager_user_id` nullable neu can.
-- [ ] Co `status ACTIVE/DISABLED`.
-- [ ] Co `created_at`, `updated_at`.
+- [x] Bang `warehouses` co `id UUID primary key`.
+- [x] Co `name`.
+- [x] Co `location`.
+- [x] Co `manager_user_id` nullable neu can.
+- [x] Co `status ACTIVE/DISABLED`.
+- [x] Co `created_at`, `updated_at`.
 
 ### quality_inspections
 
-- [ ] Bang `quality_inspections` co `id UUID primary key`.
-- [ ] Co `batch_id`.
-- [ ] Co `inspector_user_id`.
-- [ ] Co `result PASS/FAIL`.
-- [ ] Co `score` nullable.
-- [ ] Co `grade` nullable.
-- [ ] Co `certificate_no` nullable.
-- [ ] Co `certificate_url` nullable neu can.
-- [ ] Co `note`.
-- [ ] Co `evidence_image_url` hoac `ipfs_url`.
-- [ ] Co `evidence_hash`.
-- [ ] Co `ipfs_cid`.
-- [ ] Co `tx_hash`.
-- [ ] Co `block_number`.
-- [ ] Co `created_at`.
+- [x] Bang `quality_inspections` co `id UUID primary key`.
+- [x] Co `batch_id`.
+- [x] Co `inspector_user_id`.
+- [x] Co `result PASS/FAIL`.
+- [x] Co `score` nullable.
+- [x] Co `grade` nullable.
+- [x] Co `certificate_no` nullable.
+- [x] Co `certificate_url` nullable neu can.
+- [x] Co `note`.
+- [x] Co `evidence_image_url` hoac `ipfs_url`.
+- [x] Co `evidence_hash`.
+- [x] Co `ipfs_cid`.
+- [x] Co `tx_hash`.
+- [x] Co `block_number`.
+- [x] Co `created_at`.
 
 ### warehouse_receipts
 
-- [ ] Bang `warehouse_receipts` co `id UUID primary key`.
-- [ ] Co `batch_id`.
-- [ ] Co `warehouse_id` nullable.
-- [ ] Co `warehouse_name`.
-- [ ] Co `warehouse_location`.
-- [ ] Co `quantity numeric`.
-- [ ] Co `unit`.
-- [ ] Co `received_by_user_id`.
-- [ ] Co `received_at`.
-- [ ] Co `condition_note`.
-- [ ] Co `evidence_image_url` hoac `ipfs_url`.
-- [ ] Co `evidence_hash`.
-- [ ] Co `ipfs_cid`.
-- [ ] Co `tx_hash`.
-- [ ] Co `block_number`.
-- [ ] Co `created_at`.
+- [x] Bang `warehouse_receipts` co `id UUID primary key`.
+- [x] Co `batch_id`.
+- [x] Co `warehouse_id` nullable.
+- [x] Co `warehouse_name`.
+- [x] Co `warehouse_location`.
+- [x] Co `quantity numeric`.
+- [x] Co `unit`.
+- [x] Co `received_by_user_id`.
+- [x] Co `received_at`.
+- [x] Co `condition_note`.
+- [x] Co `evidence_image_url` hoac `ipfs_url`.
+- [x] Co `evidence_hash`.
+- [x] Co `ipfs_cid`.
+- [x] Co `tx_hash`.
+- [x] Co `block_number`.
+- [x] Co `created_at`.
+
+### warehouse_stock_movements
+
+- [x] Bang `warehouse_stock_movements` co `id UUID primary key`.
+- [x] Co `batch_id`.
+- [x] Co `warehouse_id`, `warehouse_name`, `warehouse_location`.
+- [x] Co `movement_type INBOUND/OUTBOUND/RESERVED/SHIPPED`.
+- [x] Co `quantity`, `unit`, `note`.
+- [x] Co `created_by_user_id`, `created_at`.
+- [x] Inventory aggregate tinh inbound/outbound/reserved/on hand/available.
+- [x] Inventory status co `LOW_STOCK`, `RESERVED`, `SHIPPED`, `IN_STOCK`.
 
 ### Optional tables
 
@@ -267,20 +284,21 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 
 ### Auth/User management
 
-- [ ] `GET /api/users` cho ADMIN.
-- [ ] `POST /api/users` cho ADMIN.
-- [ ] `GET /api/users/:id` cho ADMIN.
-- [ ] `PATCH /api/users/:id` cho ADMIN.
-- [ ] `PATCH /api/users/:id/disable` cho ADMIN.
-- [ ] `PATCH /api/users/:id/password` cho ADMIN.
+- [x] `GET /api/users` cho ADMIN.
+- [x] `POST /api/users` cho ADMIN.
+- [x] `GET /api/users/:id` cho ADMIN.
+- [x] `PATCH /api/users/:id` cho ADMIN.
+- [x] `PATCH /api/users/:id/disable` cho ADMIN.
+- [x] `PATCH /api/users/:id/password` cho ADMIN.
+- [x] `GET /api/auth/me/audit-log` cho user dang login.
 
 ### Warehouses
 
-- [ ] `GET /api/warehouses`.
-- [ ] `POST /api/warehouses` cho ADMIN.
-- [ ] `PATCH /api/warehouses/:id` cho ADMIN.
-- [ ] `GET /api/warehouses/:id`.
-- [ ] `GET /api/warehouses/:id/inventory`.
+- [x] `GET /api/warehouses`.
+- [x] `POST /api/warehouses` cho ADMIN.
+- [x] `PATCH /api/warehouses/:id` cho ADMIN.
+- [x] `GET /api/warehouses/:id`.
+- [x] `GET /api/warehouses/:id/inventory`.
 
 ### Quality Inspection
 
@@ -300,24 +318,25 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 
 ### Warehouse Receiving
 
-- [ ] `GET /api/warehouse/receiving-queue` tra batch da `QualityInspection PASS` va chua `WarehouseReceived`.
-- [ ] `POST /api/batches/:id/warehouse-receipts` chi ADMIN/WAREHOUSE_STAFF.
-- [ ] `GET /api/batches/:id/warehouse-receipts`.
-- [ ] `GET /api/warehouse/receipts`.
-- [ ] `GET /api/warehouse/inventory`.
-- [ ] Receipt body nhan `warehouseId`.
-- [ ] Receipt body nhan `warehouseName`.
-- [ ] Receipt body nhan `warehouseLocation`.
-- [ ] Receipt body nhan `quantity`.
-- [ ] Receipt body nhan `unit`.
-- [ ] Receipt body nhan `receivedAt`.
-- [ ] Receipt body nhan `receivedBy`.
-- [ ] Receipt body nhan `conditionNote`.
-- [ ] Receipt body nhan evidence file/upload metadata.
-- [ ] Reject neu chua co `QualityInspection PASS`.
-- [ ] Reject neu da co `WarehouseReceived`.
-- [ ] Ghi stage `WarehouseReceived` len blockchain.
-- [ ] Luu receipt metadata vao PostgreSQL voi tx hash/block number.
+- [x] `GET /api/warehouse/receiving-queue` tra batch da `QualityInspection PASS` va chua `WarehouseReceived`.
+- [x] `POST /api/batches/:id/warehouse-receipts` chi ADMIN/WAREHOUSE_STAFF.
+- [x] `GET /api/batches/:id/warehouse-receipts`.
+- [x] `GET /api/warehouse/receipts`.
+- [x] `GET /api/warehouse/inventory`.
+- [x] `POST /api/warehouse/inventory/movements` ghi xuat kho/giu hang/da van chuyen.
+- [x] Receipt body nhan `warehouseId`.
+- [x] Receipt body nhan `warehouseName`.
+- [x] Receipt body nhan `warehouseLocation`.
+- [x] Receipt body nhan `quantity`.
+- [x] Receipt body nhan `unit`.
+- [x] Receipt body nhan `receivedAt`.
+- [x] Receipt body nhan `receivedBy`.
+- [x] Receipt body nhan `conditionNote`.
+- [x] Receipt body nhan evidence file/upload metadata.
+- [x] Reject neu chua co `QualityInspection PASS`.
+- [x] Reject neu da co `WarehouseReceived`.
+- [x] Ghi stage `WarehouseReceived` len blockchain.
+- [x] Luu receipt metadata vao PostgreSQL voi tx hash/block number.
 
 ### Distributor
 
@@ -462,11 +481,11 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 - [ ] `/warehouse/dashboard`.
 - [ ] `/warehouse/receiving`.
 - [ ] `/warehouse/receiving/:batchId`.
-- [ ] `/warehouse/inventory`.
-- [ ] `/warehouse/receipts`.
-- [ ] Receiving queue hien batch da inspection PASS.
-- [ ] Co o tim Batch ID.
-- [ ] Optional co scan QR trong web.
+- [x] `/warehouse/inventory`.
+- [x] `/warehouse/receipts`.
+- [x] Receiving queue hien batch da inspection PASS.
+- [x] Co o tim Batch ID.
+- [x] Optional co scan QR trong web.
 - [ ] Form nhap kho co warehouse.
 - [ ] Form nhap kho co location.
 - [ ] Form nhap kho co quantity.
@@ -477,10 +496,13 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 - [ ] Sau submit show tx hash.
 - [ ] Sau submit show QR code.
 - [ ] Sau submit co button xem trang consumer.
-- [ ] Inventory hien batch da nhap kho.
-- [ ] Inventory hien quantity/unit.
-- [ ] Inventory hien warehouse.
-- [ ] Inventory hien status.
+- [x] Inventory hien batch da nhap kho.
+- [x] Inventory hien quantity/unit.
+- [x] Inventory hien warehouse.
+- [x] Inventory hien status.
+- [x] Inventory co filter theo kho.
+- [x] Inventory co inbound/outbound/reserved/available.
+- [x] Inventory co action xuat kho/giu hang/da van chuyen.
 
 ### Distributor
 
@@ -741,13 +763,13 @@ grep -Rni "PINATA_JWT=.*eyJ\|postgresql://postgres\|PRIVATE_KEY=.*0x" .
 
 - [ ] Distributor UI.
 - [ ] Admin user management.
-- [ ] Warehouse inventory.
+- [x] Warehouse inventory.
 - [ ] Docs phan bien.
 
 ### Diem cong
 
 - [ ] IPFS that bang Pinata.
-- [ ] Web scan QR trong man hinh warehouse.
+- [x] Web scan QR trong man hinh warehouse.
 - [ ] On-chain role nang cao.
 - [ ] Mobile role login.
 
